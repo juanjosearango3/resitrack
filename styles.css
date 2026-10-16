@@ -262,3 +262,15 @@ footer{margin-top:36px;font-size:14px;color:var(--muted)}
 .retar-btn{justify-self:start}
 .retar{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .ghead{margin:16px 0 8px;font-family:var(--f-display);font-size:16px}
+
+/* ---------- rachas ---------- */
+.fire{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.me .fire{font-size:13px;margin-left:2px}
+.streak-box{background:var(--sheet);border:1px solid var(--rule);border-radius:14px;padding:14px;margin:6px 0 4px}
+.streak-me{display:flex;align-items:center;gap:14px}
+.streak-num{font-family:var(--f-display);font-weight:700;font-size:44px;line-height:1;min-width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:linear-gradient(160deg,#ffb347,#ff6a3d);color:#fff}
+.streak-num::after{content:"🔥";font-size:18px;margin-left:1px;align-self:flex-start;margin-top:6px}
+.streak-mates{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.smate{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--rule);border-radius:999px;padding:3px 10px 3px 3px;font-size:14px}
+.smate.risk{border-color:#ff8a3d}
+.pstreak{font-size:14px}

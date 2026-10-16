@@ -224,6 +224,9 @@ function renderGroup(){
         : `<button class="btn small retar-btn" data-retar="${key}">Retar</button>`);
       return `<div class="person"><div class="hd">${avatar(id)}<div style="flex:1"><h3>${esc(p.alias)}${id===ME.id?" (tú)":""}</h3><div class="hint">${esc(p.city||"")}</div></div></div>
         ${retar}
+        ${STREAKS[id] ? `<div class="pstreak">${id === ME.id
+          ? `Tu racha: ${STREAKS[id].solo ? fire(STREAKS[id].solo) : "0"}`
+          : `Juntos: ${STREAKS[id].together ? fire(STREAKS[id].together) : "0"}${atRisk(id) ? " ⌛" : ""} <span class="hint">· su racha ${STREAKS[id].solo}</span>`}</div>` : ""}
         <div class="chips">${(p.specs||[]).map(s => `<span class="chip on">${esc(s)}</span>`).join("")}</div>
         ${p.note ? `<div class="hint" style="font-size:14px">${esc(p.note)}</div>` : ""}
         <div class="mini">${f.length ? f.map(([u,x]) => {
@@ -246,7 +249,7 @@ function renderTop(){
   const b = $("meBtn");
   b.hidden = false;
   b.innerHTML = ME
-    ? `${avatar(ME.id)}<span>${esc(PROFILE ? PROFILE.alias : "Tu perfil")}</span>`
+    ? `${avatar(ME.id)}<span>${esc(PROFILE ? PROFILE.alias : "Tu perfil")}</span>${myStreak() ? fire(myStreak()) : ""}`
     : `<span style="padding-left:8px">Entrar</span>`;
 }
 function renderAllTabs(){
@@ -490,12 +493,14 @@ let studyBusy = false, studyLoaded = false;
 
 async function loadStudy(){
   if (!ME || !PROFILE) return;
-  const [d, h, c, a] = await Promise.all([
+  const [d, h, c, a, k] = await Promise.all([
     SB.rpc("get_daily"),
     SB.rpc("my_study_history"),
     SB.from("challenges").select("*").order("created_at", { ascending: false }).limit(30),
-    SB.from("challenge_answers").select("challenge_id,user_id,score")
+    SB.from("challenge_answers").select("challenge_id,user_id,score"),
+    SB.rpc("my_streaks")
   ]);
+  STREAKS = Object.fromEntries((k.data || []).map(r => [r.user_id, r]));
   DAILY = d.data || [];
   HISTORY = h.data || [];
   CHALLS = c.data || [];
@@ -506,17 +511,20 @@ async function loadStudy(){
   studyLoaded = true;
 }
 
-function streak(){
-  // Días seguidos con las preguntas del día completas. Hoy cuenta si ya terminaste.
-  const byDay = Object.fromEntries(HISTORY.map(r => [r.day, r]));
-  const iso = d => d.toISOString().slice(0,10);
-  const bog = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Bogota" }));
-  let cur = new Date(Date.UTC(bog.getFullYear(), bog.getMonth(), bog.getDate()));
-  const full = r => r && r.total > 0 && r.answered === r.total;
-  if (!full(byDay[iso(cur)])) cur.setUTCDate(cur.getUTCDate() - 1);
-  let n = 0;
-  while (full(byDay[iso(cur)])) { n++; cur.setUTCDate(cur.getUTCDate() - 1); }
-  return n;
+let STREAKS = {};
+const myStreak = () => STREAKS[ME?.id]?.solo || 0;
+const fire = n => `<span class="fire" aria-label="racha de ${n} ${n===1?"día":"días"}">🔥${n}</span>`;
+// Racha con alguien en riesgo: la llevan y alguno de los dos no ha terminado hoy.
+const atRisk = id => { const t = STREAKS[id], m = STREAKS[ME?.id]; return t && t.together > 0 && !(t.done_today && m?.done_today); };
+
+function streakPanel(){
+  const me = STREAKS[ME.id]; if (!me) return "";
+  const mates = Object.values(STREAKS).filter(r => r.user_id !== ME.id)
+    .sort((a,b) => (b.together - a.together) || aliasOf(a.user_id).localeCompare(aliasOf(b.user_id),"es")).slice(0, 10);
+  const big = `<div class="streak-me"><div class="streak-num">${me.solo}</div><div><b>${me.solo === 1 ? "día seguido" : "días seguidos"}</b><div class="hint">${me.done_today ? "Hoy ya sumaste. Vuelve mañana." : me.solo ? "Termina las 10 de hoy para no perderla." : "Termina las 10 de hoy para empezar tu racha."}</div></div></div>`;
+  const list = mates.length ? `<div class="streak-mates">${mates.map(r => `<span class="smate${atRisk(r.user_id)?" risk":""}" title="${r.together ? `Llevan ${r.together} días seguidos` : "Aún no tienen racha juntos"}">${avatar(r.user_id,"sm")}<span>${esc(aliasOf(r.user_id))}</span>${r.together ? fire(r.together) : `<span class="hint">0</span>`}${atRisk(r.user_id) ? `<span aria-label="en riesgo">⌛</span>` : ""}</span>`).join("")}</div>
+    <p class="hint" style="margin:6px 0 0">La racha con alguien sube cada día que los dos terminan las 10 preguntas. ⌛ significa que hoy falta uno de los dos.</p>` : "";
+  return `<div class="streak-box">${big}${list}</div>`;
 }
 
 function optList(q, opts){
@@ -543,12 +551,11 @@ function renderDaily(){
   if (!DAILY.length) return `<div class="empty">Las preguntas de hoy todavía no están listas. Se publican cada madrugada.</div>`;
   const done = DAILY.filter(q => q.my_choice != null), ok = done.filter(q => q.is_correct).length;
   const strip = DAILY.map(q => `<i class="${q.my_choice==null?"":q.is_correct?"ok":"bad"}" title="${q.slot}"></i>`).join("");
-  const st = streak();
   const head = `<div class="sheet-head"><div class="strip" aria-label="Avance de hoy">${strip}</div>
     <p class="sub" style="margin:6px 0 0">${done.length === DAILY.length
       ? `Terminaste: <b>${ok} de ${DAILY.length}</b> correctas.`
       : `${done.length} de ${DAILY.length} respondidas${done.length?`, ${ok} correctas`:""}.`}
-      ${st ? ` Racha: <b>${st} ${st===1?"día":"días"}</b>.` : ""}</p></div>`;
+</p></div>`;
   const cards = DAILY.map(q => {
     const answered = q.my_choice != null;
     return `<article class="qcard" id="q-${q.id}">
@@ -624,7 +631,7 @@ function renderStudy(){
   if (!PROFILE){ el.innerHTML = `<div class="empty">Primero crea tu perfil en la pestaña Para mí.</div>`; return; }
   if (PLAY){ el.innerHTML = renderPlay(); return; }
   if (RESULT){ el.innerHTML = renderResult(); return; }
-  el.innerHTML = `${pushBanner()}${pendingBox()}<h2>Preguntas de hoy</h2><p class="sub">Ocho de medicina (básicas, clínicas, quirúrgicas, salud pública y sistema de salud) y dos de cultura general. Cuenta tu primera respuesta.</p>
+  el.innerHTML = `${pushBanner()}${pendingBox()}${streakPanel()}<h2>Preguntas de hoy</h2><p class="sub">Ocho de medicina (básicas, clínicas, quirúrgicas, salud pública y sistema de salud) y dos de cultura general. Cuenta tu primera respuesta.</p>
     ${renderDaily()}${renderChallenges()}`;
 }
 
@@ -642,6 +649,12 @@ document.addEventListener("click", async e => {
       if (q && r){ Object.assign(q, { my_choice: i, is_correct: r.is_correct, correct: r.correct, explanation: r.explanation, source: r.source }); }
       const h = HISTORY.find(x => x.day === new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" }));
       if (h){ h.answered++; if (r?.is_correct) h.correct++; }
+      if (DAILY.every(x => x.my_choice != null)){
+        const k = await SB.rpc("my_streaks");
+        STREAKS = Object.fromEntries((k.data || []).map(x => [x.user_id, x]));
+        renderTop();
+        toast(`🔥 ${myStreak()} ${myStreak()===1?"día":"días"} seguidos. ¡Racha al día!`);
+      }
       renderStudy();
       document.getElementById("q-"+qid)?.scrollIntoView({ block: "nearest" });
       return;
@@ -723,7 +736,7 @@ async function boot(){
   ME = data.session?.user || null;
   await loadAll();
   renderAllTabs();
-  if (ME && PROFILE){ await loadStudy(); if (tab === "study") renderStudy(); if (tab === "group") renderGroup(); }
+  if (ME && PROFILE){ await loadStudy(); renderTop(); if (tab === "study") renderStudy(); if (tab === "group") renderGroup(); }
 }
 try { const t = localStorage.getItem("rt-tab"); if (t && ["all","mine","study","group"].includes(t)) tab = t; } catch(e){}
 // Al abrir un aviso, la URL trae la pestaña (?tab=study).
