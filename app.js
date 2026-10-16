@@ -695,6 +695,18 @@ async function boot(){
 try { const t = localStorage.getItem("rt-tab"); if (t && ["all","mine","study","group"].includes(t)) tab = t; } catch(e){}
 // Al abrir un aviso, la URL trae la pestaña (?tab=study).
 { const t = new URLSearchParams(location.search).get("tab"); if (t && ["all","mine","study","group"].includes(t)) tab = t; }
+/* ---------- portada ---------- */
+function showApp(){
+  $("cover").hidden = true; $("app").hidden = false; window.scrollTo(0, 0);
+}
+function showCover(){
+  $("app").hidden = true; $("cover").hidden = false; window.scrollTo(0, 0);
+}
+["startBtn","startBtn2"].forEach(id => $(id).addEventListener("click", showApp));
+$("brandBtn").addEventListener("click", showCover);
+// Si se entra desde un aviso (?tab=...), se salta la portada.
+if (new URLSearchParams(location.search).get("tab")) showApp();
+
 setTab(tab);
 boot();
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});

@@ -15,9 +15,45 @@
 </head>
 <body>
 
-<div class="wrap">
+<section class="cover" id="cover" aria-label="Portada de ResiTrack">
+  <div class="cover-hero">
+    <h1 class="cover-title">ResiTrack</h1>
+    <div class="cover-ovals" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+    <p class="cover-lead">Las convocatorias de residencia médica en Colombia, tu avance y tu grupo, en un solo lugar.</p>
+    <button class="btn cover-start" id="startBtn" type="button">Iniciar</button>
+    <p class="cover-hint">Desliza para ver cómo funciona</p>
+  </div>
+
+  <div class="cover-more">
+    <h2>Qué es</h2>
+    <p>ResiTrack rastrea las convocatorias de especializaciones médico-quirúrgicas de las universidades de Colombia: fechas de inscripción, examen, entrevistas y admitidos; requisitos; cómo califica cada una; y tips para su examen. Los datos salen de los documentos oficiales de cada universidad y se revisan los lunes y jueves.</p>
+
+    <h2>Cómo empezar</h2>
+    <ol class="steps">
+      <li><span><b>Crea tu cuenta</b> con tu correo y una contraseña. El radar se puede ver sin cuenta; para lo demás la necesitas.</span></li>
+      <li><span><b>Arma tu perfil:</b> cómo te llaman, tu ciudad y las especialidades que te interesan. Con eso la app te muestra primero lo que te sirve.</span></li>
+      <li><span><b>Sigue convocatorias</b> y marca tu avance en los óvalos: me interesa, inscrito, presenté examen, entrevista, admitido.</span></li>
+      <li><span><b>Únete a un grupo</b> con el código de 6 letras que te pase un amigo, o crea el tuyo. Puedes estar en varios.</span></li>
+      <li><span><b>Estudia todos los días</b> las 10 preguntas y reta a alguien de tu grupo.</span></li>
+      <li><span><b>Activa los avisos</b> para enterarte de cambios en tus convocatorias y de los retos. En iPhone, primero abre la página en Safari, toca Compartir y elige Agregar a pantalla de inicio.</span></li>
+    </ol>
+
+    <h2>Las pestañas</h2>
+    <dl class="tabs-help">
+      <dt>Explorar</dt><dd>Todas las universidades. Busca por especialidad (por ejemplo, "plástica") o filtra por ciudad y estado: abiertas, en proceso, por confirmar o cerradas. Cada tarjeta trae cronograma, requisitos, cómo se califica, tips y la fuente oficial.</dd>
+      <dt>Para mí</dt><dd>Lo que sigues con tu avance, las novedades de esas convocatorias y las que coinciden con tus especialidades.</dd>
+      <dt>Estudiar</dt><dd>10 preguntas nuevas cada día: 8 casos clínicos de nivel examen de residencia (ciencias básicas, clínicas, quirúrgicas, salud pública y sistema de salud) y 2 de cultura general. Al responder ves si acertaste, el porqué y la fuente. Cuenta tu primera respuesta. Aquí también están los desafíos: gana quien acierte más, y el feedback aparece cuando los dos terminan.</dd>
+      <dt>Grupos</dt><dd>Tus grupos, su código para invitar y en qué va cada persona. Tu perfil y tu avance solo los ve la gente de tus grupos.</dd>
+    </dl>
+
+    <p class="cover-note">Antes de pagar una inscripción, confirma siempre las fechas en el enlace oficial de la universidad.</p>
+    <button class="btn" id="startBtn2" type="button">Iniciar</button>
+  </div>
+</section>
+
+<div class="wrap" id="app" hidden>
   <div class="top topwrap">
-    <div class="brand"><span class="o" aria-hidden="true"></span>ResiTrack</div>
+    <button class="brand" id="brandBtn" type="button" title="Ver portada"><span class="o" aria-hidden="true"></span>ResiTrack</button>
     <button class="me" id="meBtn" hidden></button>
     <div class="menu" id="menu" hidden></div>
   </div>
