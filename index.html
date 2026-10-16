@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ResiTrack · Convocatorias de residencias médicas en Colombia</title>
+<meta name="description" content="Radar de convocatorias de especializaciones médico-quirúrgicas en Colombia. Busca por especialidad, sigue tus universidades y acompáñate con tu grupo.">
+<meta name="theme-color" content="#f3f6f1">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="wrap">
+  <div class="top topwrap">
+    <div class="brand"><span class="o" aria-hidden="true"></span>ResiTrack</div>
+    <button class="me" id="meBtn" hidden></button>
+    <div class="menu" id="menu" hidden></div>
+  </div>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab" role="tab" id="t-all" aria-selected="true" data-tab="all">Explorar<span class="n" id="nAll"></span></button>
+    <button class="tab" role="tab" id="t-mine" aria-selected="false" data-tab="mine">Para mí</button>
+    <button class="tab" role="tab" id="t-group" aria-selected="false" data-tab="group">Grupos<span class="n" id="nGroup"></span></button>
+  </nav>
+
+  <section id="p-all">
+    <div class="filters" role="search">
+      <input class="q" id="q" type="search" placeholder="Especialidad o universidad, ej. plástica" aria-label="Buscar">
+      <select id="spec" aria-label="Especialidad"><option value="">Todas las especialidades</option></select>
+      <select id="city" aria-label="Ciudad"><option value="">Todas las ciudades</option></select>
+    </div>
+    <div class="counts" id="counts"></div>
+    <div class="list" id="list"></div>
+    <h2>Otras instituciones con especializaciones registradas</h2>
+    <p class="sub">Tienen programas activos en el SNIES, pero no hay convocatoria ni lista de programas en fuente oficial.</p>
+    <ul class="others" id="others"></ul>
+  </section>
+
+  <section id="p-mine" hidden></section>
+  <section id="p-group" hidden></section>
+
+  <footer>
+    <p>Datos verificados el <span id="verified">16 oct 2026</span>. Fuentes: documentos oficiales de cada universidad, Futuros Residentes y ResiLab. Las fechas marcadas como estimadas vienen de años anteriores. Confirma siempre en el enlace oficial antes de pagar.</p>
+  </footer>
+</div>
+
+<dialog id="dlg"><form class="form" id="pform" method="dialog">
+  <h2 id="dlgTitle">Tu perfil</h2>
+  <label>Cómo te llaman<input id="f-alias" maxlength="40" placeholder="Juanjo" required></label>
+  <label>Ciudad donde vives<input id="f-city" maxlength="60" placeholder="Cali"></label>
+  <div><label style="margin-bottom:6px">Especialidades que te interesan <span class="hint">Elige una o varias</span></label><div class="pick" id="f-specs"></div></div>
+  <label>Nota para el grupo<textarea id="f-note" rows="2" maxlength="300" placeholder="Ej. me presento a CES y UdeA, busco con quién estudiar"></textarea><span class="hint">La ven solo las personas de tus grupos.</span></label>
+  <div class="actions"><button type="button" class="btn ghost" id="f-cancel">Cancelar</button><button type="submit" class="btn" id="f-save">Guardar perfil</button></div>
+</form></dialog>
+
+<div class="toast" id="toast" hidden></div>
+
+<script src="data.js"></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>
