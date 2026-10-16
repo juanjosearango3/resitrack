@@ -247,14 +247,18 @@ function renderAllTabs(){
   if (tab === "all") renderAll();
   if (tab === "mine") renderMine();
   if (tab === "group") renderGroup();
+  if (tab === "study") renderStudy();
   $("nAll").textContent = DATA.length;
   $("nGroup").textContent = GROUPS.length || "";
 }
 function setTab(t){
   tab = t;
-  ["all","mine","group"].forEach(k => { $("p-"+k).hidden = k !== t; $("t-"+k).setAttribute("aria-selected", k === t); });
+  ["all","mine","study","group"].forEach(k => { $("p-"+k).hidden = k !== t; $("t-"+k).setAttribute("aria-selected", k === t); });
+  // Vacía los paneles ocultos para no duplicar formularios (ids repetidos).
+  ["mine","study","group"].forEach(k => { if (k !== t) $("p-"+k).innerHTML = ""; });
   try { localStorage.setItem("rt-tab", t); } catch(e){}
   renderAllTabs();
+  if (t === "study") loadStudy().then(renderStudy);
 }
 
 /* ---------- datos ---------- */
@@ -464,14 +468,231 @@ async function enablePush(){
   } catch(err){ toast("No pude activar los avisos."); }
 }
 
+/* ---------- estudiar: preguntas diarias y desafíos ---------- */
+const AREAS = {
+  basicas: "Ciencias básicas", clinicas: "Clínicas", quirurgicas: "Quirúrgicas",
+  salud_publica: "Salud pública", sistema_salud: "Sistema de salud", cultura: "Cultura general"
+};
+const LETTERS = ["A","B","C","D","E"];
+let DAILY = [], HISTORY = [], CHALLS = [], CH_ANS = [];
+let PLAY = null;      // { id, rival, qs, picks }
+let RESULT = null;    // jsonb de challenge_result
+let studyBusy = false, studyLoaded = false;
+
+async function loadStudy(){
+  if (!ME || !PROFILE) return;
+  const [d, h, c, a] = await Promise.all([
+    SB.rpc("get_daily"),
+    SB.rpc("my_study_history"),
+    SB.from("challenges").select("*").order("created_at", { ascending: false }).limit(30),
+    SB.from("challenge_answers").select("challenge_id,user_id,score")
+  ]);
+  DAILY = d.data || [];
+  HISTORY = h.data || [];
+  CHALLS = c.data || [];
+  CH_ANS = a.data || [];
+  const pend = CHALLS.filter(x => x.status === "pending" && !CH_ANS.some(r => r.challenge_id === x.id && r.user_id === ME.id)).length;
+  $("nStudy").textContent = pend || "";
+  studyLoaded = true;
+}
+
+function streak(){
+  // Días seguidos con las preguntas del día completas. Hoy cuenta si ya terminaste.
+  const byDay = Object.fromEntries(HISTORY.map(r => [r.day, r]));
+  const iso = d => d.toISOString().slice(0,10);
+  const bog = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Bogota" }));
+  let cur = new Date(Date.UTC(bog.getFullYear(), bog.getMonth(), bog.getDate()));
+  const full = r => r && r.total > 0 && r.answered === r.total;
+  if (!full(byDay[iso(cur)])) cur.setUTCDate(cur.getUTCDate() - 1);
+  let n = 0;
+  while (full(byDay[iso(cur)])) { n++; cur.setUTCDate(cur.getUTCDate() - 1); }
+  return n;
+}
+
+function optList(q, opts){
+  // opts: { pick, correct, mine, theirs, rivalName, locked, kind }
+  return `<div class="opts" role="radiogroup">${q.options.map((o,i) => {
+    const cls = [];
+    if (opts.correct != null && i === opts.correct) cls.push("right");
+    if (opts.pick != null && i === opts.pick && opts.correct != null && i !== opts.correct) cls.push("wrong");
+    if (opts.pick === i) cls.push("picked");
+    const tags = [];
+    if (opts.mine === i) tags.push("Tú");
+    if (opts.theirs === i) tags.push(esc(opts.rivalName));
+    return `<button type="button" class="opt ${cls.join(" ")}" data-kind="${opts.kind||""}" data-q="${q.id ?? q.idx}" data-i="${i}" ${opts.locked?"disabled":""} role="radio" aria-checked="${opts.pick===i}">
+      <span class="ov">${LETTERS[i]}</span><span class="txt">${esc(o)}</span>${tags.length?`<span class="who">${tags.join(" · ")}</span>`:""}</button>`;
+  }).join("")}</div>`;
+}
+
+function feedback(ok, explanation, source){
+  return `<div class="fb ${ok?"fb-ok":"fb-bad"}"><b>${ok?"Correcta.":"Incorrecta."}</b> ${esc(explanation)}${source?`<div class="hint" style="margin-top:6px">Fuente: ${esc(source)}</div>`:""}</div>`;
+}
+
+function renderDaily(){
+  if (!studyLoaded) return `<div class="empty">Cargando preguntas…</div>`;
+  if (!DAILY.length) return `<div class="empty">Las preguntas de hoy todavía no están listas. Se publican cada madrugada.</div>`;
+  const done = DAILY.filter(q => q.my_choice != null), ok = done.filter(q => q.is_correct).length;
+  const strip = DAILY.map(q => `<i class="${q.my_choice==null?"":q.is_correct?"ok":"bad"}" title="${q.slot}"></i>`).join("");
+  const st = streak();
+  const head = `<div class="sheet-head"><div class="strip" aria-label="Avance de hoy">${strip}</div>
+    <p class="sub" style="margin:6px 0 0">${done.length === DAILY.length
+      ? `Terminaste: <b>${ok} de ${DAILY.length}</b> correctas.`
+      : `${done.length} de ${DAILY.length} respondidas${done.length?`, ${ok} correctas`:""}.`}
+      ${st ? ` Racha: <b>${st} ${st===1?"día":"días"}</b>.` : ""}</p></div>`;
+  const cards = DAILY.map(q => {
+    const answered = q.my_choice != null;
+    return `<article class="qcard" id="q-${q.id}">
+      <div class="qmeta"><span class="qn">${q.slot}</span><span class="chip on">${esc(AREAS[q.area]||q.area)}</span>${q.topic?`<span class="hint">${esc(q.topic)}</span>`:""}</div>
+      <p class="stem">${esc(q.stem)}</p>
+      ${optList(q, { kind:"daily", pick: q.my_choice, correct: answered ? q.correct : null, locked: answered })}
+      ${answered ? feedback(q.is_correct, q.explanation, q.source) : ""}
+    </article>`;
+  }).join("");
+  return head + `<div class="qlist">${cards}</div>`;
+}
+
+function mates(){
+  return Object.values(PEOPLE).filter(p => p.id !== ME.id).sort((a,b) => a.alias.localeCompare(b.alias,"es"));
+}
+
+function renderChallenges(){
+  const m = mates();
+  const form = m.length
+    ? `<form id="chForm" class="chform"><label>Retar a<select id="ch-who">${m.map(p => `<option value="${p.id}">${esc(p.alias)}</option>`).join("")}</select></label>
+       <label>Preguntas<select id="ch-n"><option>5</option><option>3</option><option>10</option></select></label>
+       <button class="btn small" type="submit">Enviar desafío</button></form>`
+    : `<div class="empty">Únete a un grupo para poder retar a alguien.</div>`;
+  const mineAns = id => CH_ANS.find(r => r.challenge_id === id && r.user_id === ME.id);
+  const theirAns = (c) => CH_ANS.find(r => r.challenge_id === c.id && r.user_id !== ME.id);
+  const rivalOf = c => c.challenger === ME.id ? c.opponent : c.challenger;
+  const row = c => {
+    const rv = aliasOf(rivalOf(c)), my = mineAns(c.id);
+    if (c.status === "declined") return `<div class="chrow"><span>${c.challenger===ME.id?`${esc(rv)} rechazó tu desafío`:`Rechazaste el desafío de ${esc(rv)}`}</span></div>`;
+    if (c.status === "done"){
+      const th = theirAns(c), a = my?.score ?? 0, b = th?.score ?? 0;
+      const verdict = a > b ? "Ganaste" : a < b ? "Perdiste" : "Empate";
+      return `<div class="chrow"><span><b>${verdict}</b> contra ${esc(rv)} · ${a}–${b}</span><button class="btn ghost small" data-chres="${c.id}">Ver feedback</button></div>`;
+    }
+    if (my) return `<div class="chrow"><span>Respondiste (${my.score}/${c.question_ids.length}). Esperando a ${esc(rv)}.</span></div>`;
+    return `<div class="chrow due"><span>${c.challenger===ME.id?`Tu desafío a ${esc(rv)}`:`<b>${esc(rv)}</b> te retó`} · ${c.question_ids.length} preguntas</span>
+      <span><button class="btn small" data-chplay="${c.id}">Jugar</button>${c.opponent===ME.id?` <button class="btn ghost small" data-chdecline="${c.id}">Rechazar</button>`:""}</span></div>`;
+  };
+  return `<h2>Desafíos</h2><p class="sub">Reta a alguien de tus grupos. Gana quien acierte más; el feedback aparece cuando los dos terminan.</p>
+    ${form}<div class="chlist">${CHALLS.map(row).join("") || '<div class="hint">Aún no tienes desafíos.</div>'}</div>`;
+}
+
+function renderPlay(){
+  const all = PLAY.qs.every((q,i) => PLAY.picks[i] != null);
+  return `<div class="playhead"><button class="btn ghost small" id="chBack">Volver</button><h2 style="margin:0">Desafío contra ${esc(PLAY.rival)}</h2></div>
+    <p class="sub">Elige una respuesta en cada pregunta. Verás el feedback cuando ${esc(PLAY.rival)} también termine.</p>
+    <div class="qlist">${PLAY.qs.map((q,i) => `<article class="qcard"><div class="qmeta"><span class="qn">${i+1}</span><span class="chip on">${esc(AREAS[q.area]||q.area)}</span></div>
+      <p class="stem">${esc(q.stem)}</p>${optList({ ...q, id: i }, { kind:"play", pick: PLAY.picks[i] })}</article>`).join("")}</div>
+    <div class="submitbar"><span class="hint">${PLAY.picks.filter(x => x!=null).length} de ${PLAY.qs.length}</span><button class="btn" id="chSubmit" ${all?"":"disabled"}>Enviar respuestas</button></div>`;
+}
+
+function renderResult(){
+  const r = RESULT, rv = aliasOf(r.rival);
+  const verdict = r.my_score > r.their_score ? "Ganaste" : r.my_score < r.their_score ? `Ganó ${esc(rv)}` : "Empate";
+  return `<div class="playhead"><button class="btn ghost small" id="chBack">Volver</button><h2 style="margin:0">${verdict}</h2></div>
+    <div class="score"><div><span>${r.my_score}</span>Tú</div><div class="vs">–</div><div><span>${r.their_score}</span>${esc(rv)}</div></div>
+    <div class="qlist">${r.items.map(it => `<article class="qcard"><div class="qmeta"><span class="qn">${it.idx}</span><span class="chip on">${esc(AREAS[it.area]||it.area)}</span></div>
+      <p class="stem">${esc(it.stem)}</p>
+      ${optList({ id: "r"+it.idx, options: it.options }, { correct: it.correct, pick: it.mine, mine: it.mine, theirs: it.theirs, rivalName: rv, locked: true })}
+      ${feedback(it.mine === it.correct, it.explanation, it.source)}</article>`).join("")}</div>`;
+}
+
+function renderStudy(){
+  const el = $("p-study");
+  if (!ME){ el.innerHTML = gate("Estudia con ResiTrack","Entra para responder las 10 preguntas del día y retar a tus amigos."); return; }
+  if (!PROFILE){ el.innerHTML = `<div class="empty">Primero crea tu perfil en la pestaña Para mí.</div>`; return; }
+  if (PLAY){ el.innerHTML = renderPlay(); return; }
+  if (RESULT){ el.innerHTML = renderResult(); return; }
+  el.innerHTML = `<h2>Preguntas de hoy</h2><p class="sub">Ocho de medicina (básicas, clínicas, quirúrgicas, salud pública y sistema de salud) y dos de cultura general. Cuenta tu primera respuesta.</p>
+    ${renderDaily()}${renderChallenges()}`;
+}
+
+document.addEventListener("click", async e => {
+  const opt = e.target.closest(".opt[data-kind]");
+  if (opt && !opt.disabled){
+    const i = Number(opt.dataset.i);
+    if (opt.dataset.kind === "daily"){
+      if (studyBusy) return; studyBusy = true;
+      const qid = Number(opt.dataset.q);
+      const { data, error } = await SB.rpc("answer_daily", { p_qid: qid, p_choice: i });
+      studyBusy = false;
+      if (error){ toast(error.message); return; }
+      const r = data?.[0], q = DAILY.find(x => x.id === qid);
+      if (q && r){ Object.assign(q, { my_choice: i, is_correct: r.is_correct, correct: r.correct, explanation: r.explanation, source: r.source }); }
+      const h = HISTORY.find(x => x.day === new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" }));
+      if (h){ h.answered++; if (r?.is_correct) h.correct++; }
+      renderStudy();
+      document.getElementById("q-"+qid)?.scrollIntoView({ block: "nearest" });
+      return;
+    }
+    if (opt.dataset.kind === "play"){
+      PLAY.picks[Number(opt.dataset.q)] = i;
+      const y = window.scrollY; renderStudy(); window.scrollTo(0, y);
+      return;
+    }
+  }
+  const play = e.target.closest("[data-chplay]");
+  if (play){
+    const c = CHALLS.find(x => x.id === play.dataset.chplay);
+    const { data, error } = await SB.rpc("get_challenge", { p_cid: c.id });
+    if (error){ toast(error.message); return; }
+    PLAY = { id: c.id, rival: aliasOf(c.challenger === ME.id ? c.opponent : c.challenger), qs: data, picks: data.map(() => null) };
+    renderStudy(); window.scrollTo(0,0); return;
+  }
+  const res = e.target.closest("[data-chres]");
+  if (res){
+    const { data, error } = await SB.rpc("challenge_result", { p_cid: res.dataset.chres });
+    if (error){ toast(error.message); return; }
+    RESULT = data; renderStudy(); window.scrollTo(0,0); return;
+  }
+  const dec = e.target.closest("[data-chdecline]");
+  if (dec){
+    if (!confirm("¿Rechazar este desafío?")) return;
+    const { error } = await SB.rpc("decline_challenge", { p_cid: dec.dataset.chdecline });
+    if (error){ toast(error.message); return; }
+    await loadStudy(); renderStudy(); return;
+  }
+  if (e.target.closest("#chBack")){ PLAY = null; RESULT = null; await loadStudy(); renderStudy(); return; }
+  if (e.target.closest("#chSubmit")){
+    if (studyBusy) return; studyBusy = true;
+    const { data, error } = await SB.rpc("submit_challenge", { p_cid: PLAY.id, p_answers: PLAY.picks });
+    studyBusy = false;
+    if (error){ toast(error.message); return; }
+    const r = data?.[0], cid = PLAY.id, rival = PLAY.rival;
+    PLAY = null;
+    if (r?.status === "done"){
+      const rr = await SB.rpc("challenge_result", { p_cid: cid });
+      RESULT = rr.data || null;
+    } else {
+      toast(`Acertaste ${r?.score ?? 0} de ${r?.total ?? 0}. Te avisamos el resultado cuando ${rival} termine.`);
+    }
+    await loadStudy(); renderStudy(); window.scrollTo(0,0); return;
+  }
+});
+
+document.addEventListener("submit", async e => {
+  if (e.target.id !== "chForm") return;
+  e.preventDefault();
+  const who = $("ch-who").value, n = Number($("ch-n").value);
+  const { error } = await SB.rpc("create_challenge", { p_opponent: who, p_n: n });
+  if (error){ toast(error.message); return; }
+  toast(`Desafío enviado a ${aliasOf(who)}.`);
+  await loadStudy(); renderStudy();
+});
+
 /* ---------- arranque ---------- */
 async function boot(){
   const { data } = await SB.auth.getSession();
   ME = data.session?.user || null;
   await loadAll();
   renderAllTabs();
+  if (ME && PROFILE){ await loadStudy(); if (tab === "study") renderStudy(); }
 }
-try { const t = localStorage.getItem("rt-tab"); if (t && ["all","mine","group"].includes(t)) tab = t; } catch(e){}
+try { const t = localStorage.getItem("rt-tab"); if (t && ["all","mine","study","group"].includes(t)) tab = t; } catch(e){}
 setTab(tab);
 boot();
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
