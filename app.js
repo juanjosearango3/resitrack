@@ -175,7 +175,7 @@ function pushBanner(){
   if (Notification.permission === "granted") return "";
   if (Notification.permission === "denied")
     return `<div class="banner">Los avisos están bloqueados en este navegador. Actívalos en los ajustes del sitio si quieres recibirlos.</div>`;
-  return `<div class="banner">Te avisamos cuando cambie una convocatoria que sigues o cuando abra una de tus especialidades.<button class="btn small" id="pushBtn">Activar avisos</button></div>`;
+  return `<div class="banner">Activa los avisos para enterarte cuando te reten, cuando termine un desafío y cuando cambie una convocatoria que te interesa.<button class="btn small" id="pushBtn">Activar avisos</button></div>`;
 }
 
 function feedHtml(){
@@ -607,7 +607,7 @@ function renderStudy(){
   if (!PROFILE){ el.innerHTML = `<div class="empty">Primero crea tu perfil en la pestaña Para mí.</div>`; return; }
   if (PLAY){ el.innerHTML = renderPlay(); return; }
   if (RESULT){ el.innerHTML = renderResult(); return; }
-  el.innerHTML = `<h2>Preguntas de hoy</h2><p class="sub">Ocho de medicina (básicas, clínicas, quirúrgicas, salud pública y sistema de salud) y dos de cultura general. Cuenta tu primera respuesta.</p>
+  el.innerHTML = `${pushBanner()}<h2>Preguntas de hoy</h2><p class="sub">Ocho de medicina (básicas, clínicas, quirúrgicas, salud pública y sistema de salud) y dos de cultura general. Cuenta tu primera respuesta.</p>
     ${renderDaily()}${renderChallenges()}`;
 }
 
@@ -693,6 +693,8 @@ async function boot(){
   if (ME && PROFILE){ await loadStudy(); if (tab === "study") renderStudy(); }
 }
 try { const t = localStorage.getItem("rt-tab"); if (t && ["all","mine","study","group"].includes(t)) tab = t; } catch(e){}
+// Al abrir un aviso, la URL trae la pestaña (?tab=study).
+{ const t = new URLSearchParams(location.search).get("tab"); if (t && ["all","mine","study","group"].includes(t)) tab = t; }
 setTab(tab);
 boot();
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});

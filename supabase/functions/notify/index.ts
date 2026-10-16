@@ -42,47 +42,68 @@ Deno.serve(async (req) => {
   const keys = await vapid();
   webpush.setVapidDetails(SITE, keys.publicKey, keys.privateKey);
 
+  // Suscripciones por usuario, cargadas una sola vez.
+  const subsCache = new Map<string, any[]>();
+  async function subsOf(uids: string[]) {
+    const missing = uids.filter((u) => !subsCache.has(u));
+    if (missing.length) {
+      const { data } = await sb.from("push_subs").select("*").in("user_id", missing);
+      for (const u of missing) subsCache.set(u, (data ?? []).filter((s: any) => s.user_id === u));
+    }
+  }
+  let sent = 0;
+  const gone = new Set<string>();
+  async function push(uid: string, payload: string) {
+    for (const s of subsCache.get(uid) ?? []) {
+      if (gone.has(s.endpoint)) continue;
+      try {
+        await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payload);
+        sent++;
+      } catch (e: any) {
+        if (e?.statusCode === 404 || e?.statusCode === 410) gone.add(s.endpoint);
+      }
+    }
+  }
+
+  // 1) Avisos personales: retos (llegan uno por uno, con su propia etiqueta).
+  const since = new Date(Date.now() - 2 * 864e5).toISOString();
+  const { data: notices } = await sb.from("user_notices").select("*")
+    .is("sent_at", null).gte("created_at", since).order("created_at").limit(200);
+  if (notices?.length) {
+    await subsOf([...new Set(notices.map((n: any) => n.user_id))]);
+    for (const n of notices) {
+      await push(n.user_id, JSON.stringify({
+        title: n.title, body: n.body || "", url: SITE + "/?tab=study", tag: "reto-" + (n.ref ?? n.id),
+      }));
+    }
+    await sb.from("user_notices").update({ sent_at: new Date().toISOString() }).in("id", notices.map((n: any) => n.id));
+  }
+
+  // 2) Novedades de convocatorias.
   const { data: pending, error } = await sb.rpc("pending_notifications");
   if (error) return json({ error: error.message }, 500);
-  if (!pending || pending.length === 0) return json({ sent: 0, marked: 0 });
 
   const byUser = new Map<string, any[]>();
-  for (const p of pending) {
+  for (const p of pending ?? []) {
     if (!byUser.has(p.user_id)) byUser.set(p.user_id, []);
     byUser.get(p.user_id)!.push(p);
   }
-
-  const { data: subs } = await sb.from("push_subs").select("*").in("user_id", [...byUser.keys()]);
-
-  let sent = 0;
-  const gone: string[] = [];
   const done: { user_id: string; change_id: number }[] = [];
-
-  for (const [uid, items] of byUser) {
-    const mine = (subs ?? []).filter((s: any) => s.user_id === uid);
-    const title = items.length === 1 ? items[0].title : `${items.length} novedades en ResiTrack`;
-    const body = items.length === 1
-      ? (items[0].body || "Toca para ver el detalle.")
-      : items.slice(0, 3).map((i: any) => i.title).join(" · ");
-    const payload = JSON.stringify({ title, body, url: SITE, tag: "resitrack" });
-
-    for (const s of mine) {
-      try {
-        await webpush.sendNotification(
-          { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
-          payload,
-        );
-        sent++;
-      } catch (e: any) {
-        if (e?.statusCode === 404 || e?.statusCode === 410) gone.push(s.endpoint);
-      }
+  if (byUser.size) {
+    await subsOf([...byUser.keys()]);
+    for (const [uid, items] of byUser) {
+      const title = items.length === 1 ? items[0].title : `${items.length} novedades en ResiTrack`;
+      const body = items.length === 1
+        ? (items[0].body || "Toca para ver el detalle.")
+        : items.slice(0, 3).map((i: any) => i.title).join(" · ");
+      await push(uid, JSON.stringify({ title, body, url: SITE + "/?tab=mine", tag: "resitrack" }));
+      // Se marca aunque no tenga dispositivo: la novedad ya queda en su feed.
+      for (const it of items) done.push({ user_id: uid, change_id: it.change_id });
     }
-    // Se marca aunque no tenga dispositivo: la novedad ya queda en su feed.
-    for (const it of items) done.push({ user_id: uid, change_id: it.change_id });
+    await sb.from("notified").upsert(done, { onConflict: "user_id,change_id" });
   }
 
-  if (gone.length) await sb.from("push_subs").delete().in("endpoint", gone);
-  if (done.length) await sb.from("notified").upsert(done, { onConflict: "user_id,change_id" });
+  if (gone.size) await sb.from("push_subs").delete().in("endpoint", [...gone]);
 
-  return json({ sent, users: byUser.size, marked: done.length, dropped: gone.length });
+  return json({ sent, notices: notices?.length ?? 0, users: byUser.size, marked: done.length, dropped: gone.size });
 });
