@@ -1,18 +1,18 @@
 /* Layout: answer-sheet motif. Top bar with profile, three tabs (Para mí / Explorar / Grupo), single column of dossiers with a date stub on the left. */
 :root{
-  --paper:#f3f6f1; --sheet:#ffffff; --ink:#1d2a33; --muted:#5d6b70; --rule:#cfdcd2;
-  --drop:#2f7d5b; --drop-soft:#e2efe6; --lead:#2b2e33; --marker:#ffe36e;
+  --paper:#f4f7f6; --sheet:#ffffff; --ink:#0d2a4a; --muted:#56677a; --rule:#d2dde0;
+  --drop:#0b8a6c; --drop-soft:#e0f2ec; --lead:#0d2a4a; --marker:#ffe36e;
   --ok:#1f7a45; --ok-bg:#dff1e5; --warn:#9a5a00; --warn-bg:#fbeed3; --off:#66717c; --off-bg:#e9ecef; --tbd:#2f5aa8; --tbd-bg:#e2eafa;
   --f-display:"Familjen Grotesk","Segoe UI",system-ui,sans-serif;
   --f-body:"Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --paper:#121618; --sheet:#1a2023; --ink:#e4ebe7; --muted:#9aa8a3; --rule:#2c3833;
-  --drop:#6cc79d; --drop-soft:#1d3329; --lead:#e4ebe7; --marker:#6b5d12;
+  --paper:#111a20; --sheet:#18232b; --ink:#e6edf2; --muted:#9db0bd; --rule:#2a3a45;
+  --drop:#34c9a0; --drop-soft:#14342d; --lead:#e6edf2; --marker:#6b5d12;
   --ok:#6fd497; --ok-bg:#183424; --warn:#f2b356; --warn-bg:#3a2b12; --off:#a0abb6; --off-bg:#242c33; --tbd:#93b4f5; --tbd-bg:#1c2a46; color-scheme:dark}}
 :root[data-theme="dark"]{
-  --paper:#121618; --sheet:#1a2023; --ink:#e4ebe7; --muted:#9aa8a3; --rule:#2c3833;
-  --drop:#6cc79d; --drop-soft:#1d3329; --lead:#e4ebe7; --marker:#6b5d12;
+  --paper:#111a20; --sheet:#18232b; --ink:#e6edf2; --muted:#9db0bd; --rule:#2a3a45;
+  --drop:#34c9a0; --drop-soft:#14342d; --lead:#e6edf2; --marker:#6b5d12;
   --ok:#6fd497; --ok-bg:#183424; --warn:#f2b356; --warn-bg:#3a2b12; --off:#a0abb6; --off-bg:#242c33; --tbd:#93b4f5; --tbd-bg:#1c2a46; color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.5}
@@ -247,3 +247,10 @@ footer{margin-top:36px;font-size:14px;color:var(--muted)}
 .tabs-help dd{margin:4px 0 0;line-height:1.55;color:var(--ink)}
 .cover-note{margin-top:28px!important;padding:10px 14px;background:var(--drop-soft);border-radius:10px;font-size:15px}
 #startBtn2{margin-top:16px}
+
+/* ---------- logo ---------- */
+.cover-title{line-height:0}
+.cover-title img{display:block;width:min(88vw,620px);height:auto;margin:0 auto}
+.brand-ico{width:30px;height:30px;border-radius:8px;display:block}
+.brand .b1{color:var(--ink)} .brand .b2{color:var(--drop)}
+.brand{gap:9px}

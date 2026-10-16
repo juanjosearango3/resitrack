@@ -5,9 +5,12 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>ResiTrack · Convocatorias de residencias médicas en Colombia</title>
 <meta name="description" content="Radar de convocatorias de especializaciones médico-quirúrgicas en Colombia. Busca por especialidad, sigue tus universidades y acompáñate con tu grupo.">
-<meta name="theme-color" content="#f3f6f1">
+<meta name="theme-color" content="#f4f7f6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#111a20" media="(prefers-color-scheme: dark)">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icon-32.png">
+<meta name="apple-mobile-web-app-title" content="ResiTrack">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
@@ -17,8 +20,10 @@
 
 <section class="cover" id="cover" aria-label="Portada de ResiTrack">
   <div class="cover-hero">
-    <h1 class="cover-title">ResiTrack</h1>
-    <div class="cover-ovals" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+    <h1 class="cover-title"><picture>
+      <source srcset="logo-dark.png" media="(prefers-color-scheme: dark)">
+      <img src="logo.png" alt="ResiTrack. Tu camino a la residencia" width="848" height="579">
+    </picture></h1>
     <p class="cover-lead">Las convocatorias de residencia médica en Colombia, tu avance y tu grupo, en un solo lugar.</p>
     <button class="btn cover-start" id="startBtn" type="button">Iniciar</button>
     <p class="cover-hint">Desliza para ver cómo funciona</p>
@@ -53,7 +58,7 @@
 
 <div class="wrap" id="app" hidden>
   <div class="top topwrap">
-    <button class="brand" id="brandBtn" type="button" title="Ver portada"><span class="o" aria-hidden="true"></span>ResiTrack</button>
+    <button class="brand" id="brandBtn" type="button" title="Ver portada"><img class="brand-ico" src="icon-192.png" alt="" width="30" height="30"><span><span class="b1">Resi</span><span class="b2">Track</span></span></button>
     <button class="me" id="meBtn" hidden></button>
     <div class="menu" id="menu" hidden></div>
   </div>
@@ -89,8 +94,8 @@
 
 <dialog id="dlg"><form class="form" id="pform" method="dialog">
   <h2 id="dlgTitle">Tu perfil</h2>
-  <label>Cómo te llaman<input id="f-alias" maxlength="40" placeholder="Juanjo" required></label>
-  <label>Ciudad donde vives<input id="f-city" maxlength="60" placeholder="Cali"></label>
+  <label>Cómo te llaman<input id="f-alias" maxlength="40" required></label>
+  <label>Ciudad donde vives<input id="f-city" maxlength="60"></label>
   <div><label style="margin-bottom:6px">Especialidades que te interesan <span class="hint">Elige una o varias</span></label><div class="pick" id="f-specs"></div></div>
   <label>Nota para el grupo<textarea id="f-note" rows="2" maxlength="300" placeholder="Ej. me presento a CES y UdeA, busco con quién estudiar"></textarea><span class="hint">La ven solo las personas de tus grupos.</span></label>
   <div class="actions"><button type="button" class="btn ghost" id="f-cancel">Cancelar</button><button type="submit" class="btn" id="f-save">Guardar perfil</button></div>
