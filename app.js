@@ -218,7 +218,12 @@ function renderGroup(){
       const p = PEOPLE[id];
       if (!p) return "";
       const f = FOLLOWS.filter(x => x.user_id === id).map(x => [BY[x.uni_id], x]).filter(x => x[0]).sort((a,b) => sortU(a[0],b[0]));
-      return `<div class="person"><div class="hd">${avatar(id)}<div><h3>${esc(p.alias)}${id===ME.id?" (tú)":""}</h3><div class="hint">${esc(p.city||"")}</div></div></div>
+      const key = g.id + ":" + id;
+      const retar = id === ME.id ? "" : (RETAR_OPEN === key
+        ? `<div class="retar"><span class="hint">¿Cuántas preguntas?</span>${[3,5,10].map(n => `<button class="btn small" data-retar-go="${id}" data-g="${g.id}" data-n="${n}">${n}</button>`).join("")}<button class="btn ghost small" data-retar-x>Cancelar</button></div>`
+        : `<button class="btn small retar-btn" data-retar="${key}">Retar</button>`);
+      return `<div class="person"><div class="hd">${avatar(id)}<div style="flex:1"><h3>${esc(p.alias)}${id===ME.id?" (tú)":""}</h3><div class="hint">${esc(p.city||"")}</div></div></div>
+        ${retar}
         <div class="chips">${(p.specs||[]).map(s => `<span class="chip on">${esc(s)}</span>`).join("")}</div>
         ${p.note ? `<div class="hint" style="font-size:14px">${esc(p.note)}</div>` : ""}
         <div class="mini">${f.length ? f.map(([u,x]) => {
@@ -229,10 +234,12 @@ function renderGroup(){
     return `<div class="gcard"><div class="ghd"><h3>${esc(g.name)}</h3><div><span class="hint">Código para invitar</span> <span class="code">${esc(g.code)}</span></div></div>
       <p class="sub" style="margin:10px 0">${ids.length} ${ids.length===1?"integrante":"integrantes"}. Quien tenga el código puede unirse.</p>
       <div class="people">${people}</div>
+      ${(() => { const cs = CHALLS.filter(c => c.group_id === g.id).slice(0, 6);
+        return `<h4 class="ghead">Retos en este grupo</h4>${cs.length ? `<div class="chlist">${cs.map(chRow).join("")}</div>` : `<p class="hint" style="margin:0">Todavía no hay retos. Toca Retar en la tarjeta de alguien.</p>`}`; })()}
       <div style="margin-top:12px"><button class="btn ghost small" data-leave="${g.id}">Salir del grupo</button></div></div>`;
   }).join("");
-  $("p-group").innerHTML = `<h2>Tus grupos</h2><p class="sub">Puedes estar en varios. Cada grupo ve tu perfil y tu avance.</p>${forms}${cards || '<div class="empty">Todavía no estás en ningún grupo. Crea uno y pásale el código a tus amigos.</div>'}`;
-  $("nGroup").textContent = GROUPS.length || "";
+  $("p-group").innerHTML = `${pendingBox()}<h2>Tus grupos</h2><p class="sub">Puedes estar en varios. Cada grupo ve tu perfil y tu avance. Toca Retar en la tarjeta de alguien para desafiarlo.</p>${cards || '<div class="empty">Todavía no estás en ningún grupo. Crea uno y pásale el código a tus amigos.</div>'}${GROUPS.length ? '<h2>Otro grupo</h2>' : ''}${forms}`;
+  $("nGroup").textContent = pendingCount() || "";
 }
 
 function renderTop(){
@@ -249,7 +256,7 @@ function renderAllTabs(){
   if (tab === "group") renderGroup();
   if (tab === "study") renderStudy();
   $("nAll").textContent = DATA.length;
-  $("nGroup").textContent = GROUPS.length || "";
+  $("nGroup").textContent = pendingCount() || "";
 }
 function setTab(t){
   tab = t;
@@ -259,6 +266,7 @@ function setTab(t){
   try { localStorage.setItem("rt-tab", t); } catch(e){}
   renderAllTabs();
   if (t === "study") loadStudy().then(renderStudy);
+  if (t === "group") loadStudy().then(() => { if (tab === "group") renderGroup(); });
 }
 
 /* ---------- datos ---------- */
@@ -475,6 +483,7 @@ const AREAS = {
 };
 const LETTERS = ["A","B","C","D","E"];
 let DAILY = [], HISTORY = [], CHALLS = [], CH_ANS = [];
+let RETAR_OPEN = null, BACK_TAB = "study";
 let PLAY = null;      // { id, rival, qs, picks }
 let RESULT = null;    // jsonb de challenge_result
 let studyBusy = false, studyLoaded = false;
@@ -493,6 +502,7 @@ async function loadStudy(){
   CH_ANS = a.data || [];
   const pend = CHALLS.filter(x => x.status === "pending" && !CH_ANS.some(r => r.challenge_id === x.id && r.user_id === ME.id)).length;
   $("nStudy").textContent = pend || "";
+  $("nGroup").textContent = pend || "";
   studyLoaded = true;
 }
 
@@ -555,6 +565,28 @@ function mates(){
   return Object.values(PEOPLE).filter(p => p.id !== ME.id).sort((a,b) => a.alias.localeCompare(b.alias,"es"));
 }
 
+const rivalOf = c => c.challenger === ME.id ? c.opponent : c.challenger;
+const myChAns = id => CH_ANS.find(r => r.challenge_id === id && r.user_id === ME.id);
+const isMyTurn = c => c.status === "pending" && !myChAns(c.id);
+const pendingCount = () => ME ? CHALLS.filter(isMyTurn).length : 0;
+function chRow(c){
+  const rv = aliasOf(rivalOf(c)), my = myChAns(c.id);
+  if (c.status === "declined") return `<div class="chrow"><span>${c.challenger===ME.id?`${esc(rv)} rechazó tu desafío`:`Rechazaste el desafío de ${esc(rv)}`}</span></div>`;
+  if (c.status === "done"){
+    const th = CH_ANS.find(r => r.challenge_id === c.id && r.user_id !== ME.id), a = my?.score ?? 0, b = th?.score ?? 0;
+    const verdict = a > b ? "Ganaste" : a < b ? "Perdiste" : "Empate";
+    return `<div class="chrow"><span><b>${verdict}</b> contra ${esc(rv)} · ${a}–${b}</span><button class="btn ghost small" data-chres="${c.id}">Ver feedback</button></div>`;
+  }
+  if (my) return `<div class="chrow"><span>Respondiste (${my.score}/${c.question_ids.length}). Esperando a ${esc(rv)}.</span></div>`;
+  return `<div class="chrow due"><span>${c.challenger===ME.id?`Tu desafío a ${esc(rv)}`:`<b>${esc(rv)}</b> te retó`} · ${c.question_ids.length} preguntas</span>
+    <span><button class="btn small" data-chplay="${c.id}">Jugar</button>${c.opponent===ME.id?` <button class="btn ghost small" data-chdecline="${c.id}">Rechazar</button>`:""}</span></div>`;
+}
+function pendingBox(){
+  const p = CHALLS.filter(isMyTurn);
+  if (!p.length) return "";
+  return `<div class="duebox"><h3>Te toca responder</h3><div class="chlist">${p.map(chRow).join("")}</div></div>`;
+}
+
 function renderChallenges(){
   const m = mates();
   const form = m.length
@@ -562,23 +594,8 @@ function renderChallenges(){
        <label>Preguntas<select id="ch-n"><option>5</option><option>3</option><option>10</option></select></label>
        <button class="btn small" type="submit">Enviar desafío</button></form>`
     : `<div class="empty">Únete a un grupo para poder retar a alguien.</div>`;
-  const mineAns = id => CH_ANS.find(r => r.challenge_id === id && r.user_id === ME.id);
-  const theirAns = (c) => CH_ANS.find(r => r.challenge_id === c.id && r.user_id !== ME.id);
-  const rivalOf = c => c.challenger === ME.id ? c.opponent : c.challenger;
-  const row = c => {
-    const rv = aliasOf(rivalOf(c)), my = mineAns(c.id);
-    if (c.status === "declined") return `<div class="chrow"><span>${c.challenger===ME.id?`${esc(rv)} rechazó tu desafío`:`Rechazaste el desafío de ${esc(rv)}`}</span></div>`;
-    if (c.status === "done"){
-      const th = theirAns(c), a = my?.score ?? 0, b = th?.score ?? 0;
-      const verdict = a > b ? "Ganaste" : a < b ? "Perdiste" : "Empate";
-      return `<div class="chrow"><span><b>${verdict}</b> contra ${esc(rv)} · ${a}–${b}</span><button class="btn ghost small" data-chres="${c.id}">Ver feedback</button></div>`;
-    }
-    if (my) return `<div class="chrow"><span>Respondiste (${my.score}/${c.question_ids.length}). Esperando a ${esc(rv)}.</span></div>`;
-    return `<div class="chrow due"><span>${c.challenger===ME.id?`Tu desafío a ${esc(rv)}`:`<b>${esc(rv)}</b> te retó`} · ${c.question_ids.length} preguntas</span>
-      <span><button class="btn small" data-chplay="${c.id}">Jugar</button>${c.opponent===ME.id?` <button class="btn ghost small" data-chdecline="${c.id}">Rechazar</button>`:""}</span></div>`;
-  };
   return `<h2>Desafíos</h2><p class="sub">Reta a alguien de tus grupos. Gana quien acierte más; el feedback aparece cuando los dos terminan.</p>
-    ${form}<div class="chlist">${CHALLS.map(row).join("") || '<div class="hint">Aún no tienes desafíos.</div>'}</div>`;
+    ${form}<div class="chlist">${CHALLS.map(chRow).join("") || '<div class="hint">Aún no tienes desafíos.</div>'}</div>`;
 }
 
 function renderPlay(){
@@ -607,7 +624,7 @@ function renderStudy(){
   if (!PROFILE){ el.innerHTML = `<div class="empty">Primero crea tu perfil en la pestaña Para mí.</div>`; return; }
   if (PLAY){ el.innerHTML = renderPlay(); return; }
   if (RESULT){ el.innerHTML = renderResult(); return; }
-  el.innerHTML = `${pushBanner()}<h2>Preguntas de hoy</h2><p class="sub">Ocho de medicina (básicas, clínicas, quirúrgicas, salud pública y sistema de salud) y dos de cultura general. Cuenta tu primera respuesta.</p>
+  el.innerHTML = `${pushBanner()}${pendingBox()}<h2>Preguntas de hoy</h2><p class="sub">Ocho de medicina (básicas, clínicas, quirúrgicas, salud pública y sistema de salud) y dos de cultura general. Cuenta tu primera respuesta.</p>
     ${renderDaily()}${renderChallenges()}`;
 }
 
@@ -641,13 +658,15 @@ document.addEventListener("click", async e => {
     const { data, error } = await SB.rpc("get_challenge", { p_cid: c.id });
     if (error){ toast(error.message); return; }
     PLAY = { id: c.id, rival: aliasOf(c.challenger === ME.id ? c.opponent : c.challenger), qs: data, picks: data.map(() => null) };
-    renderStudy(); window.scrollTo(0,0); return;
+    BACK_TAB = tab; if (tab !== "study") setTab("study"); else renderStudy();
+    window.scrollTo(0,0); return;
   }
   const res = e.target.closest("[data-chres]");
   if (res){
     const { data, error } = await SB.rpc("challenge_result", { p_cid: res.dataset.chres });
     if (error){ toast(error.message); return; }
-    RESULT = data; renderStudy(); window.scrollTo(0,0); return;
+    RESULT = data; BACK_TAB = tab; if (tab !== "study") setTab("study"); else renderStudy();
+    window.scrollTo(0,0); return;
   }
   const dec = e.target.closest("[data-chdecline]");
   if (dec){
@@ -656,7 +675,21 @@ document.addEventListener("click", async e => {
     if (error){ toast(error.message); return; }
     await loadStudy(); renderStudy(); return;
   }
-  if (e.target.closest("#chBack")){ PLAY = null; RESULT = null; await loadStudy(); renderStudy(); return; }
+  if (e.target.closest("#chBack")){ PLAY = null; RESULT = null; await loadStudy(); if (BACK_TAB !== "study") setTab(BACK_TAB); else renderStudy(); BACK_TAB = "study"; return; }
+  const ro = e.target.closest("[data-retar]");
+  if (ro){ RETAR_OPEN = ro.dataset.retar; renderGroup(); return; }
+  if (e.target.closest("[data-retar-x]")){ RETAR_OPEN = null; renderGroup(); return; }
+  const rg = e.target.closest("[data-retar-go]");
+  if (rg){
+    if (studyBusy) return; studyBusy = true;
+    const who = rg.dataset.retarGo;
+    const { error } = await SB.rpc("create_challenge_in", { p_opponent: who, p_n: Number(rg.dataset.n), p_group: rg.dataset.g });
+    studyBusy = false;
+    if (error){ toast(error.message); return; }
+    RETAR_OPEN = null;
+    toast(`Reto enviado a ${aliasOf(who)}. Ya puedes jugar tu parte.`);
+    await loadStudy(); renderGroup(); return;
+  }
   if (e.target.closest("#chSubmit")){
     if (studyBusy) return; studyBusy = true;
     const { data, error } = await SB.rpc("submit_challenge", { p_cid: PLAY.id, p_answers: PLAY.picks });
@@ -690,7 +723,7 @@ async function boot(){
   ME = data.session?.user || null;
   await loadAll();
   renderAllTabs();
-  if (ME && PROFILE){ await loadStudy(); if (tab === "study") renderStudy(); }
+  if (ME && PROFILE){ await loadStudy(); if (tab === "study") renderStudy(); if (tab === "group") renderGroup(); }
 }
 try { const t = localStorage.getItem("rt-tab"); if (t && ["all","mine","study","group"].includes(t)) tab = t; } catch(e){}
 // Al abrir un aviso, la URL trae la pestaña (?tab=study).

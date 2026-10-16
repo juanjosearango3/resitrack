@@ -254,3 +254,11 @@ footer{margin-top:36px;font-size:14px;color:var(--muted)}
 .brand-ico{width:30px;height:30px;border-radius:8px;display:block}
 .brand .b1{color:var(--ink)} .brand .b2{color:var(--drop)}
 .brand{gap:9px}
+
+/* ---------- retos en Grupos ---------- */
+.duebox{background:var(--drop-soft);border:1.5px solid var(--drop);border-radius:14px;padding:12px 14px;margin:6px 0 16px}
+.duebox h3{margin:0 0 8px;font-family:var(--f-display);font-size:17px}
+.duebox .chrow{background:var(--sheet)}
+.retar-btn{justify-self:start}
+.retar{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.ghead{margin:16px 0 8px;font-family:var(--f-display);font-size:16px}
