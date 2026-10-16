@@ -5,7 +5,7 @@
 import webpush from "npm:web-push@3.6.7";
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 
-const SITE = Deno.env.get("RT_SITE_URL") ?? "https://resitrack.vercel.app";
+const SITE = Deno.env.get("RT_SITE_URL") ?? "https://resitrack-nine.vercel.app";
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
