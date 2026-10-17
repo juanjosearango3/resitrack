@@ -377,3 +377,13 @@ img.av{border-radius:50%;aspect-ratio:1/1;object-fit:cover}
 .pdlg::backdrop{background:rgba(0,0,0,.45)}
 .pdlg-top{display:flex;justify-content:flex-end;padding:10px 12px 0}
 .pdlg .pdetail{border:0;background:none;padding:6px 16px 18px}
+
+/* Guía de instalación al inicio de "Cómo funciona" */
+.install{margin:22px 0 8px;padding:18px 18px 20px;border:2px solid var(--drop);border-radius:18px;background:var(--drop-soft)}
+.guide .cover-more .install h2{margin:0 0 8px;font-size:22px}
+.install h3{font-family:var(--f-display);font-size:17px;margin:18px 0 10px}
+.install .steps li::before{width:28px;height:28px}
+.install-now{width:100%;margin:6px 0 2px;padding:12px 18px}
+.install-done{font-weight:700;color:var(--drop);margin:4px 0 0}
+.install.is-done{border-width:1px}
+.install-os[hidden],.install-done[hidden],.install-now[hidden]{display:none}

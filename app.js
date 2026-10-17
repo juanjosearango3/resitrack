@@ -1000,7 +1000,29 @@ function isReturning(){
   let seen = false; try { seen = localStorage.getItem("rt-guia") === "1"; } catch(e){}
   return seen || !!PROFILE;
 }
-function showGuide(){ $("guideSkip").hidden = !isReturning(); show("guide"); }
+let INSTALL_EVT = null;
+window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); INSTALL_EVT = e; setupInstall(); });
+window.addEventListener("appinstalled", () => { INSTALL_EVT = null; setupInstall(true); });
+function setupInstall(justInstalled){
+  const ua = navigator.userAgent;
+  const iOS = /iphone|ipad|ipod/i.test(ua) || (/macintosh/i.test(ua) && navigator.maxTouchPoints > 1);
+  const android = /android/i.test(ua);
+  const standalone = justInstalled || window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
+  const box = $("install"); if (!box) return;
+  box.classList.toggle("is-done", !!standalone);
+  $("installDone").hidden = !standalone;
+  $("installNow").hidden = !!standalone || !INSTALL_EVT;
+  $("installIos").hidden = !!standalone || android;
+  $("installAndroid").hidden = !!standalone || iOS;
+  $("installDesk").hidden = !!standalone || iOS || android;
+}
+$("installNow").addEventListener("click", async () => {
+  if (!INSTALL_EVT) return;
+  INSTALL_EVT.prompt();
+  try { await INSTALL_EVT.userChoice; } catch(e){}
+  INSTALL_EVT = null; setupInstall();
+});
+function showGuide(){ $("guideSkip").hidden = !isReturning(); setupInstall(); show("guide"); }
 function finishGuide(){ try { localStorage.setItem("rt-guia", "1"); } catch(e){} showApp(); }
 $("startBtn").addEventListener("click", showGuide);
 $("guideDone").addEventListener("click", finishGuide);
