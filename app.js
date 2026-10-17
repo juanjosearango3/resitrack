@@ -340,6 +340,8 @@ function renderAllTabs(){
 function setTab(t){
   tab = t;
   ["all","mine","study","group"].forEach(k => { $("p-"+k).hidden = k !== t; $("t-"+k).setAttribute("aria-selected", k === t); });
+  // La nota de fuentes solo aplica a las convocatorias.
+  $("srcFoot").hidden = !(t === "all" || t === "mine");
   // Vacía los paneles ocultos para no duplicar formularios (ids repetidos).
   ["mine","study","group"].forEach(k => { if (k !== t) $("p-"+k).innerHTML = ""; });
   try { localStorage.setItem("rt-tab", t); } catch(e){}
