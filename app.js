@@ -53,10 +53,10 @@ let FOLLOWS = [];         // mis follows + los de mi grupo
 let FEED = [];            // cambios recientes
 let tab = "mine";
 let statusFilter = "";
-// Práctica (repaso, áreas, simulacro por universidad), liga de grupo y quiz en vivo
+// Práctica (repaso, áreas, simulacro), liga de grupo y quiz en vivo
 let PRAC = null;          // { screen, mode, title, qs, picks, uni, startedAt, endsAt, result }
 let REV = { due_now: 0, upcoming: 0, mastered: 0, next_due: null };
-let AREA_STATS = [], BANK = 0, SIM_HIST = [], LEAGUE = {}, SIM_POOL = {};
+let AREA_STATS = [], BANK = 0, SIM_HIST = [], LEAGUE = {};
 let STUDY_VIEW = null;    // null = menú de Estudiar; "daily" = preguntas del día
 let LIVE = null;          // { room, code, st, endsAt, busy }
 
@@ -1055,19 +1055,16 @@ if ("serviceWorker" in navigator) navigator.serviceWorker.addEventListener("mess
 try { const t = localStorage.getItem("rt-tab"); if (t && ["all","mine","study","group"].includes(t)) tab = t; } catch(e){}
 // Al abrir un aviso, la URL trae la pestaña (?tab=study).
 { const t = new URLSearchParams(location.search).get("tab"); if (t && ["all","mine","study","group"].includes(t)) tab = t; }
-/* ---------- práctica: repaso de errores, mis áreas y simulacro por universidad ---------- */
-const SIM_FMT = {
-  udea: { name: "UdeA", n: 70, mins: 150, note: "70 preguntas en 2 h 30 min, como el examen médico de la UdeA (sin la prueba de inglés). No incluye cultura general." },
-  univalle: { name: "Univalle", n: 100, mins: 150, note: "Univalle pone entre 80 y 100 preguntas, con cultura general. Aquí van 100 a un ritmo de 1,5 minutos por pregunta." }
-};
+/* ---------- práctica: repaso de errores, mis áreas y simulacro ---------- */
+// Simulacro general: mezcla preguntas de exámenes reales (UdeA, Univalle) y del banco, a ritmo de examen.
+const SIM_SIZES = [25, 50, 100];
+const SIM_MIN_PER_Q = 1.8;
 const pctOf = (ok, n) => n ? Math.round(100 * ok / n) : 0;
 async function loadPractice(){
-  const [r, a, b, h, sp] = await Promise.all([
+  const [r, a, b, h] = await Promise.all([
     SB.rpc("review_summary"), SB.rpc("my_area_stats"), SB.rpc("bank_size"),
-    SB.from("sim_attempts").select("uni,n,correct,secs,created_at").order("created_at", { ascending: false }).limit(6),
-    SB.rpc("sim_pool")
+    SB.from("sim_attempts").select("uni,n,correct,secs,created_at").order("created_at", { ascending: false }).limit(6)
   ]);
-  SIM_POOL = Object.fromEntries((sp.data || []).map(x => [x.uni, x]));
   REV = r.data?.[0] || REV;
   AREA_STATS = a.data || [];
   BANK = b.data || 0;
@@ -1089,12 +1086,11 @@ function studyHub(){
   else dline = DAILY.some(q => q.correct == null) ? "Entregado" : `Terminaste: ${ok} de ${n}`;
   const w = weakestArea();
   const rline = REV.due_now ? `${REV.due_now} para repasar hoy` : w ? `Más floja: ${AREAS[w.area]}` : REV.upcoming ? `Próximo repaso: ${fmtS(REV.next_due)}` : "Tus aciertos por área";
-  const tu = PROFILE?.target_uni && SIM_FMT[PROFILE.target_uni];
   const card = (attr, title, line, hot) => `<button type="button" class="hub-card${hot ? " hot" : ""}" ${attr}><b>${title}</b><span>${esc(line)}</span></button>`;
   return `<div class="hub">
     ${card("data-study-daily", sim ? "Simulacro del sábado" : "Preguntas diarias", dline, dhot)}
     ${card('data-pr="refuerzo"', "Reforzar debilidades", rline, REV.due_now > 0)}
-    ${card('data-pr="sim"', "Simulacro por universidad", tu ? `Tu examen: ${tu.name}` : "UdeA o Univalle", false)}
+    ${card('data-pr="sim"', "Simulacro", "Mezcla de estilos, con cronómetro", false)}
     ${card("data-sd-menu", "Study Date", "Ruleta o quiz en vivo con tus amigos", false)}
   </div>`;
 }
@@ -1125,24 +1121,22 @@ function renderAreas(){
       </div>`;
     }).join("")}</div>`;
 }
-function simPlan(uni){
-  const f = SIM_FMT[uni], n = Math.min(f.n, SIM_POOL[uni]?.total ?? BANK);
-  return { n, mins: Math.max(5, Math.round(f.mins * n / f.n)) };
+function simPlan(size){
+  const n = Math.min(size, BANK);
+  return { n, mins: Math.max(5, Math.round(n * SIM_MIN_PER_Q)) };
 }
 function renderSimSetup(){
-  const pick = PRAC.uni;
-  const hist = SIM_HIST.length ? `<h4 class="ghead">Tus últimos simulacros</h4><div class="chlist">${SIM_HIST.map(h => `<div class="chrow"><span><b>${esc(SIM_FMT[h.uni]?.name || h.uni)}</b> · ${h.correct} de ${h.n} (${pctOf(h.correct, h.n)} %) · ${Math.round(h.secs / 60)} min</span><span class="hint">${new Date(h.created_at).toLocaleDateString("es-CO", { day: "numeric", month: "short" })}</span></div>`).join("")}</div>` : "";
-  const plan = pick ? simPlan(pick) : null, f = pick ? SIM_FMT[pick] : null;
-  return `${prHead("Simulacro por universidad")}
-    <p class="sub">Con cronómetro y sin retroalimentación hasta terminar, como el examen real. Las preguntas salen del banco de ResiTrack, con prioridad a los temas que más repite cada universidad. No cuenta para el ranking ni las rachas.</p>
-    <div class="counts" style="margin:6px 0 10px">${Object.entries(SIM_FMT).map(([k, v]) => `<button type="button" class="count" data-pr-uni="${k}" aria-pressed="${pick === k}">${v.name}</button>`).join("")}</div>
-    ${f ? `<div class="sim-card">
-      <p style="margin:0 0 8px">${esc(f.note)}</p>
-      ${SIM_POOL[pick]?.own ? `<p class="hint" style="margin:0 0 8px">Primero salen las <b>${SIM_POOL[pick].own}</b> preguntas de exámenes reales de ${f.name} (reconstrucciones de años anteriores, verificadas con la evidencia actual); el resto, del banco general.</p>` : ""}
-      ${plan.n < f.n ? `<p class="hint" style="margin:0 0 8px">Hoy hay ${plan.n} preguntas disponibles para ${f.name}, así que este simulacro trae ${plan.n} en ${plan.mins} minutos (el mismo ritmo). El banco crece cada semana.</p>` : ""}
+  const pick = PRAC.size || 50;
+  const hist = SIM_HIST.length ? `<h4 class="ghead">Tus últimos simulacros</h4><div class="chlist">${SIM_HIST.map(h => `<div class="chrow"><span>${h.correct} de ${h.n} (${pctOf(h.correct, h.n)} %) · ${Math.round(h.secs / 60)} min</span><span class="hint">${new Date(h.created_at).toLocaleDateString("es-CO", { day: "numeric", month: "short" })}</span></div>`).join("")}</div>` : "";
+  const plan = simPlan(pick);
+  return `${prHead("Simulacro")}
+    <p class="sub">Con cronómetro y sin retroalimentación hasta terminar, como el examen real. Mezcla preguntas de exámenes pasados de la UdeA y Univalle (verificadas con la evidencia actual) y del banco de ResiTrack, para que llegues listo a cualquier estilo. No cuenta para el ranking ni las rachas.</p>
+    <div class="counts" style="margin:6px 0 10px"><span class="hint">Preguntas:</span>${SIM_SIZES.map(k => `<button type="button" class="count" data-pr-size="${k}" aria-pressed="${pick === k}">${k}</button>`).join("")}</div>
+    <div class="sim-card">
+      ${plan.n < pick ? `<p class="hint" style="margin:0 0 8px">Hoy hay ${plan.n} preguntas disponibles, así que este simulacro trae ${plan.n}. El banco crece cada noche.</p>` : ""}
       <div class="sim-go"><span><b>${plan.n}</b> preguntas · <b>${plan.mins}</b> min</span><button type="button" class="btn" data-pr-start ${plan.n < 5 ? "disabled" : ""}>Empezar simulacro</button></div>
-      ${plan.n < 5 ? `<p class="hint" style="margin:8px 0 0">Todavía no hay suficientes preguntas en el banco.</p>` : ""}
-    </div>` : `<p class="hint">Elige la universidad.</p>`}
+      <p class="hint" style="margin:8px 0 0">Ritmo de examen: unos ${String(SIM_MIN_PER_Q).replace(".", ",")} minutos por pregunta. Lo que falles pasa a tu repaso.</p>
+    </div>
     ${hist}`;
 }
 function clockText(ms){
@@ -1171,7 +1165,7 @@ function renderRun(){
 function renderSimResult(){
   const P = PRAC, R = P.result;
   const areas = Object.entries(R.by).sort((a, b) => pctOf(a[1].ok, a[1].n) - pctOf(b[1].ok, b[1].n));
-  return `${prHead(`Resultado: ${esc(SIM_FMT[P.uni].name)}`)}
+  return `${prHead("Resultado del simulacro")}
     <div class="score"><div><span>${R.ok}</span>de ${P.qs.length}</div><div class="vs">·</div><div><span>${pctOf(R.ok, P.qs.length)}%</span>${clockText(R.secs * 1000)} min</div></div>
     <h4 class="ghead">Por área (de la más floja a la mejor)</h4>
     <div class="areas">${areas.map(([k, v]) => `<div class="area-row"><div class="area-top"><b>${esc(AREAS[k] || k)}</b><span class="area-pct">${v.ok}/${v.n}</span></div><div class="bar" aria-hidden="true"><i style="width:${Math.max(pctOf(v.ok, v.n), 3)}%"></i></div></div>`).join("")}</div>
@@ -1225,7 +1219,7 @@ document.addEventListener("click", async e => {
       PRAC = { screen: "run", mode: "review", title: "Repaso de errores", qs: data, picks: data.map(() => null) };
     }
     if (k === "areas" || k === "refuerzo") PRAC = { screen: "areas" };
-    if (k === "sim") PRAC = { screen: "simsetup", uni: PROFILE?.target_uni && SIM_FMT[PROFILE.target_uni] ? PROFILE.target_uni : null };
+    if (k === "sim") PRAC = { screen: "simsetup", size: 50 };
     renderStudy(); window.scrollTo(0, 0); return;
   }
   if (!PRAC) return;
@@ -1244,15 +1238,15 @@ document.addEventListener("click", async e => {
     PRAC = { screen: "run", mode: "area", title: `Practicar: ${AREAS[ar.dataset.prArea]}`, qs: data, picks: data.map(() => null) };
     renderStudy(); window.scrollTo(0, 0); return;
   }
-  const un = t.closest("[data-pr-uni]");
-  if (un){ PRAC.uni = un.dataset.prUni; renderStudy(); return; }
+  const sz = t.closest("[data-pr-size]");
+  if (sz){ PRAC.size = Number(sz.dataset.prSize); renderStudy(); return; }
   if (t.closest("[data-pr-start]")){
-    const plan = simPlan(PRAC.uni);
-    const { data, error } = await SB.rpc("practice_set", { p_n: plan.n, p_uni: PRAC.uni });
+    const plan = simPlan(PRAC.size || 50);
+    const { data, error } = await SB.rpc("practice_set", { p_n: plan.n, p_uni: "mixto" });
     if (error){ toast(error.message); return; }
     const qs = (data || []).sort(() => Math.random() - 0.5);
-    const mins = Math.max(5, Math.round(SIM_FMT[PRAC.uni].mins * qs.length / SIM_FMT[PRAC.uni].n));
-    PRAC = { screen: "run", mode: "sim", uni: PRAC.uni, title: `Simulacro ${SIM_FMT[PRAC.uni].name}`, qs, picks: qs.map(() => null), startedAt: Date.now(), endsAt: Date.now() + mins * 60000 };
+    const mins = Math.max(5, Math.round(qs.length * SIM_MIN_PER_Q));
+    PRAC = { screen: "run", mode: "sim", uni: "mixto", title: "Simulacro", qs, picks: qs.map(() => null), startedAt: Date.now(), endsAt: Date.now() + mins * 60000 };
     renderStudy(); window.scrollTo(0, 0); return;
   }
   if (t.closest("[data-pr-finish]")){
@@ -1293,7 +1287,7 @@ function strengthsBox(){
       <div><span class="hint">Fortalezas</span><div>${strong.map(chip).join("") || `<span class="hint">Aún sin datos suficientes</span>`}</div></div>
       <div><span class="hint">Por reforzar</span><div>${weak.map(chip).join("") || `<span class="hint">${rows.length ? "Nada por debajo del 60 %" : "Aún sin datos suficientes"}</span>`}</div></div>
     </div>
-    <p class="hint" style="margin:8px 0 0">${REV.due_now ? `Tienes ${REV.due_now} ${REV.due_now === 1 ? "pregunta" : "preguntas"} de repaso para hoy. ` : ""}${last ? `Último simulacro (${esc(SIM_FMT[last.uni]?.name || last.uni)}): ${pctOf(last.correct, last.n)} %. ` : ""}Las áreas cuentan desde 3 respuestas.</p>
+    <p class="hint" style="margin:8px 0 0">${REV.due_now ? `Tienes ${REV.due_now} ${REV.due_now === 1 ? "pregunta" : "preguntas"} de repaso para hoy. ` : ""}${last ? `Último simulacro: ${pctOf(last.correct, last.n)} %. ` : ""}Las áreas cuentan desde 3 respuestas.</p>
     <button type="button" class="btn small" data-go-refuerzo>Reforzar en Estudiar</button>
   </div>`;
 }
@@ -1323,10 +1317,9 @@ function countdownBox(){
     return `<div class="cd-box"><div><h3>¿A qué examen apuntas?</h3><p class="hint">Elígelo y te mostramos cuántos días faltan y qué hacer cada semana.${u && !ex ? ` La fecha del examen de ${esc(u.name.split(" · ")[0])} ya pasó o aún no está publicada.` : ""}</p></div>${sel(u?.id)}</div>`;
   }
   const d = days(ex), wk = weekdaysUntil(ex), sats = Math.floor(wk / 5);
-  const sim = SIM_FMT[u.id] ? SIM_FMT[u.id].name : null;
   return `<div class="cd-box on">
     <div class="cd-main"><span class="cd-num">${d}</span><div><b>${d === 1 ? "día" : "días"} para el examen de ${esc(u.name.split(" · ")[0])}</b><div class="hint">${fmt(ex)}${u.tl.find(x => x[0] === ex)?.[1] ? " · " + esc(u.tl.find(x => x[0] === ex)[1]) : ""}</div></div></div>
-    <p class="cd-plan">Hasta ese día salen unas <b>${wk * 10}</b> preguntas diarias nuevas${sats ? ` y ${sats} ${sats === 1 ? "simulacro" : "simulacros"} de sábado` : ""}. Cada semana: termina las diarias, haz tu repaso${REV.due_now ? ` (hoy tienes ${REV.due_now})` : ""}${sim ? ` y un simulacro de ${sim} en Estudiar` : " y practica tu área más floja en Estudiar"}.</p>
+    <p class="cd-plan">Hasta ese día salen unas <b>${wk * 10}</b> preguntas diarias nuevas${sats ? ` y ${sats} ${sats === 1 ? "simulacro" : "simulacros"} de sábado` : ""}. Cada semana: termina las diarias, haz tu repaso${REV.due_now ? ` (hoy tienes ${REV.due_now})` : ""} y un simulacro en Estudiar.</p>
     <div class="cd-change"><span class="hint">Cambiar:</span>${sel(u.id)}</div>
   </div>`;
 }
