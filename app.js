@@ -590,7 +590,7 @@ function renderDaily(){
   const cards = DAILY.map(q => {
     const answered = q.my_choice != null;
     return `<article class="qcard" id="q-${q.id}">
-      <div class="qmeta"><span class="qn">${q.slot}</span><span class="chip on">${esc(AREAS[q.area]||q.area)}</span>${q.topic?`<span class="hint">${esc(q.topic)}</span>`:""}</div>
+      <div class="qmeta"><span class="qn">${q.slot}</span><span class="chip on">${esc(AREAS[q.area]||q.area)}</span>${answered && q.topic ? `<span class="hint">${esc(q.topic)}</span>` : ""}</div>
       <p class="stem">${esc(q.stem)}</p>
       ${optList(q, { kind:"daily", pick: q.my_choice, correct: answered ? q.correct : null, locked: answered })}
       ${answered ? feedback(q.is_correct, q.explanation, q.source) : ""}
