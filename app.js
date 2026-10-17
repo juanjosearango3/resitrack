@@ -781,7 +781,7 @@ function chRow(c){
     const verdict = a > b ? "Ganaste" : a < b ? "Perdiste" : "Empate";
     return `<div class="chrow"><span><b>${verdict}</b> contra ${esc(rv)} · ${a}–${b}</span><button class="btn ghost small" data-chres="${c.id}">Ver feedback</button></div>`;
   }
-  if (my) return `<div class="chrow"><span>Respondiste (${my.score}/${c.question_ids.length}). Esperando a ${esc(rv)}.</span></div>`;
+  if (my) return `<div class="chrow"><span>Respondiste (${my.score}/${c.question_ids.length}). Esperando a ${esc(rv)}.</span><button class="btn ghost small" data-chres="${c.id}">Ver retroalimentación</button></div>`;
   return `<div class="chrow due"><span>${c.challenger===ME.id?`Tu desafío a ${esc(rv)}`:`<b>${esc(rv)}</b> te retó`} · ${c.question_ids.length} preguntas</span>
     <span><button class="btn small" data-chplay="${c.id}">Jugar</button>${c.opponent===ME.id?` <button class="btn ghost small" data-chdecline="${c.id}">Rechazar</button>`:""}</span></div>`;
 }
@@ -798,14 +798,14 @@ function renderChallenges(){
        <label>Preguntas<select id="ch-n"><option>5</option><option>3</option><option>10</option></select></label>
        <button class="btn small" type="submit">Enviar desafío</button></form>`
     : `<div class="empty">Únete a un grupo para poder retar a alguien.</div>`;
-  return `<h2>Desafíos</h2><p class="sub">Reta a alguien de tus grupos. Gana quien acierte más; el feedback aparece cuando los dos terminan.</p>
+  return `<h2>Desafíos</h2><p class="sub">Reta a alguien de tus grupos. Gana quien acierte más. Ves tu retroalimentación apenas envías; el ganador se define cuando los dos terminan.</p>
     ${form}<div class="chlist">${CHALLS.map(chRow).join("") || '<div class="hint">Aún no tienes desafíos.</div>'}</div>`;
 }
 
 function renderPlay(){
   const all = PLAY.qs.every((q,i) => PLAY.picks[i] != null);
   return `<div class="playhead"><button class="btn ghost small" id="chBack">Volver</button><h2 style="margin:0">Desafío contra ${esc(PLAY.rival)}</h2></div>
-    <p class="sub">Elige una respuesta en cada pregunta. Verás el feedback cuando ${esc(PLAY.rival)} también termine.</p>
+    <p class="sub">Elige una respuesta en cada pregunta. Al enviar ves tu retroalimentación; el ganador se define cuando ${esc(PLAY.rival)} también termine.</p>
     <div class="qlist">${PLAY.qs.map((q,i) => `<article class="qcard"><div class="qmeta"><span class="qn">${i+1}</span><span class="chip on">${esc(AREAS[q.area]||q.area)}</span></div>
       <p class="stem">${esc(q.stem)}</p>${optList({ ...q, id: i }, { kind:"play", pick: PLAY.picks[i] })}</article>`).join("")}</div>
     <div class="submitbar"><span class="hint">${PLAY.picks.filter(x => x!=null).length} de ${PLAY.qs.length}</span><button class="btn" id="chSubmit" ${all?"":"disabled"}>Enviar respuestas</button></div>`;
@@ -813,15 +813,22 @@ function renderPlay(){
 
 function renderResult(){
   const r = RESULT, rv = aliasOf(r.rival);
+  const items = () => `<div class="qlist">${r.items.map(it => `<article class="qcard"><div class="qmeta"><span class="qn">${it.idx}</span><span class="chip on">${esc(AREAS[it.area]||it.area)}</span></div>
+      <p class="stem">${esc(it.stem)}</p>
+      ${optList({ id: "r"+it.idx, options: it.options }, { correct: it.correct, pick: it.mine, mine: it.mine, theirs: r.done ? it.theirs : null, rivalName: rv, locked: true })}
+      ${feedback(it.mine === it.correct, it.explanation, it.source, it.qid)}</article>`).join("")}</div>`;
+  if (r.done === false){
+    // Aún falta el rival: se ve el propio puntaje y la retroalimentación, pero no el ganador ni sus respuestas.
+    return `<div class="playhead"><button class="btn ghost small" id="chBack">Volver</button><h2 style="margin:0">Respuestas enviadas</h2></div>
+      <div class="score"><div><span>${r.my_score}</span>de ${r.total}</div></div>
+      <p class="sub" style="text-align:center">El ganador se define cuando ${esc(rv)} termine. Te avisamos.</p>
+      ${r.open ? items() : `<div style="text-align:center;margin:10px 0 18px"><button class="btn" type="button" data-chres-open>Ver retroalimentación</button></div>`}`;
+  }
   const verdict = r.my_score > r.their_score ? "Ganaste" : r.my_score < r.their_score ? `Ganó ${esc(rv)}` : "Empate";
   return `<div class="playhead"><button class="btn ghost small" id="chBack">Volver</button><h2 style="margin:0">${verdict}</h2></div>
     <div class="score"><div><span>${r.my_score}</span>Tú</div><div class="vs">–</div><div><span>${r.their_score}</span>${esc(rv)}</div></div>
-    <div class="qlist">${r.items.map(it => `<article class="qcard"><div class="qmeta"><span class="qn">${it.idx}</span><span class="chip on">${esc(AREAS[it.area]||it.area)}</span></div>
-      <p class="stem">${esc(it.stem)}</p>
-      ${optList({ id: "r"+it.idx, options: it.options }, { correct: it.correct, pick: it.mine, mine: it.mine, theirs: it.theirs, rivalName: rv, locked: true })}
-      ${feedback(it.mine === it.correct, it.explanation, it.source, it.qid)}</article>`).join("")}</div>`;
+    ${items()}`;
 }
-
 function renderCurrent(){ if (tab === "group") renderGroup(); else if (tab === "study") renderStudy(); else renderAllTabs(); }
 // Día de la semana en Bogotá: 0 = domingo … 6 = sábado.
 const DIAS = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
@@ -904,11 +911,13 @@ document.addEventListener("click", async e => {
     if (tab !== "group") setTab("group"); else renderGroup();
     window.scrollTo(0,0); return;
   }
+  if (e.target.closest("[data-chres-open]") && RESULT){ RESULT.open = true; renderCurrent(); return; }
   const res = e.target.closest("[data-chres]");
   if (res){
     const { data, error } = await SB.rpc("challenge_result", { p_cid: res.dataset.chres });
     if (error){ toast(error.message); return; }
-    RESULT = data; if (tab !== "group") setTab("group"); else renderGroup();
+    RESULT = data; if (RESULT && RESULT.done === false) RESULT.open = true;
+    if (tab !== "group") setTab("group"); else renderGroup();
     window.scrollTo(0,0); return;
   }
   const dec = e.target.closest("[data-chdecline]");
@@ -985,16 +994,14 @@ document.addEventListener("click", async e => {
     const { data, error } = await SB.rpc("submit_challenge", { p_cid: PLAY.id, p_answers: PLAY.picks });
     studyBusy = false;
     if (error){ toast(error.message); return; }
-    const r = data?.[0], cid = PLAY.id, rival = PLAY.rival;
+    const r = data?.[0], cid = PLAY.id;
     PLAY = null;
     if (r?.status === "done"){
       const k = await SB.rpc("streaks_v2");
       STREAKS = Object.fromEntries((k.data || []).map(x => [x.user_id, x]));
-      const rr = await SB.rpc("challenge_result", { p_cid: cid });
-      RESULT = rr.data || null;
-    } else {
-      toast(`Acertaste ${r?.score ?? 0} de ${r?.total ?? 0}. Te avisamos el resultado cuando ${rival} termine.`);
     }
+    const rr = await SB.rpc("challenge_result", { p_cid: cid });
+    RESULT = rr.data || null;
     await loadStudy(); renderCurrent(); window.scrollTo(0,0); return;
   }
 });
