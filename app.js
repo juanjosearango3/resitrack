@@ -215,12 +215,20 @@ function renderMine(){
 
 function personCard(id, gid){
   const p = PEOPLE[id]; if (!p) return "";
+  const key = (gid || "f") + ":" + id;
+  const open = RETAR_OPEN === key;
+  const act = id === ME.id ? `<span class="hint">Tú</span>` : `<button class="btn small retar-btn" data-retar="${key}">Retar</button>`;
+  return `<div class="prow"><button type="button" class="prow-who" data-person="${id}" data-g="${gid||""}">${avatar(id, "md")}<span class="prow-name">${esc(p.alias)}</span></button>${act}
+    ${open ? `<div class="retar"><span class="hint">¿Cuántas preguntas?</span>${[3,5,10].map(n => `<button class="btn small" data-retar-go="${id}" data-g="${gid||""}" data-n="${n}">${n}</button>`).join("")}<button class="btn ghost small" data-retar-x>Cancelar</button></div>` : ""}</div>`;
+}
+function personDetail(id, gid){
+  const p = PEOPLE[id]; if (!p) return "";
   const f = FOLLOWS.filter(x => x.user_id === id).map(x => [BY[x.uni_id], x]).filter(x => x[0]).sort((a,b) => sortU(a[0],b[0]));
   const key = (gid || "f") + ":" + id;
   const retar = id === ME.id ? "" : (RETAR_OPEN === key
     ? `<div class="retar"><span class="hint">¿Cuántas preguntas?</span>${[3,5,10].map(n => `<button class="btn small" data-retar-go="${id}" data-g="${gid||""}" data-n="${n}">${n}</button>`).join("")}<button class="btn ghost small" data-retar-x>Cancelar</button></div>`
     : `<button class="btn small retar-btn" data-retar="${key}">Retar</button>`);
-  return `<div class="person"><div class="hd">${avatar(id)}<div style="flex:1"><h3>${esc(p.alias)}${id===ME.id?" (tú)":""}</h3><div class="hint">${esc(p.city||"")}</div></div></div>
+  return `<div class="person pdetail"><div class="hd">${avatar(id, "lg")}<div style="flex:1"><h3>${esc(p.alias)}${id===ME.id?" (tú)":""}</h3><div class="hint">${esc(p.city||"")}</div></div></div>
     ${retar}
     ${STREAKS[id] ? `<div class="pstreak">${id === ME.id
       ? `Tu racha: ${STREAKS[id].solo ? fire(STREAKS[id].solo) : "0"}`
@@ -251,7 +259,7 @@ function renderFriends(){
     <div class="fcode"><div><span class="hint">Tu código de amigo</span> <span class="code">${esc(code)}</span></div><button class="btn small" id="shareCode">Compartir invitación</button></div>
     <form id="friendForm" class="fadd"><input id="f-code" maxlength="6" placeholder="Código de tu amigo" style="text-transform:uppercase" required><button class="btn small" type="submit">Agregar</button></form>
     ${outgoing.length ? `<p class="hint">Esperando respuesta de: ${outgoing.map(r => esc(r.alias)).join(", ")}.</p>` : ""}
-    ${cards ? `<div class="people">${cards}</div>` : `<div class="empty">Aún no tienes amigos agregados. Comparte tu invitación o pide el código de alguien.</div>`}
+    ${cards ? `<div class="plist">${cards}</div>` : `<div class="empty">Aún no tienes amigos agregados. Comparte tu invitación o pide el código de alguien.</div>`}
     ${cs.length ? `<h4 class="ghead">Retos con amigos</h4><div class="chlist">${cs.map(chRow).join("")}</div>` : ""}`;
 }
 
@@ -274,13 +282,14 @@ function renderGroup(){
     return `<details class="gcard" data-gid="${g.id}"${groupOpen(g.id)?" open":""}><summary class="gsum"><span class="gsum-txt"><b class="gname">${esc(g.name)}</b><span class="hint">${ids.length} ${ids.length===1?"integrante":"integrantes"}${pend?` · <span class="due">${pend} ${pend===1?"reto pendiente":"retos pendientes"}</span>`:""}</span></span><span class="chev" aria-hidden="true"></span></summary>
       <div class="gbody"><div class="ghd"><div><span class="hint">Código para invitar</span> <span class="code">${esc(g.code)}</span></div></div>
       <p class="sub" style="margin:10px 0">Quien tenga el código puede unirse.</p>
-      <div class="people">${ids.map(id => personCard(id, g.id)).join("")}</div>
+      <div class="plist">${ids.map(id => personCard(id, g.id)).join("")}</div>
       <h4 class="ghead">Retos en este grupo</h4>${cs.length ? `<div class="chlist">${cs.map(chRow).join("")}</div>` : `<p class="hint" style="margin:0">Todavía no hay retos. Toca Retar en la tarjeta de alguien.</p>`}
       <div style="margin-top:12px"><button class="btn ghost small" data-leave="${g.id}">Salir del grupo</button></div></div></details>`;
   }).join("");
   if (PLAY){ $("p-group").innerHTML = renderPlay(); return; }
   if (RESULT){ $("p-group").innerHTML = renderResult(); return; }
   if (SD){ $("p-group").innerHTML = renderStudyDate(); return; }
+  if (PERSON_OPEN && $("pdlg").open) renderPersonDlg();
   $("p-group").innerHTML = `${pushBanner()}${pendingBox()}${streakPanel()}${sdEntry()}${renderFriends()}
     <h2>Tus grupos</h2><p class="sub">Puedes estar en varios. Cada grupo ve tu perfil y tu avance.</p>${cards || '<div class="empty">Todavía no estás en ningún grupo. Crea uno y pásale el código a tus amigos.</div>'}${GROUPS.length ? '<h2>Otro grupo</h2>' : ''}${forms}`;
   updateBadges();
@@ -1130,4 +1139,17 @@ document.addEventListener("submit", e => {
   if (SD.names.length >= 12){ toast("La ruleta admite hasta 12 nombres."); return; }
   SD.names.push(nm); sdSaveNames(); sdRender();
   setTimeout(() => document.querySelector("[data-sd-add] input")?.focus(), 0);
+});
+
+/* ---------- perfil de un amigo (se abre al tocar su nombre) ---------- */
+let PERSON_OPEN = null; // { id, gid }
+function renderPersonDlg(){
+  const d = $("pdlg"); if (!PERSON_OPEN || !PEOPLE[PERSON_OPEN.id]){ if (d.open) d.close(); return; }
+  $("pdlgBody").innerHTML = personDetail(PERSON_OPEN.id, PERSON_OPEN.gid);
+}
+document.addEventListener("click", e => {
+  const w = e.target.closest("[data-person]");
+  if (w){ PERSON_OPEN = { id: w.dataset.person, gid: w.dataset.g || null }; renderPersonDlg(); $("pdlg").showModal(); return; }
+  if (e.target.closest("[data-pdlg-close]")){ PERSON_OPEN = null; $("pdlg").close(); return; }
+  if (e.target.closest("#pdlg [data-funfriend], #pdlg [data-retar-go]")){ PERSON_OPEN = null; $("pdlg").close(); }
 });

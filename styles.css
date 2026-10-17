@@ -361,3 +361,19 @@ img.av{display:inline-block;padding:0}
 .sd-board ol{margin:0 0 8px;padding-left:20px;display:grid;gap:4px}
 .sd-board li span:first-child{display:inline-block;min-width:8ch}
 .sd-board li b{margin:0 6px 0 10px}
+
+/* Lista compacta de personas */
+.plist{display:grid;background:var(--sheet);border:1px solid var(--rule);border-radius:14px;padding:2px 12px}
+.prow{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:8px 0;border-bottom:1px solid var(--rule)}
+.prow:last-child{border-bottom:0}
+.prow-who{display:flex;align-items:center;gap:10px;background:none;border:0;padding:0;color:inherit;font:inherit;cursor:pointer;min-width:0;flex:1;text-align:left}
+.prow-name{font-weight:700;font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prow .retar{flex-basis:100%;margin-top:4px}
+.av.md{width:42px;height:42px;font-size:15px}
+.av.lg,.person .hd .av.lg{width:72px;height:72px;font-size:24px}
+img.av{border-radius:50%;aspect-ratio:1/1;object-fit:cover}
+/* Perfil de un amigo */
+.pdlg{border:0;border-radius:18px;padding:0;width:min(440px,calc(100vw - 32px));max-height:85vh;background:var(--paper);color:var(--ink)}
+.pdlg::backdrop{background:rgba(0,0,0,.45)}
+.pdlg-top{display:flex;justify-content:flex-end;padding:10px 12px 0}
+.pdlg .pdetail{border:0;background:none;padding:6px 16px 18px}
