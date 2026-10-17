@@ -263,7 +263,9 @@ function renderGroup(){
       <h4 class="ghead">Retos en este grupo</h4>${cs.length ? `<div class="chlist">${cs.map(chRow).join("")}</div>` : `<p class="hint" style="margin:0">Todavía no hay retos. Toca Retar en la tarjeta de alguien.</p>`}
       <div style="margin-top:12px"><button class="btn ghost small" data-leave="${g.id}">Salir del grupo</button></div></div>`;
   }).join("");
-  $("p-group").innerHTML = `${pendingBox()}${renderFriends()}
+  if (PLAY){ $("p-group").innerHTML = renderPlay(); return; }
+  if (RESULT){ $("p-group").innerHTML = renderResult(); return; }
+  $("p-group").innerHTML = `${pushBanner()}${pendingBox()}${streakPanel()}${renderFriends()}
     <h2>Tus grupos</h2><p class="sub">Puedes estar en varios. Cada grupo ve tu perfil y tu avance.</p>${cards || '<div class="empty">Todavía no estás en ningún grupo. Crea uno y pásale el código a tus amigos.</div>'}${GROUPS.length ? '<h2>Otro grupo</h2>' : ''}${forms}`;
   updateBadges();
 }
@@ -558,7 +560,7 @@ function rankPanel(){
   const meExtra = me && !shown.includes(me) ? `<li class="me-row sep"><span class="rpos">${me.pos}</span><span class="rname">${esc(me.alias)} (tú)</span><span class="rscore"><b>${me.correct}</b> <span class="hint">${pct(me)}</span></span></li>` : "";
   const chip = (k, v, label) => `<button class="count" data-rank-${k}="${v}" aria-pressed="${RANK[k] === v}">${label}</button>`;
   return `<div class="rank-box">
-    <div class="rank-hd"><h3>Ranking</h3><span class="hint">aciertos en las preguntas diarias</span></div>
+    <div class="rank-hd"><h3>Ranking</h3></div>
     <div class="counts" style="margin:8px 0 4px">${chip("period","week","Esta semana")}${chip("period","month","Este mes")}${chip("period","all","Siempre")}</div>
     <div class="counts" style="margin:0 0 8px">${chip("scope","all","Todos")}${chip("scope","mine","Mis amigos y grupos")}</div>
     ${rows.some(r => r.answered > 0) ? `<ol class="rank">${list}${meExtra}</ol>
@@ -635,7 +637,8 @@ const isMyTurn = c => c.status === "pending" && !myChAns(c.id);
 const pendingCount = () => ME ? CHALLS.filter(isMyTurn).length : 0;
 function updateBadges(){
   const p = pendingCount(), r = FREQS.filter(x => x.incoming).length;
-  $("nStudy").textContent = p || "";
+  const left = DAILY.length ? DAILY.filter(q => q.my_choice == null).length : 0;
+  $("nStudy").textContent = left || "";
   $("nGroup").textContent = (p + r) || "";
 }
 function chRow(c){
@@ -687,14 +690,13 @@ function renderResult(){
       ${feedback(it.mine === it.correct, it.explanation, it.source)}</article>`).join("")}</div>`;
 }
 
+function renderCurrent(){ if (tab === "group") renderGroup(); else if (tab === "study") renderStudy(); else renderAllTabs(); }
 function renderStudy(){
   const el = $("p-study");
   if (!ME){ el.innerHTML = gate("Estudia con ResiTrack","Entra para responder las 10 preguntas del día y retar a tus amigos."); return; }
   if (!PROFILE){ el.innerHTML = `<div class="empty">Primero crea tu perfil en la pestaña Para mí.</div>`; return; }
-  if (PLAY){ el.innerHTML = renderPlay(); return; }
-  if (RESULT){ el.innerHTML = renderResult(); return; }
-  el.innerHTML = `${pushBanner()}${pendingBox()}${streakPanel()}${rankPanel()}<h2>Preguntas de hoy</h2><p class="sub">Ocho de medicina (básicas, clínicas, quirúrgicas, salud pública y sistema de salud) y dos de cultura general. Cuenta tu primera respuesta.</p>
-    ${renderDaily()}${renderChallenges()}`;
+  el.innerHTML = `${rankPanel()}<h2>Preguntas de hoy</h2><p class="sub">Ocho de medicina (básicas, clínicas, quirúrgicas, salud pública y sistema de salud) y dos de cultura general. Cuenta tu primera respuesta.</p>
+    ${renderDaily()}`;
 }
 
 document.addEventListener("click", async e => {
@@ -718,13 +720,13 @@ document.addEventListener("click", async e => {
         renderTop();
         toast(`🔥 ${myStreak()} ${myStreak()===1?"día":"días"} seguidos. ¡Racha al día!`);
       }
-      renderStudy();
+      updateBadges(); renderStudy();
       document.getElementById("q-"+qid)?.scrollIntoView({ block: "nearest" });
       return;
     }
     if (opt.dataset.kind === "play"){
       PLAY.picks[Number(opt.dataset.q)] = i;
-      const y = window.scrollY; renderStudy(); window.scrollTo(0, y);
+      const y = window.scrollY; renderCurrent(); window.scrollTo(0, y);
       return;
     }
   }
@@ -734,14 +736,14 @@ document.addEventListener("click", async e => {
     const { data, error } = await SB.rpc("get_challenge", { p_cid: c.id });
     if (error){ toast(error.message); return; }
     PLAY = { id: c.id, rival: aliasOf(c.challenger === ME.id ? c.opponent : c.challenger), qs: data, picks: data.map(() => null) };
-    BACK_TAB = tab; if (tab !== "study") setTab("study"); else renderStudy();
+    if (tab !== "group") setTab("group"); else renderGroup();
     window.scrollTo(0,0); return;
   }
   const res = e.target.closest("[data-chres]");
   if (res){
     const { data, error } = await SB.rpc("challenge_result", { p_cid: res.dataset.chres });
     if (error){ toast(error.message); return; }
-    RESULT = data; BACK_TAB = tab; if (tab !== "study") setTab("study"); else renderStudy();
+    RESULT = data; if (tab !== "group") setTab("group"); else renderGroup();
     window.scrollTo(0,0); return;
   }
   const dec = e.target.closest("[data-chdecline]");
@@ -749,9 +751,9 @@ document.addEventListener("click", async e => {
     if (!confirm("¿Rechazar este desafío?")) return;
     const { error } = await SB.rpc("decline_challenge", { p_cid: dec.dataset.chdecline });
     if (error){ toast(error.message); return; }
-    await loadStudy(); renderStudy(); return;
+    await loadStudy(); renderCurrent(); return;
   }
-  if (e.target.closest("#chBack")){ PLAY = null; RESULT = null; await loadStudy(); if (BACK_TAB !== "study") setTab(BACK_TAB); else renderStudy(); BACK_TAB = "study"; return; }
+  if (e.target.closest("#chBack")){ PLAY = null; RESULT = null; await loadStudy(); renderCurrent(); window.scrollTo(0,0); return; }
   const fa = e.target.closest("[data-faccept],[data-freject]");
   if (fa){
     const other = fa.dataset.faccept || fa.dataset.freject, ok = !!fa.dataset.faccept;
@@ -820,7 +822,7 @@ document.addEventListener("click", async e => {
     } else {
       toast(`Acertaste ${r?.score ?? 0} de ${r?.total ?? 0}. Te avisamos el resultado cuando ${rival} termine.`);
     }
-    await loadStudy(); renderStudy(); window.scrollTo(0,0); return;
+    await loadStudy(); renderCurrent(); window.scrollTo(0,0); return;
   }
 });
 
@@ -841,7 +843,7 @@ document.addEventListener("submit", async e => {
   const { error } = await SB.rpc("create_challenge", { p_opponent: who, p_n: n });
   if (error){ toast(error.message); return; }
   toast(`Desafío enviado a ${aliasOf(who)}.`);
-  await loadStudy(); renderStudy();
+  await loadStudy(); renderCurrent();
 });
 
 /* ---------- arranque ---------- */

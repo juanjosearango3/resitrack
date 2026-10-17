@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
     await subsOf([...new Set(notices.map((n: any) => n.user_id))]);
     for (const n of notices) {
       await push(n.user_id, JSON.stringify({
-        title: n.title, body: n.body || "", url: SITE + "/?tab=study", tag: "reto-" + (n.ref ?? n.id),
+        title: n.title, body: n.body || "", url: SITE + "/?tab=group", tag: "reto-" + (n.ref ?? n.id),
       }));
     }
     await sb.from("user_notices").update({ sent_at: new Date().toISOString() }).in("id", notices.map((n: any) => n.id));
