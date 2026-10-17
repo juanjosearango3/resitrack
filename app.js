@@ -91,6 +91,12 @@ function tracker(u){
     STAGES.map((s,i) => `<button type="button" class="bub${i<=idx?" f":""}" data-stage="${s[0]}" data-uni="${u.id}" aria-pressed="${i<=idx}"><i class="ov"></i><span>${s[1]}</span></button>`).join("")
   }</div>`;
 }
+const NOT_OFFICIAL = /cursofuturosresidentes|resilab|emagister|empleabilidad/i;
+function portalOf(u){
+  if (u.portal) return { url: u.portal, pdf: /\.pdf($|[?#])/i.test(u.portal) };
+  const s = (u.src || []).find(x => !NOT_OFFICIAL.test(x[1]));
+  return s ? { url: s[1], pdf: /\.pdf($|[?#])/i.test(s[1]) } : null;
+}
 function card(u, opts = {}){
   const st = status(u), ne = nextEvent(u), sp = curSpec(), conv = new Set(u.specs);
   const stub = ne
@@ -125,6 +131,7 @@ function card(u, opts = {}){
       <div class="facts"><span>${esc(CI(u).join(" y "))}</span><span>${u.type}</span><span>${esc(u.cycle)}</span><span>Inscripción ${esc(u.cost)}</span></div>
       ${nextHtml}${gap}<div class="chips">${chips}</div>${social}</div></summary>
     ${followBar}
+    ${(() => { const p = portalOf(u); return p ? `<div class="portal"><a class="btn small" href="${esc(p.url)}" target="_blank" rel="noopener">${p.pdf ? "Ver convocatoria oficial (PDF)" : /^https?:\/\/[^/]+\/?$/.test(p.url) ? "Ir a la página de la universidad" : "Ir al portal de la convocatoria"}</a></div>` : ""; })()}
     <div class="body">
       ${u.next && ne ? `<div class="note">${esc(u.next)}</div>` : ""}
       ${u.oferta ? `<p class="hint" style="margin:8px 0 0">Borde verde: programa abierto en esta convocatoria. Punteado: lo ofrece pero no lo abrió.</p>` : ""}

@@ -108,6 +108,8 @@ ul{margin:0;padding-left:18px} li{margin:3px 0}
 .bub.f span{color:var(--ink);font-weight:700}
 .bub[disabled]{cursor:default}
 .follow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 14px;border-top:1px dotted var(--rule);background:var(--drop-soft)}
+.portal{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 14px;border-top:1px dotted var(--rule)}
+.portal .btn{text-decoration:none}
 .follow .lbl{font-weight:700;font-size:14px;margin-right:4px}
 
 /* group */

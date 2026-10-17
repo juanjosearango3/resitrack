@@ -177,7 +177,7 @@ const DATA = [
  tips:["La convocatoria abre a mitad de año: atento desde junio."],
  src:[["Convocatoria UIS 2026","https://convocatorias.uis.edu.co/convocatoria-002-especializaciones-medico-quirurgicas-2026/index.html"]]},
 
-{id:"unal",name:"Universidad Nacional de Colombia",city:"Bogotá",type:"Pública",cycle:"Convocatoria 2027‑1",cost:"Ver portal (2025: $427.000)",
+{id:"unal",portal:"https://medicina.bogota.unal.edu.co/dependencias/secretaria-academica/admision",name:"Universidad Nacional de Colombia",city:"Bogotá",type:"Pública",cycle:"Convocatoria 2027‑1",cost:"Ver portal (2025: $427.000)",
  specs:["Anestesiología","Cirugía General","Cirugía Pediátrica","Cirugía Plástica","Dermatología","Endocrinología","Geriatría","Medicina Aeroespacial","Medicina del Deporte","Medicina Física y Rehabilitación","Medicina Forense","Medicina Interna","Neurocirugía","Neurología","Ginecología y Obstetricia","Oftalmología","Ortopedia y Traumatología","Otorrinolaringología","Patología","Pediatría","Psiquiatría","Radiología","Urología"],
  cupos:{"Anestesiología":6,"Cirugía General":5,"Cirugía Pediátrica":2,"Cirugía Plástica":3,"Dermatología":2,"Medicina Interna":8,"Ginecología y Obstetricia":7,"Ortopedia y Traumatología":5,"Pediatría":9,"Psiquiatría":5,"Radiología":5,"Oftalmología":1,"Neurocirugía":1,"Neurología":3,"Endocrinología":1,"Geriatría":2,"Medicina del Deporte":5,"Medicina Física y Rehabilitación":5,"Medicina Forense":1,"Medicina Aeroespacial":3,"Otorrinolaringología":3,"Patología":1,"Urología":2},
  insc:"2026-09-16",final:"2026-11-11",
@@ -236,7 +236,7 @@ const DATA = [
  tips:["El examen es casi todo: 80% del puntaje.","Elige seccional (Cali o Barranquilla) con cuidado: solo una."],
  src:[["Convocatoria Unilibre 2026","https://www.unilibre.edu.co/wp-content/uploads/2026/02/ADMISION-MEDICO-QUIRURGICAS-17022026-RECTOR.pdf"]]},
 
-{id:"uniquindio",name:"Universidad del Quindío",city:"Armenia",type:"Pública",cycle:"Convocatoria 2026 (cerrada)",cost:"1 SMMLV",
+{id:"uniquindio",portal:"https://www.uniquindio.edu.co/",name:"Universidad del Quindío",city:"Armenia",type:"Pública",cycle:"Convocatoria 2026 (cerrada)",cost:"1 SMMLV",
  specs:["Medicina Interna","Pediatría"],
  insc:"2026-07-09",final:"2026-07-17",next:"Estimada: julio 2027.",
  tl:[["2026-07-09","Cierre de inscripciones"],["2026-07-14","Examen escrito"],["2026-07-15","Entrevista"],["2026-07-17","Admitidos"]],
@@ -331,7 +331,7 @@ const DATA = [
  tips:["Repasa salud pública: tiene peso en el examen."],
  src:[["Medicina Interna San Martín","https://sanmartin.edu.co/especializacion-en-medicina-interna/"]]},
 
-{id:"unisimon",name:"Universidad Simón Bolívar",city:"Barranquilla",type:"Privada",cycle:"Convocatoria 2026 (cerrada)",cost:"Ver portal",tbd:true,
+{id:"unisimon",portal:"https://www.unisimon.edu.co/",name:"Universidad Simón Bolívar",city:"Barranquilla",type:"Privada",cycle:"Convocatoria 2026 (cerrada)",cost:"Ver portal",tbd:true,
  specs:["Oftalmología","Cirugía General"],
  insc:null,final:null,next:"En 2026 solo abrió Oftalmología (examen 10 de marzo, según ResiLab). Cirugía General es un programa nuevo. Patrón: inscripciones enero–febrero.",
  tl:[],exam:"Según ResiLab: 60% ciencias clínicas generales y 40% de la especialidad.",
@@ -340,7 +340,7 @@ const DATA = [
  tips:["Información de fuente de terceros: confirma con la oficina de posgrados."],
  src:[["Unisimón: Cirugía General","https://www.unisimon.edu.co/blog/cirugia-general-la-nueva-especializacion-medico-quirurgica-de-unisimon/3657"]]},
 
-{id:"ucc",name:"Universidad Cooperativa de Colombia",city:"Medellín",type:"Privada",cycle:"Sin convocatoria verificada",cost:"Ver portal",tbd:true,
+{id:"ucc",portal:"https://www.ucc.edu.co/",name:"Universidad Cooperativa de Colombia",city:"Medellín",type:"Privada",cycle:"Sin convocatoria verificada",cost:"Ver portal",tbd:true,
  specs:["Medicina Interna","Medicina de Urgencias"],
  insc:null,final:null,next:"Programas con egresados en Medellín; no encontré fechas de convocatoria publicadas.",
  tl:[],exam:"No publicado.",weights:null,weightNote:"",req:["Ver portal de la universidad"],tips:["Pregunta directamente a la facultad cuándo abre."],
