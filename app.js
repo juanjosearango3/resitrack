@@ -53,6 +53,11 @@ let FOLLOWS = [];         // mis follows + los de mi grupo
 let FEED = [];            // cambios recientes
 let tab = "all";
 let statusFilter = "";
+// Práctica (repaso, áreas, simulacro por universidad), liga de grupo y quiz en vivo
+let PRAC = null;          // { screen, mode, title, qs, picks, uni, startedAt, endsAt, result }
+let REV = { due_now: 0, upcoming: 0, mastered: 0, next_due: null };
+let AREA_STATS = [], BANK = 0, SIM_HIST = [], LEAGUE = {};
+let LIVE = null;          // { room, code, st, endsAt, busy }
 
 const myFollow = id => FOLLOWS.find(f => f.uni_id === id && f.user_id === ME?.id);
 const aliasOf = id => PEOPLE[id]?.alias || "Alguien";
@@ -206,7 +211,7 @@ function renderMine(){
   const fol = FOLLOWS.filter(f => f.user_id === ME.id).map(f => BY[f.uni_id]).filter(Boolean).sort(sortU);
   const rec = DATA.filter(u => !myFollow(u.id) && (PROFILE.specs||[]).some(s => OF(u).includes(s))).sort(sortU);
   const recOpen = rec.filter(u => ["open","tbd"].includes(status(u).k));
-  $("p-mine").innerHTML = `${pushBanner()}${feedHtml()}
+  $("p-mine").innerHTML = `${pushBanner()}${countdownBox()}${feedHtml()}
     <h2>Lo que sigues</h2><p class="sub">Toca los óvalos para marcar tu avance. Tus grupos lo ven.</p>
     <div class="list">${fol.map(u => card(u,{k:"-m"})).join("") || '<div class="empty">Aún no sigues ninguna convocatoria. Abajo están las que coinciden con tus especialidades.</div>'}</div>
     <h2>Para tus especialidades</h2><p class="sub">${esc((PROFILE.specs||[]).join(", ") || "Elige especialidades en tu perfil")}. Primero las abiertas o por confirmar.</p>
@@ -299,18 +304,20 @@ function renderGroup(){
     const ids = MEMBERS.filter(m => m.group_id === g.id).map(m => m.user_id);
     const cs = CHALLS.filter(c => c.group_id === g.id).slice(0, 6);
     const pend = cs.filter(isMyTurn).length;
-    return `<details class="gcard" data-gid="${g.id}"${groupOpen(g.id)?" open":""}><summary class="gsum"><span class="gsum-txt"><b class="gname">${esc(g.name)}</b><span class="hint">${ids.length} ${ids.length===1?"integrante":"integrantes"}${pend?` · <span class="due">${pend} ${pend===1?"reto pendiente":"retos pendientes"}</span>`:""}</span></span><span class="chev" aria-hidden="true"></span></summary>
+    return `<details class="gcard" data-gid="${g.id}"${groupOpen(g.id)?" open":""}><summary class="gsum"><span class="gsum-txt"><b class="gname">${esc(g.name)}</b><span class="hint">${ids.length} ${ids.length===1?"integrante":"integrantes"}${leagueLeader(g.id)}${pend?` · <span class="due">${pend} ${pend===1?"reto pendiente":"retos pendientes"}</span>`:""}</span></span><span class="chev" aria-hidden="true"></span></summary>
       <div class="gbody"><div class="ghd"><div><span class="hint">Código para invitar</span> <span class="code">${esc(g.code)}</span></div></div>
       <p class="sub" style="margin:10px 0">Quien tenga el código puede unirse.</p>
       <div class="plist">${ids.map(id => personCard(id, g.id)).join("")}</div>
+      ${leaguePanel(g.id)}
       <h4 class="ghead">Retos en este grupo</h4>${cs.length ? `<div class="chlist">${cs.map(chRow).join("")}</div>` : `<p class="hint" style="margin:0">Todavía no hay retos. Toca Retar en la tarjeta de alguien.</p>`}
       <div style="margin-top:12px"><button class="btn ghost small" data-leave="${g.id}">Salir del grupo</button></div></div></details>`;
   }).join("");
   if (PLAY){ $("p-group").innerHTML = renderPlay(); return; }
   if (RESULT){ $("p-group").innerHTML = renderResult(); return; }
   if (SD){ $("p-group").innerHTML = renderStudyDate(); return; }
+  if (LIVE){ $("p-group").innerHTML = renderLive(); return; }
   if (PERSON_OPEN && $("pdlg").open) renderPersonDlg();
-  $("p-group").innerHTML = `${inviteBanner()}${pushBanner()}${friendReqBox()}${pendingBox()}${streakPanel()}${sdEntry()}${renderFriends()}
+  $("p-group").innerHTML = `${inviteBanner()}${pushBanner()}${friendReqBox()}${pendingBox()}${streakPanel()}${sdEntry()}${liveEntry()}${renderFriends()}
     <h2>Tus grupos</h2><p class="sub">Puedes estar en varios. Cada grupo ve tu perfil y tu avance.</p>${cards || '<div class="empty">Todavía no estás en ningún grupo. Crea uno y pásale el código a tus amigos.</div>'}${GROUPS.length ? '<h2>Otro grupo</h2>' : ''}${forms}`;
   updateBadges();
 }
@@ -628,7 +635,9 @@ async function loadStudy(){
     SB.from("challenge_answers").select("challenge_id,user_id,score"),
     SB.rpc("streaks_v2"),
     loadRank(),
-    SB.rpc("my_reports").then(r => { REPORTED = new Set((r.data || []).map(Number)); })
+    SB.rpc("my_reports").then(r => { REPORTED = new Set((r.data || []).map(Number)); }),
+    loadPractice(),
+    loadLeagues()
   ]);
   STREAKS = Object.fromEntries((k.data || []).map(r => [r.user_id, r]));
   DAILY = d.data || [];
@@ -825,21 +834,22 @@ function renderStudy(){
   const el = $("p-study");
   if (!ME){ el.innerHTML = gate("Estudia con ResiTrack","Entra para responder las preguntas del día y retar a tus amigos."); return; }
   if (!PROFILE){ el.innerHTML = `<div class="empty">Primero crea tu perfil en la pestaña Para mí.</div>`; return; }
+  if (PRAC){ el.innerHTML = renderPractice(); return; }
   const dow = bogotaDow();
   if (dow === 0 && !DAILY.length){
-    el.innerHTML = `${rankPanel()}<h2>Domingo: día de descanso</h2>
+    el.innerHTML = `${rankPanel()}${practiceStrip()}<h2>Domingo: día de descanso</h2>
       <p class="sub">Hoy no hay preguntas. Descansa: el domingo no rompe tu racha ni tus rachas de batallas. Si quieres, igual puedes retar a alguien. Mañana vuelven las preguntas diarias.</p>`;
     return;
   }
   if (isSimDay()){
     const n = DAILY.length || 50;
-    el.innerHTML = `${rankPanel()}<h2>Simulacro</h2>
+    el.innerHTML = `${rankPanel()}${practiceStrip()}<h2>Simulacro</h2>
       <p class="sub">El simulacro del sábado abarca las preguntas de esta semana (lunes a viernes): ${n} preguntas en un orden nuevo y con las opciones reordenadas. Cuenta tu primera respuesta y, para sumar a tu racha, debes terminarlas todas.</p>
       <p class="sub"><b>Como en el examen real, la retroalimentación es al final:</b> mientras respondes no verás si acertaste. Cuando termines las ${n} aparecen tu puntaje, las respuestas correctas, las explicaciones y las fuentes.</p>
       ${studyLoaded && !DAILY.length ? `<div class="empty">El simulacro de hoy todavía no está listo. Se arma a medianoche.</div>` : renderDaily()}`;
     return;
   }
-  el.innerHTML = `${rankPanel()}<h2>Preguntas diarias: ${DIAS[dow]}</h2><p class="sub">Ocho de medicina (básicas, clínicas, quirúrgicas, salud pública y sistema de salud) y dos de cultura general. Cuenta tu primera respuesta.</p>
+  el.innerHTML = `${rankPanel()}${practiceStrip()}<h2>Preguntas diarias: ${DIAS[dow]}</h2><p class="sub">Ocho de medicina (básicas, clínicas, quirúrgicas, salud pública y sistema de salud) y dos de cultura general. Cuenta tu primera respuesta.</p>
     ${renderDaily()}`;
 }
 
@@ -1013,7 +1023,9 @@ async function boot(){
     let inv = null; try { inv = localStorage.getItem("rt-amigo"); } catch(e){}
     if (inv && inv !== PROFILE.friend_code){ try { localStorage.removeItem("rt-amigo"); } catch(e){} history.replaceState(null, "", location.pathname); await addFriend(inv); }
   }
-  if (ME && PROFILE){ await loadStudy(); renderTop(); if (tab === "study") renderStudy(); if (tab === "group") renderGroup(); }
+  if (ME && PROFILE){ await loadStudy(); renderTop(); if (tab === "study") renderStudy(); if (tab === "group") renderGroup(); if (tab === "mine") renderMine(); }
+  const qz = new URLSearchParams(location.search).get("quiz");
+  if (qz && ME && PROFILE) liveOpen(qz.trim().toUpperCase().slice(0, 5));
 }
 // Al volver a la app (o al llegar un aviso) se recargan solicitudes, retos y rachas: la app instalada no se recarga sola.
 let LAST_REFRESH = Date.now(), REFRESHING = false;
@@ -1024,7 +1036,7 @@ async function refreshData(force){
   try {
     await loadAll(); if (PROFILE) await loadStudy();
     LAST_REFRESH = Date.now();
-    if (PLAY || SD) renderTop(); else renderAllTabs();
+    if (PLAY || SD || PRAC || LIVE) renderTop(); else renderAllTabs();
   } catch(e){} finally { REFRESHING = false; }
 }
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") refreshData(); });
@@ -1037,6 +1049,386 @@ if ("serviceWorker" in navigator) navigator.serviceWorker.addEventListener("mess
 try { const t = localStorage.getItem("rt-tab"); if (t && ["all","mine","study","group"].includes(t)) tab = t; } catch(e){}
 // Al abrir un aviso, la URL trae la pestaña (?tab=study).
 { const t = new URLSearchParams(location.search).get("tab"); if (t && ["all","mine","study","group"].includes(t)) tab = t; }
+/* ---------- práctica: repaso de errores, mis áreas y simulacro por universidad ---------- */
+const SIM_FMT = {
+  udea: { name: "UdeA", n: 70, mins: 150, note: "70 preguntas en 2 h 30 min, como el examen médico de la UdeA (sin la prueba de inglés). No incluye cultura general." },
+  univalle: { name: "Univalle", n: 100, mins: 150, note: "Univalle pone entre 80 y 100 preguntas, con cultura general. Aquí van 100 a un ritmo de 1,5 minutos por pregunta." }
+};
+const pctOf = (ok, n) => n ? Math.round(100 * ok / n) : 0;
+async function loadPractice(){
+  const [r, a, b, h] = await Promise.all([
+    SB.rpc("review_summary"), SB.rpc("my_area_stats"), SB.rpc("bank_size"),
+    SB.from("sim_attempts").select("uni,n,correct,secs,created_at").order("created_at", { ascending: false }).limit(6)
+  ]);
+  REV = r.data?.[0] || REV;
+  AREA_STATS = a.data || [];
+  BANK = b.data || 0;
+  SIM_HIST = h.data || [];
+}
+// Área más floja: la de menor % entre las que tienen al menos 3 respuestas (sin contar cultura general).
+function weakestArea(){
+  const c = AREA_STATS.filter(x => x.answered >= 3 && x.area !== "cultura").sort((x, y) => (x.correct / x.answered) - (y.correct / y.answered));
+  return c[0] && c[0].correct < c[0].answered ? c[0] : null;
+}
+function practiceStrip(){
+  const w = weakestArea();
+  const rv = REV.due_now ? `${REV.due_now} para hoy` : REV.upcoming ? `próximo: ${fmtS(REV.next_due)}` : "sin errores pendientes";
+  return `<div class="pr-strip" role="group" aria-label="Practicar más">
+    <button type="button" class="pr-btn${REV.due_now ? " hot" : ""}" data-pr="review"><b>Repaso</b><span>${rv}</span></button>
+    <button type="button" class="pr-btn" data-pr="areas"><b>Mis áreas</b><span>${w ? `más floja: ${esc(AREAS[w.area])}` : "tus aciertos por área"}</span></button>
+    <button type="button" class="pr-btn" data-pr="sim"><b>Simulacro</b><span>UdeA o Univalle</span></button>
+  </div>`;
+}
+function prHead(title, extra){
+  return `<div class="playhead"><button class="btn ghost small" type="button" data-pr-back>Volver</button><h2 style="margin:0;flex:1">${title}</h2>${extra || ""}</div>`;
+}
+function renderAreas(){
+  const rows = Object.keys(AREAS).map(k => AREA_STATS.find(x => x.area === k) || { area: k, answered: 0, correct: 0, topics: [] });
+  const w = weakestArea();
+  const any = rows.some(r => r.answered);
+  return `${prHead("Mis áreas")}
+    <p class="sub">Tus aciertos en las preguntas diarias, por área. Toca Practicar para hacer 10 preguntas del banco de esa área: primero las que no has visto o fallaste. No cuentan para el ranking ni las rachas, y lo que falles pasa a tu repaso.</p>
+    ${any ? "" : `<div class="empty">Todavía no hay datos. Responde las preguntas diarias y aquí verás en qué vas bien y en qué no.</div>`}
+    <div class="areas">${rows.map(r => {
+      const p = pctOf(r.correct, r.answered), weak = w && w.area === r.area;
+      const tps = (r.topics || []).slice(0, 3);
+      return `<div class="area-row${weak ? " weak" : ""}">
+        <div class="area-top"><b>${esc(AREAS[r.area])}</b>${weak ? `<span class="due">Tu área más floja</span>` : ""}<span class="area-pct">${r.answered ? p + " %" : "–"}</span></div>
+        <div class="bar" aria-hidden="true"><i style="width:${r.answered ? Math.max(p, 3) : 0}%"></i></div>
+        <div class="area-meta"><span class="hint">${r.answered ? `${r.correct} de ${r.answered} correctas` : "Sin respuestas todavía"}</span><button type="button" class="btn small" data-pr-area="${r.area}">Practicar</button></div>
+        ${tps.length ? `<div class="area-topics"><span class="hint">Temas que fallaste:</span>${tps.map(t => `<span class="chip">${esc(t.topic)} · ${t.ok}/${t.n}</span>`).join("")}</div>` : ""}
+      </div>`;
+    }).join("")}</div>`;
+}
+function simPlan(uni){
+  const f = SIM_FMT[uni], n = Math.min(f.n, BANK);
+  return { n, mins: Math.max(5, Math.round(f.mins * n / f.n)) };
+}
+function renderSimSetup(){
+  const pick = PRAC.uni;
+  const hist = SIM_HIST.length ? `<h4 class="ghead">Tus últimos simulacros</h4><div class="chlist">${SIM_HIST.map(h => `<div class="chrow"><span><b>${esc(SIM_FMT[h.uni]?.name || h.uni)}</b> · ${h.correct} de ${h.n} (${pctOf(h.correct, h.n)} %) · ${Math.round(h.secs / 60)} min</span><span class="hint">${new Date(h.created_at).toLocaleDateString("es-CO", { day: "numeric", month: "short" })}</span></div>`).join("")}</div>` : "";
+  const plan = pick ? simPlan(pick) : null, f = pick ? SIM_FMT[pick] : null;
+  return `${prHead("Simulacro por universidad")}
+    <p class="sub">Con cronómetro y sin retroalimentación hasta terminar, como el examen real. Las preguntas salen del banco de ResiTrack, con prioridad a los temas que más repite cada universidad. No cuenta para el ranking ni las rachas.</p>
+    <div class="counts" style="margin:6px 0 10px">${Object.entries(SIM_FMT).map(([k, v]) => `<button type="button" class="count" data-pr-uni="${k}" aria-pressed="${pick === k}">${v.name}</button>`).join("")}</div>
+    ${f ? `<div class="sim-card">
+      <p style="margin:0 0 8px">${esc(f.note)}</p>
+      ${plan.n < f.n ? `<p class="hint" style="margin:0 0 8px">Hoy el banco tiene ${BANK} preguntas, así que este simulacro trae ${plan.n} en ${plan.mins} minutos (el mismo ritmo). Cada día hábil entran 10 nuevas; el simulacro completo de ${f.n} estará cuando el banco llegue a ${f.n}.</p>` : ""}
+      <div class="sim-go"><span><b>${plan.n}</b> preguntas · <b>${plan.mins}</b> min</span><button type="button" class="btn" data-pr-start ${plan.n < 5 ? "disabled" : ""}>Empezar simulacro</button></div>
+      ${plan.n < 5 ? `<p class="hint" style="margin:8px 0 0">Todavía no hay suficientes preguntas en el banco.</p>` : ""}
+    </div>` : `<p class="hint">Elige la universidad.</p>`}
+    ${hist}`;
+}
+function clockText(ms){
+  const s = Math.max(0, Math.round(ms / 1000)), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60;
+  return (h ? h + ":" + String(m).padStart(2, "0") : m) + ":" + String(x).padStart(2, "0");
+}
+function renderRun(){
+  const P = PRAC, sim = P.mode === "sim", done = P.picks.filter(x => x != null).length;
+  const clock = sim ? `<span class="sim-clock" id="simClock" aria-live="off">${clockText(P.endsAt - Date.now())}</span>` : "";
+  const intro = P.mode === "review"
+    ? `Estas son preguntas que fallaste. Si la aciertas, vuelve en 7 días; si la aciertas otra vez, queda dominada. Si la fallas, vuelve en 3 días.`
+    : sim ? `Puedes cambiar tus respuestas hasta terminar. Al acabarse el tiempo, el simulacro se entrega solo.`
+    : `Preguntas del banco para practicar. No cuentan para el ranking; lo que falles pasa a tu repaso.`;
+  const cards = P.qs.map((q, i) => {
+    const pick = P.picks[i], show = !sim && pick != null;
+    return `<article class="qcard"><div class="qmeta"><span class="qn">${i + 1}</span><span class="chip on">${esc(AREAS[q.area] || q.area)}</span>${show && q.topic ? `<span class="hint">${esc(q.topic)}</span>` : ""}${P.mode === "review" && q.misses > 1 ? `<span class="hint">fallada ${q.misses} veces</span>` : ""}</div>
+      <p class="stem">${esc(q.stem)}</p>
+      ${optList({ ...q, id: i }, { kind: "prac", pick, correct: show ? q.correct : null, locked: show })}
+      ${show ? feedback(pick === q.correct, q.explanation, q.source, q.id) : ""}</article>`;
+  }).join("");
+  const bar = sim
+    ? `<div class="submitbar"><span class="hint">${done} de ${P.qs.length}</span><button class="btn" type="button" data-pr-finish>Terminar y ver resultado</button></div>`
+    : done === P.qs.length ? `<div class="sim-card" style="margin-top:14px"><b>Listo: ${P.qs.filter((q, i) => P.picks[i] === q.correct).length} de ${P.qs.length} correctas.</b>${P.mode === "review" ? ` ${REV.due_now ? `Te quedan ${REV.due_now} para hoy.` : "Terminaste el repaso de hoy."}` : ""}<div style="margin-top:10px"><button class="btn small" type="button" data-pr-back>Volver a Estudiar</button></div></div>` : "";
+  return `${prHead(esc(P.title), clock)}<p class="sub">${intro}</p><div class="qlist">${cards}</div>${bar}`;
+}
+function renderSimResult(){
+  const P = PRAC, R = P.result;
+  const areas = Object.entries(R.by).sort((a, b) => pctOf(a[1].ok, a[1].n) - pctOf(b[1].ok, b[1].n));
+  return `${prHead(`Resultado: ${esc(SIM_FMT[P.uni].name)}`)}
+    <div class="score"><div><span>${R.ok}</span>de ${P.qs.length}</div><div class="vs">·</div><div><span>${pctOf(R.ok, P.qs.length)}%</span>${clockText(R.secs * 1000)} min</div></div>
+    <h4 class="ghead">Por área (de la más floja a la mejor)</h4>
+    <div class="areas">${areas.map(([k, v]) => `<div class="area-row"><div class="area-top"><b>${esc(AREAS[k] || k)}</b><span class="area-pct">${v.ok}/${v.n}</span></div><div class="bar" aria-hidden="true"><i style="width:${Math.max(pctOf(v.ok, v.n), 3)}%"></i></div></div>`).join("")}</div>
+    <p class="sub" style="margin-top:12px">${R.ok < P.qs.length ? `Las ${P.qs.length - R.ok} que fallaste o dejaste en blanco quedaron en tu repaso: vuelven en 3 días.` : "Sin errores. Excelente."}</p>
+    <div class="qlist">${P.qs.map((q, i) => `<article class="qcard"><div class="qmeta"><span class="qn">${i + 1}</span><span class="chip on">${esc(AREAS[q.area] || q.area)}</span>${q.topic ? `<span class="hint">${esc(q.topic)}</span>` : ""}${P.picks[i] == null ? `<span class="due">En blanco</span>` : ""}</div>
+      <p class="stem">${esc(q.stem)}</p>${optList({ ...q, id: "s" + i }, { pick: P.picks[i], correct: q.correct, locked: true })}${feedback(P.picks[i] === q.correct, q.explanation, q.source, q.id)}</article>`).join("")}</div>
+    <div class="totop"><button type="button" class="btn ghost" data-totop>Volver arriba</button></div>`;
+}
+function renderPractice(){
+  if (PRAC.screen === "areas") return renderAreas();
+  if (PRAC.screen === "simsetup") return renderSimSetup();
+  if (PRAC.screen === "result") return renderSimResult();
+  return renderRun();
+}
+async function finishSim(){
+  const P = PRAC; if (!P || P.mode !== "sim" || P.screen !== "run") return;
+  const by = {}; let ok = 0; const wrong = [];
+  P.qs.forEach((q, i) => {
+    const hit = P.picks[i] === q.correct; if (hit) ok++; else wrong.push(q.id);
+    (by[q.area] ||= { ok: 0, n: 0 }); by[q.area].n++; if (hit) by[q.area].ok++;
+  });
+  const secs = Math.round((Math.min(Date.now(), P.endsAt) - P.startedAt) / 1000);
+  P.result = { ok, by, secs }; P.screen = "result";
+  renderStudy(); window.scrollTo(0, 0);
+  await Promise.all([
+    SB.from("sim_attempts").insert({ user_id: ME.id, uni: P.uni, n: P.qs.length, correct: ok, secs, by_area: by }),
+    wrong.length ? SB.rpc("review_add", { p_qids: wrong }) : null
+  ]);
+  loadPractice();
+}
+setInterval(() => {
+  if (!PRAC || PRAC.mode !== "sim" || PRAC.screen !== "run") return;
+  const left = PRAC.endsAt - Date.now(), el = $("simClock");
+  if (el){ el.textContent = clockText(left); el.classList.toggle("low", left < 5 * 60000); }
+  if (left <= 0){ toast("Se acabó el tiempo. Entregamos tu simulacro."); finishSim(); }
+}, 1000);
+
+document.addEventListener("click", async e => {
+  const t = e.target;
+  const pr = t.closest("[data-pr]");
+  if (pr){
+    const k = pr.dataset.pr;
+    if (k === "review"){
+      if (!REV.due_now){ toast(REV.upcoming ? `Hoy no tienes repaso. El próximo es el ${fmtS(REV.next_due)}.` : "Aún no tienes errores para repasar. Las preguntas que falles volverán a los 3 días."); return; }
+      const { data, error } = await SB.rpc("review_due");
+      if (error){ toast(error.message); return; }
+      if (!data?.length){ toast("Hoy no tienes repaso."); return; }
+      PRAC = { screen: "run", mode: "review", title: "Repaso de errores", qs: data, picks: data.map(() => null) };
+    }
+    if (k === "areas") PRAC = { screen: "areas" };
+    if (k === "sim") PRAC = { screen: "simsetup", uni: PROFILE?.target_uni && SIM_FMT[PROFILE.target_uni] ? PROFILE.target_uni : null };
+    renderStudy(); window.scrollTo(0, 0); return;
+  }
+  if (!PRAC) return;
+  if (t.closest("[data-pr-back]")){
+    if (PRAC.mode === "sim" && PRAC.screen === "run" && PRAC.picks.some(x => x != null) && !confirm("¿Salir del simulacro? Se pierde lo que llevas.")) return;
+    const back = PRAC.screen === "run" && PRAC.mode === "area" ? { screen: "areas" } : null;
+    PRAC = back; renderStudy(); window.scrollTo(0, 0);
+    loadPractice().then(() => { if (tab === "study") renderStudy(); });
+    return;
+  }
+  const ar = t.closest("[data-pr-area]");
+  if (ar){
+    const { data, error } = await SB.rpc("practice_set", { p_n: 10, p_area: ar.dataset.prArea });
+    if (error){ toast(error.message); return; }
+    if (!data?.length){ toast("Todavía no hay preguntas de esa área en el banco."); return; }
+    PRAC = { screen: "run", mode: "area", title: `Practicar: ${AREAS[ar.dataset.prArea]}`, qs: data, picks: data.map(() => null) };
+    renderStudy(); window.scrollTo(0, 0); return;
+  }
+  const un = t.closest("[data-pr-uni]");
+  if (un){ PRAC.uni = un.dataset.prUni; renderStudy(); return; }
+  if (t.closest("[data-pr-start]")){
+    const plan = simPlan(PRAC.uni);
+    const { data, error } = await SB.rpc("practice_set", { p_n: plan.n, p_uni: PRAC.uni });
+    if (error){ toast(error.message); return; }
+    const qs = (data || []).sort(() => Math.random() - 0.5);
+    const mins = Math.max(5, Math.round(SIM_FMT[PRAC.uni].mins * qs.length / SIM_FMT[PRAC.uni].n));
+    PRAC = { screen: "run", mode: "sim", uni: PRAC.uni, title: `Simulacro ${SIM_FMT[PRAC.uni].name}`, qs, picks: qs.map(() => null), startedAt: Date.now(), endsAt: Date.now() + mins * 60000 };
+    renderStudy(); window.scrollTo(0, 0); return;
+  }
+  if (t.closest("[data-pr-finish]")){
+    const left = PRAC.picks.filter(x => x == null).length;
+    if (left && !confirm(`Te faltan ${left} por responder. ¿Terminar de todas formas?`)) return;
+    finishSim(); return;
+  }
+  const opt = t.closest('.opt[data-kind="prac"]');
+  if (opt && !opt.disabled && PRAC.screen === "run"){
+    const i = Number(opt.dataset.q), c = Number(opt.dataset.i), q = PRAC.qs[i];
+    if (PRAC.mode !== "sim" && PRAC.picks[i] != null) return;
+    PRAC.picks[i] = c;
+    const y = window.scrollY; renderStudy(); window.scrollTo(0, y);
+    if (PRAC.mode === "review"){
+      const ok = c === q.correct;
+      await SB.rpc("review_mark", { p_qid: q.id, p_ok: ok });
+      REV.due_now = Math.max(0, REV.due_now - 1);
+      if (PRAC.picks.every(x => x != null)){ const y2 = window.scrollY; renderStudy(); window.scrollTo(0, y2); }
+    } else if (PRAC.mode === "area" && c !== q.correct){
+      SB.rpc("review_add", { p_qids: [q.id] });
+    }
+  }
+});
+
+/* ---------- cuenta regresiva al examen ---------- */
+// Fecha del examen: el primer evento del cronograma que sea examen o prueba y no haya pasado.
+function examDate(u){
+  const e = (u.tl || []).find(x => /examen|prueba/i.test(x[1]) && days(x[0]) >= 0);
+  return e ? e[0] : null;
+}
+function weekdaysUntil(s){
+  let n = 0; const d = new Date(today); const end = D(s);
+  for (d.setDate(d.getDate() + 1); d < end; d.setDate(d.getDate() + 1)) if (d.getDay() >= 1 && d.getDay() <= 5) n++;
+  return n;
+}
+function countdownBox(){
+  const opts = DATA.filter(u => examDate(u)).sort((a, b) => D(examDate(a)) - D(examDate(b)));
+  const mineIds = new Set(FOLLOWS.filter(f => f.user_id === ME.id).map(f => f.uni_id));
+  const ordered = [...opts.filter(u => mineIds.has(u.id)), ...opts.filter(u => !mineIds.has(u.id))];
+  const sel = cur => `<select data-target-uni aria-label="Examen al que apuntas"><option value="">${cur ? "Quitar cuenta regresiva" : "Elige un examen…"}</option>${ordered.map(u => `<option value="${u.id}"${u.id === cur ? " selected" : ""}>${esc(u.name.split(" · ")[0])} · ${fmtS(examDate(u))}</option>`).join("")}</select>`;
+  const u = PROFILE.target_uni ? BY[PROFILE.target_uni] : null, ex = u ? examDate(u) : null;
+  if (!u || !ex){
+    return `<div class="cd-box"><div><h3>¿A qué examen apuntas?</h3><p class="hint">Elígelo y te mostramos cuántos días faltan y qué hacer cada semana.${u && !ex ? ` La fecha del examen de ${esc(u.name.split(" · ")[0])} ya pasó o aún no está publicada.` : ""}</p></div>${sel(u?.id)}</div>`;
+  }
+  const d = days(ex), wk = weekdaysUntil(ex), sats = Math.floor(wk / 5);
+  const sim = SIM_FMT[u.id] ? SIM_FMT[u.id].name : null;
+  return `<div class="cd-box on">
+    <div class="cd-main"><span class="cd-num">${d}</span><div><b>${d === 1 ? "día" : "días"} para el examen de ${esc(u.name.split(" · ")[0])}</b><div class="hint">${fmt(ex)}${u.tl.find(x => x[0] === ex)?.[1] ? " · " + esc(u.tl.find(x => x[0] === ex)[1]) : ""}</div></div></div>
+    <p class="cd-plan">Hasta ese día salen unas <b>${wk * 10}</b> preguntas diarias nuevas${sats ? ` y ${sats} ${sats === 1 ? "simulacro" : "simulacros"} de sábado` : ""}. Cada semana: termina las diarias, haz tu repaso${REV.due_now ? ` (hoy tienes ${REV.due_now})` : ""}${sim ? ` y un simulacro de ${sim} en Estudiar` : " y practica tu área más floja en Estudiar"}.</p>
+    <div class="cd-change"><span class="hint">Cambiar:</span>${sel(u.id)}</div>
+  </div>`;
+}
+document.addEventListener("change", async e => {
+  const s = e.target.closest("[data-target-uni]");
+  if (!s) return;
+  const ok = await saveProfile({ target_uni: s.value || null });
+  if (ok) renderMine();
+});
+
+/* ---------- liga semanal de grupo ---------- */
+async function loadLeagues(){
+  const out = {};
+  await Promise.all(GROUPS.map(g => SB.rpc("group_league", { p_group: g.id }).then(r => { out[g.id] = r.data || []; })));
+  LEAGUE = out;
+}
+function leagueLeader(gid){
+  const L = LEAGUE[gid] || [], top = L[0];
+  if (!top || !top.correct) return "";
+  const tied = L.filter(r => r.pos === 1).length;
+  return ` · <span class="lead-name">🏆 ${tied > 1 ? "empate" : `${esc(top.alias)} va ganando`}</span>`;
+}
+function leaguePanel(gid){
+  const L = LEAGUE[gid] || [];
+  if (L.length < 2) return "";
+  const dow = bogotaDow(), left = dow >= 1 && dow <= 5 ? 5 - dow : 0;
+  const medal = p => p === 1 ? "🥇" : p === 2 ? "🥈" : p === 3 ? "🥉" : p;
+  return `<div class="league"><div class="league-hd"><h4 class="ghead" style="margin:0">Liga de la semana</h4><span class="hint">${left ? `cierra en ${left} ${left === 1 ? "día" : "días"}` : dow === 5 ? "hoy cierra" : "se reinicia el lunes"}</span></div>
+    <ol class="rank">${L.map(r => `<li class="${r.user_id === ME.id ? "me-row" : ""}"><span class="rpos">${r.correct ? medal(r.pos) : "–"}</span><span class="rname">${esc(r.alias)}${r.user_id === ME.id ? " (tú)" : ""}${r.wins ? ` <span class="wins" title="Semanas ganadas">🏆×${r.wins}</span>` : ""}</span><span class="rscore"><b>${r.correct}</b> <span class="hint">de ${r.answered}</span></span></li>`).join("")}</ol>
+    <p class="hint" style="margin:6px 0 0">Cuentan los aciertos de las preguntas diarias de lunes a viernes. Quien termine la semana de primero gana un 🏆.</p></div>`;
+}
+
+/* ---------- quiz en vivo ---------- */
+let LIVE_POLL = null;
+function liveEntry(){
+  return `<div class="sd-entry live-entry"><div><h3>Quiz en vivo</h3><p class="hint">Para estudiar en grupo a distancia: todos responden la misma pregunta al tiempo y gana quien acierte más rápido.</p></div>
+    <form class="live-new" data-live-new>
+      <label>Tema<select name="area"><option value="">Todas</option>${Object.entries(AREAS).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select></label>
+      <label>Preguntas<select name="n"><option>5</option><option selected>10</option><option>15</option></select></label>
+      <button class="btn" type="submit">Crear quiz</button>
+    </form>
+    <form class="live-join fadd" data-live-join><input name="code" maxlength="5" placeholder="Código del quiz" style="text-transform:uppercase" autocomplete="off" required><button class="btn small" type="submit">Unirme</button></form>
+  </div>`;
+}
+async function liveOpen(code){
+  const { data, error } = await SB.rpc("live_join", { p_code: code });
+  if (error){ toast(error.message); return; }
+  LIVE = { room: data, code: code.toUpperCase(), st: null, endsAt: 0, key: "" };
+  if (tab !== "group") setTab("group");
+  await livePoll(true);
+  if (LIVE_POLL) clearInterval(LIVE_POLL);
+  LIVE_POLL = setInterval(() => { if (document.visibilityState === "visible") livePoll(); }, 1500);
+}
+function liveClose(){
+  LIVE = null; if (LIVE_POLL) clearInterval(LIVE_POLL); LIVE_POLL = null;
+  try { history.replaceState(null, "", location.pathname); } catch(e){}
+  renderGroup(); window.scrollTo(0, 0);
+}
+async function livePoll(force){
+  if (!LIVE || LIVE.busy) return;
+  LIVE.busy = true;
+  try {
+    const { data, error } = await SB.rpc("live_state", { p_room: LIVE.room });
+    if (error){ toast(error.message); liveClose(); return; }
+    const st = data, key = [st.status, st.idx, st.players.map(p => p.id + p.score + (p.answered ? 1 : 0)).join(","), st.mine?.choice].join("|");
+    if (st.status === "q") LIVE.endsAt = Date.now() + st.left_ms;
+    const changed = force || key !== LIVE.key;
+    LIVE.st = st; LIVE.key = key;
+    if (changed && tab === "group" && !PLAY && !SD){ const y = st.status === LIVE.lastStatus ? window.scrollY : 0; $("p-group").innerHTML = renderLive(); window.scrollTo(0, y); }
+    LIVE.lastStatus = st.status;
+  } finally { if (LIVE) LIVE.busy = false; }
+}
+setInterval(() => {
+  if (!LIVE?.st || LIVE.st.status !== "q") return;
+  const left = LIVE.endsAt - Date.now(), el = $("liveClock"), bar = $("liveBar");
+  if (el) el.textContent = Math.max(0, Math.ceil(left / 1000));
+  if (bar) bar.style.width = Math.max(0, Math.min(100, 100 * left / (LIVE.st.secs * 1000))) + "%";
+  if (left < -300 && !LIVE.busy) livePoll();
+}, 250);
+function liveBoard(players, n){
+  const medal = i => i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1;
+  return `<ol class="rank">${players.slice(0, n || 99).map((p, i) => `<li class="${p.id === ME.id ? "me-row" : ""}"><span class="rpos">${medal(i)}</span><span class="rname">${esc(p.alias)}${p.id === ME.id ? " (tú)" : ""}</span><span class="rscore"><b>${p.score}</b>${p.last ? ` <span class="hint">+${p.last}</span>` : ""}</span></li>`).join("")}</ol>`;
+}
+function renderLive(){
+  const L = LIVE, st = L.st;
+  const head = `<div class="playhead"><button class="btn ghost small" type="button" data-live-x>Salir</button><h2 style="margin:0;flex:1">Quiz en vivo</h2><span class="code">${esc(L.code)}</span></div>`;
+  if (!st) return head + `<div class="empty">Conectando…</div>`;
+  if (st.status === "lobby"){
+    return `${head}<div class="live-lobby"><p class="sub" style="margin:0">Pídanle a todos que entren a <b>Amigos → Quiz en vivo</b> y escriban este código:</p>
+      <div class="live-code">${esc(L.code)}</div>
+      <button class="btn ghost small" type="button" data-live-share>Compartir código</button>
+      <h4 class="ghead">${st.players.length} ${st.players.length === 1 ? "jugador" : "jugadores"}</h4>
+      <div class="live-players">${st.players.map(p => `<span class="smate">${avatar(p.id, "sm")}<span>${esc(p.alias)}</span></span>`).join("")}</div>
+      <p class="hint">${st.n} preguntas · ${st.secs} segundos cada una. Acertar da 500 puntos y hasta 500 más según la rapidez.</p>
+      ${st.is_host ? `<button class="btn" type="button" data-live-next ${st.players.length < 1 ? "disabled" : ""}>Empezar quiz</button>` : `<p class="hint">Esperando a que quien creó el quiz lo empiece…</p>`}</div>`;
+  }
+  if (st.status === "done"){
+    return `${head}<h3>Resultado final</h3>${liveBoard(st.players)}<div style="margin-top:14px"><button class="btn" type="button" data-live-x>Salir</button></div>`;
+  }
+  const q = st.q, answered = st.players.filter(p => p.answered).length;
+  const mine = st.mine?.choice;
+  const top = `<div class="live-top"><span class="hint">Pregunta ${st.idx + 1} de ${st.n}</span>${st.status === "q" ? `<span class="live-clock" id="liveClock">${Math.ceil(Math.max(0, L.endsAt - Date.now()) / 1000)}</span>` : ""}</div>
+    ${st.status === "q" ? `<div class="live-bar"><i id="liveBar" style="width:${Math.max(0, Math.min(100, 100 * (L.endsAt - Date.now()) / (st.secs * 1000)))}%"></i></div>` : ""}`;
+  if (st.status === "q"){
+    return `${head}${top}<article class="qcard"><div class="qmeta"><span class="chip on">${esc(AREAS[q.area] || q.area)}</span></div><p class="stem">${esc(q.stem)}</p>
+      ${optList({ id: st.idx, options: q.options }, { kind: "live", pick: mine ?? null, locked: mine != null })}</article>
+      <p class="hint">${mine != null ? "Respuesta enviada. " : ""}${answered} de ${st.players.length} respondieron.</p>
+      ${st.is_host ? `<button class="btn ghost small" type="button" data-live-next>Cerrar la pregunta ya</button>` : ""}`;
+  }
+  // reveal
+  const counts = st.counts || [];
+  const verdict = mine == null ? `<div class="fb fb-bad"><p><b>No respondiste a tiempo.</b></p></div>` : "";
+  return `${head}${top}<article class="qcard"><div class="qmeta"><span class="chip on">${esc(AREAS[q.area] || q.area)}</span>${st.mine ? `<span class="${st.mine.ok ? "ok-txt" : "due"}">${st.mine.ok ? `+${st.mine.pts} puntos` : "0 puntos"}</span>` : ""}</div><p class="stem">${esc(q.stem)}</p>
+    ${optList({ id: "lv" + st.idx, options: q.options.map((o, i) => `${o}  (${counts[i] || 0})`) }, { pick: mine ?? null, correct: st.correct, locked: true })}
+    ${verdict}${feedback(mine === st.correct, st.explanation, st.source, st.qid)}</article>
+    <h4 class="ghead">Puntaje</h4>${liveBoard(st.players, 5)}
+    ${st.is_host ? `<button class="btn" type="button" data-live-next>${st.idx + 1 >= st.n ? "Ver resultado final" : "Siguiente pregunta"}</button>` : `<p class="hint">Esperando la siguiente pregunta…</p>`}`;
+}
+document.addEventListener("submit", async e => {
+  const nf = e.target.closest("[data-live-new]");
+  const jf = e.target.closest("[data-live-join]");
+  if (!nf && !jf) return;
+  e.preventDefault();
+  if (nf){
+    const fd = new FormData(nf);
+    const { data, error } = await SB.rpc("live_create", { p_n: Number(fd.get("n")) || 10, p_area: fd.get("area") || null, p_secs: 20 });
+    if (error){ toast(error.message); return; }
+    await liveOpen(data);
+  } else {
+    const code = String(new FormData(jf).get("code") || "").trim().toUpperCase();
+    if (code.length < 4){ toast("Escribe el código del quiz."); return; }
+    await liveOpen(code);
+  }
+});
+document.addEventListener("click", async e => {
+  if (!LIVE) return;
+  const t = e.target;
+  if (t.closest("[data-live-x]")){ if (LIVE.st && ["q","reveal"].includes(LIVE.st.status) && !confirm("¿Salir del quiz?")) return; liveClose(); return; }
+  if (t.closest("[data-live-share]")){
+    const url = location.origin + "/?quiz=" + LIVE.code, text = `Únete a mi quiz en vivo de ResiTrack. Código: ${LIVE.code}`;
+    try { if (navigator.share) await navigator.share({ title: "Quiz en vivo", text, url }); else { await navigator.clipboard.writeText(text + " " + url); toast("Código copiado."); } } catch(err){}
+    return;
+  }
+  if (t.closest("[data-live-next]")){
+    const { error } = await SB.rpc("live_next", { p_room: LIVE.room });
+    if (error){ toast(error.message); return; }
+    livePoll(true); return;
+  }
+  const opt = t.closest('.opt[data-kind="live"]');
+  if (opt && !opt.disabled && LIVE.st?.status === "q"){
+    const { error } = await SB.rpc("live_answer", { p_room: LIVE.room, p_idx: LIVE.st.idx, p_choice: Number(opt.dataset.i) });
+    if (error){ toast(error.message); }
+    livePoll(true);
+  }
+});
+
 /* ---------- portada e instrucciones ---------- */
 const views = ["cover","guide","app"];
 function show(v){ views.forEach(k => $(k).hidden = k !== v); window.scrollTo(0, 0); }
@@ -1079,7 +1471,8 @@ $("brandBtn").addEventListener("click", showCover);
 { const qp = new URLSearchParams(location.search);
   const inv = qp.get("amigo");
   if (inv){ try { localStorage.setItem("rt-amigo", inv); } catch(e){} tab = "group"; }
-  if (qp.get("tab") || inv) showApp(); }
+  if (qp.get("quiz")) tab = "group";
+  if (qp.get("tab") || inv || qp.get("quiz")) showApp(); }
 
 setTab(tab);
 boot();

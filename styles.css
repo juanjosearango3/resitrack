@@ -389,3 +389,59 @@ img.av{border-radius:50%;aspect-ratio:1/1;object-fit:cover}
 .install-os[hidden],.install-done[hidden],.install-now[hidden]{display:none}
 .inv-banner{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;line-height:1.5}
 .inv-banner .code{font-size:18px}
+
+/* Práctica: repaso, áreas, simulacro por universidad */
+.pr-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0 6px}
+.pr-btn{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;background:var(--sheet);border:1px solid var(--rule);border-radius:12px;padding:10px 12px;color:var(--ink);font:inherit;cursor:pointer;min-width:0}
+.pr-btn b{font-family:var(--f-display);font-size:16px}
+.pr-btn span{font-size:13px;color:var(--muted);line-height:1.3}
+.pr-btn.hot{border:2px solid var(--drop);background:var(--drop-soft)}
+.pr-btn:focus-visible{outline:3px solid var(--drop);outline-offset:2px}
+@media (max-width:420px){.pr-strip{gap:6px}.pr-btn{padding:9px 9px}.pr-btn b{font-size:15px}}
+.areas{display:grid;gap:10px;margin:10px 0}
+.area-row{background:var(--sheet);border:1px solid var(--rule);border-radius:12px;padding:12px 14px}
+.area-row.weak{border:2px solid var(--warn)}
+.area-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.area-top b{flex:1}
+.area-pct{font-family:var(--f-display);font-weight:700;font-size:18px}
+.bar{height:8px;border-radius:99px;background:var(--off-bg);margin:8px 0;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--drop);border-radius:99px}
+.area-row.weak .bar i{background:var(--warn)}
+.area-meta{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.area-topics{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:8px}
+.sim-card{background:var(--sheet);border:1px solid var(--rule);border-radius:14px;padding:14px 16px;line-height:1.5}
+.sim-go{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.sim-clock{font-family:var(--f-display);font-weight:700;font-size:20px;font-variant-numeric:tabular-nums;background:var(--sheet);border:1px solid var(--rule);border-radius:10px;padding:3px 10px}
+.sim-clock.low{color:var(--warn);border-color:var(--warn)}
+.playhead .sim-clock{position:sticky;top:8px}
+.ok-txt{color:var(--ok);font-weight:700}
+
+/* Cuenta regresiva */
+.cd-box{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;background:var(--sheet);border:1px solid var(--rule);border-radius:14px;padding:12px 16px;margin:10px 0 4px}
+.cd-box h3{margin:0 0 2px}.cd-box p{margin:0}
+.cd-box select{max-width:100%}
+.cd-box.on{display:block;border:2px solid var(--drop)}
+.cd-main{display:flex;align-items:center;gap:14px}
+.cd-num{font-family:var(--f-display);font-weight:700;font-size:52px;line-height:1;color:var(--drop);font-variant-numeric:tabular-nums}
+.cd-plan{margin:10px 0 8px !important;line-height:1.5}
+.cd-change{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+
+/* Liga semanal */
+.league{margin:12px 0 4px;border-top:1px solid var(--rule);padding-top:10px}
+.league-hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:6px}
+.wins{font-size:13px;white-space:nowrap}
+.lead-name{color:var(--ink)}
+
+/* Quiz en vivo */
+.live-new{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;width:100%;margin-top:4px}
+.live-new label{display:flex;flex-direction:column;font-size:13px;color:var(--muted);gap:2px}
+.live-join{width:100%;margin:0}
+.live-entry{flex-direction:column;align-items:stretch}
+.live-lobby{text-align:center}
+.live-code{font-family:var(--f-display);font-weight:700;font-size:56px;letter-spacing:.18em;margin:10px 0}
+.live-players{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:12px}
+.live-top{display:flex;justify-content:space-between;align-items:center;margin:8px 0 4px}
+.live-clock{font-family:var(--f-display);font-weight:700;font-size:28px;font-variant-numeric:tabular-nums}
+.live-bar{height:6px;border-radius:99px;background:var(--off-bg);overflow:hidden;margin-bottom:10px}
+.live-bar i{display:block;height:100%;background:var(--drop);transition:width .25s linear}
+@media (prefers-reduced-motion:reduce){.live-bar i{transition:none}}
