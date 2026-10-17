@@ -306,3 +306,12 @@ footer{margin-top:36px;font-size:14px;color:var(--muted)}
 .rpos{font-family:var(--f-display);font-weight:700;text-align:center;font-variant-numeric:tabular-nums}
 .rname{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rscore{font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* Reporte de errores en preguntas */
+.report-link{margin:8px 0 0;font-size:14px;color:var(--muted)}
+.report-done{margin:8px 0 0}
+.report{margin-top:10px;padding:12px;border:1px dashed var(--rule);border-radius:12px;display:grid;gap:8px}
+.report-kinds{display:grid;gap:6px;font-size:15px}
+.report-kinds label{display:flex;gap:8px;align-items:center}
+.report textarea{width:100%;font:inherit;padding:8px 10px;border-radius:10px;border:1px solid var(--rule);background:var(--paper);color:var(--ink)}
+.report .actions{display:flex;gap:8px;justify-content:flex-end}

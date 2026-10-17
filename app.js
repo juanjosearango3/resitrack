@@ -406,6 +406,9 @@ $("menu").addEventListener("click", async e => {
 
 /* ---------- eventos de la página ---------- */
 document.addEventListener("click", async e => {
+  const rb = e.target.closest("[data-report]");
+  if (rb){ REPORT_OPEN = Number(rb.dataset.report); const y = window.scrollY; renderCurrent(); window.scrollTo(0, y); return; }
+  if (e.target.closest("[data-report-cancel]")){ REPORT_OPEN = null; const y = window.scrollY; renderCurrent(); window.scrollTo(0, y); return; }
   const tabBtn = e.target.closest(".tab");
   if (tabBtn){ setTab(tabBtn.dataset.tab); return; }
 
@@ -526,6 +529,7 @@ const AREAS = {
 };
 const LETTERS = ["A","B","C","D","E"];
 let DAILY = [], HISTORY = [], CHALLS = [], CH_ANS = [];
+let REPORTED = new Set(), REPORT_OPEN = null;
 let RETAR_OPEN = null, BACK_TAB = "study";
 let FRIENDS = [], FREQS = [];
 let PLAY = null;      // { id, rival, qs, picks }
@@ -540,7 +544,8 @@ async function loadStudy(){
     SB.from("challenges").select("*").order("created_at", { ascending: false }).limit(30),
     SB.from("challenge_answers").select("challenge_id,user_id,score"),
     SB.rpc("streaks_v2"),
-    loadRank()
+    loadRank(),
+    SB.rpc("my_reports").then(r => { REPORTED = new Set((r.data || []).map(Number)); })
   ]);
   STREAKS = Object.fromEntries((k.data || []).map(r => [r.user_id, r]));
   DAILY = d.data || [];
@@ -611,11 +616,29 @@ function optList(q, opts){
   }).join("")}</div>`;
 }
 
-function feedback(ok, explanation, source){
+const REPORT_KINDS = [
+  ["respuesta","La respuesta marcada está mal"],
+  ["explicacion","La explicación tiene un error"],
+  ["enunciado","Enunciado incompleto o confuso"],
+  ["desactualizado","Dato desactualizado"],
+  ["otro","Otro"]
+];
+function reportBox(qid){
+  if (!qid || !ME) return "";
+  if (REPORTED.has(Number(qid))) return `<p class="hint report-done">Reportaste esta pregunta. Gracias, la revisamos.</p>`;
+  if (REPORT_OPEN !== Number(qid)) return `<button class="linkish report-link" type="button" data-report="${qid}">Reportar un error</button>`;
+  return `<form class="report" data-report-form="${qid}">
+    <b>¿Qué está mal?</b>
+    <div class="report-kinds">${REPORT_KINDS.map(([k,t], i) => `<label><input type="radio" name="rk-${qid}" value="${k}"${i===0?" checked":""}> ${t}</label>`).join("")}</div>
+    <textarea name="note" rows="2" maxlength="600" placeholder="Cuéntanos el detalle y, si puedes, la fuente (opcional)"></textarea>
+    <div class="actions"><button class="btn ghost small" type="button" data-report-cancel>Cancelar</button><button class="btn small" type="submit">Enviar reporte</button></div>
+  </form>`;
+}
+function feedback(ok, explanation, source, qid){
   // La explicación puede venir en varios párrafos separados por una línea en blanco.
   const paras = String(explanation || "").split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
   const body = paras.map((p, i) => `<p>${i === 0 ? `<b>${ok?"Correcta.":"Incorrecta."}</b> ` : ""}${esc(p).replace(/^OJO:/, "<b>OJO:</b>")}</p>`).join("");
-  return `<div class="fb ${ok?"fb-ok":"fb-bad"}">${body}${source?`<div class="hint" style="margin-top:6px">Fuente: ${esc(source)}</div>`:""}</div>`;
+  return `<div class="fb ${ok?"fb-ok":"fb-bad"}">${body}${source?`<div class="hint" style="margin-top:6px">Fuente: ${esc(source)}</div>`:""}</div>${reportBox(qid)}`;
 }
 
 function renderDaily(){
@@ -637,7 +660,7 @@ function renderDaily(){
       <div class="qmeta"><span class="qn">${q.slot}</span><span class="chip on">${esc(AREAS[q.area]||q.area)}</span>${answered && q.topic ? `<span class="hint">${esc(q.topic)}</span>` : ""}</div>
       <p class="stem">${esc(q.stem)}</p>
       ${optList(q, { kind:"daily", pick: q.my_choice, correct: answered ? q.correct : null, locked: answered })}
-      ${answered && q.correct != null ? feedback(q.is_correct, q.explanation, q.source) : answered ? `<p class="hint" style="margin:6px 0 0">Respuesta guardada. La retroalimentación aparece al final del simulacro.</p>` : ""}
+      ${answered && q.correct != null ? feedback(q.is_correct, q.explanation, q.source, q.id) : answered ? `<p class="hint" style="margin:6px 0 0">Respuesta guardada. La retroalimentación aparece al final del simulacro.</p>` : ""}
     </article>`;
   }).join("");
   return head + `<div class="qlist">${cards}</div>`;
@@ -703,7 +726,7 @@ function renderResult(){
     <div class="qlist">${r.items.map(it => `<article class="qcard"><div class="qmeta"><span class="qn">${it.idx}</span><span class="chip on">${esc(AREAS[it.area]||it.area)}</span></div>
       <p class="stem">${esc(it.stem)}</p>
       ${optList({ id: "r"+it.idx, options: it.options }, { correct: it.correct, pick: it.mine, mine: it.mine, theirs: it.theirs, rivalName: rv, locked: true })}
-      ${feedback(it.mine === it.correct, it.explanation, it.source)}</article>`).join("")}</div>`;
+      ${feedback(it.mine === it.correct, it.explanation, it.source, it.qid)}</article>`).join("")}</div>`;
 }
 
 function renderCurrent(){ if (tab === "group") renderGroup(); else if (tab === "study") renderStudy(); else renderAllTabs(); }
@@ -929,3 +952,18 @@ $("brandBtn").addEventListener("click", showCover);
 setTab(tab);
 boot();
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+
+document.addEventListener("submit", async e => {
+  const f = e.target.closest("[data-report-form]");
+  if (!f) return;
+  e.preventDefault();
+  const qid = Number(f.dataset.reportForm);
+  const kind = f.querySelector("input[type=radio]:checked")?.value || "otro";
+  const note = f.note.value.trim();
+  const btn = f.querySelector("button[type=submit]"); btn.disabled = true;
+  const { data, error } = await SB.rpc("report_question", { p_qid: qid, p_kind: kind, p_note: note || null });
+  if (error){ btn.disabled = false; toast(error.message); return; }
+  REPORTED.add(qid); REPORT_OPEN = null;
+  const y = window.scrollY; renderCurrent(); window.scrollTo(0, y);
+  toast(data === "ya" ? "Ya habías reportado esta pregunta." : "Gracias. Revisamos la pregunta y la corregimos si hay un error.");
+});
