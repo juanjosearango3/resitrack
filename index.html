@@ -38,7 +38,7 @@
       <li><span><b>Crea tu cuenta</b> con tu correo y una contraseña. El radar se puede ver sin cuenta; para lo demás la necesitas.</span></li>
       <li><span><b>Arma tu perfil:</b> cómo te llaman, tu ciudad y las especialidades que te interesan. Con eso la app te muestra primero lo que te sirve.</span></li>
       <li><span><b>Sigue convocatorias</b> y marca tu avance en los óvalos: me interesa, inscrito, presenté examen, entrevista, admitido.</span></li>
-      <li><span><b>Únete a un grupo</b> con el código de 6 letras que te pase un amigo, o crea el tuyo. Puedes estar en varios.</span></li>
+      <li><span><b>Agrega amigos y únete a grupos</b> en la pestaña Amigos. A un amigo lo agregas con su código personal o compartiendo tu invitación; a un grupo entras con el código de 6 letras del grupo, o creas el tuyo. Puedes estar en varios.</span></li>
       <li><span><b>Estudia todos los días</b> las 10 preguntas y reta a alguien de tu grupo. Cada día que terminas las 10 suma a tu racha 🔥; si un día no las terminas, vuelve a cero. Con cada amigo llevas además una racha de batallas, que sube cada día que terminan un desafío entre ustedes. A las 8 p. m. te avisamos si alguna está en riesgo.</span></li>
       <li><span><b>Activa los avisos</b> para enterarte de cambios en tus convocatorias y de los retos. En iPhone, primero abre la página en Safari, toca Compartir y elige Agregar a pantalla de inicio.</span></li>
     </ol>
@@ -48,7 +48,7 @@
       <dt>Explorar</dt><dd>Todas las universidades. Busca por especialidad (por ejemplo, "plástica") o filtra por ciudad y estado: abiertas, en proceso, por confirmar o cerradas. Cada tarjeta trae cronograma, requisitos, cómo se califica, tips y la fuente oficial.</dd>
       <dt>Para mí</dt><dd>Lo que sigues con tu avance, las novedades de esas convocatorias y las que coinciden con tus especialidades.</dd>
       <dt>Estudiar</dt><dd>10 preguntas nuevas cada día: 8 casos clínicos de nivel examen de residencia (ciencias básicas, clínicas, quirúrgicas, salud pública y sistema de salud) y 2 de cultura general. Al responder ves si acertaste, el porqué y la fuente. Cuenta tu primera respuesta. Arriba ves tu racha 🔥 y la racha de batallas con cada amigo (⌛ significa que hoy todavía no han tenido batalla). Aquí también están los desafíos: gana quien acierte más, y el feedback aparece cuando los dos terminan.</dd>
-      <dt>Grupos</dt><dd>Tus grupos, su código para invitar y en qué va cada persona. Tu perfil y tu avance solo los ve la gente de tus grupos.</dd>
+      <dt>Amigos</dt><dd>Tus amigos y tus grupos: solicitudes de amistad, tu código para que te agreguen, en qué va cada persona, su racha y el botón para retarla. Tu perfil y tu avance solo los ven tus amigos y la gente de tus grupos.</dd>
     </dl>
 
     <p class="cover-note">Antes de pagar una inscripción, confirma siempre las fechas en el enlace oficial de la universidad.</p>
@@ -67,7 +67,7 @@
     <button class="tab" role="tab" id="t-all" aria-selected="true" data-tab="all">Explorar<span class="n" id="nAll"></span></button>
     <button class="tab" role="tab" id="t-mine" aria-selected="false" data-tab="mine">Para mí</button>
     <button class="tab" role="tab" id="t-study" aria-selected="false" data-tab="study">Estudiar<span class="n" id="nStudy"></span></button>
-    <button class="tab" role="tab" id="t-group" aria-selected="false" data-tab="group">Grupos<span class="n" id="nGroup"></span></button>
+    <button class="tab" role="tab" id="t-group" aria-selected="false" data-tab="group">Amigos<span class="n" id="nGroup"></span></button>
   </nav>
 
   <section id="p-all">
@@ -97,7 +97,7 @@
   <label>Cómo te llaman<input id="f-alias" maxlength="40" required></label>
   <label>Ciudad donde vives<input id="f-city" maxlength="60"></label>
   <div><label style="margin-bottom:6px">Especialidades que te interesan <span class="hint">Elige una o varias</span></label><div class="pick" id="f-specs"></div></div>
-  <label>Nota para el grupo<textarea id="f-note" rows="2" maxlength="300" placeholder="Ej. me presento a CES y UdeA, busco con quién estudiar"></textarea><span class="hint">La ven solo las personas de tus grupos.</span></label>
+  <label>Nota para el grupo<textarea id="f-note" rows="2" maxlength="300" placeholder="Ej. me presento a CES y UdeA, busco con quién estudiar"></textarea><span class="hint">La ven solo tus amigos y las personas de tus grupos.</span></label>
   <div class="actions"><button type="button" class="btn ghost" id="f-cancel">Cancelar</button><button type="submit" class="btn" id="f-save">Guardar perfil</button></div>
 </form></dialog>
 

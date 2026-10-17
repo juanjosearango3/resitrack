@@ -273,3 +273,11 @@ footer{margin-top:36px;font-size:14px;color:var(--muted)}
 .smate{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--rule);border-radius:999px;padding:3px 10px 3px 3px;font-size:14px}
 .smate.risk{border-color:#ff8a3d}
 .pstreak{font-size:14px}
+
+/* ---------- amigos ---------- */
+.fcode{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:var(--sheet);border:1px solid var(--rule);border-radius:14px;padding:12px 14px;margin-bottom:10px}
+.fadd{display:flex;gap:8px;margin-bottom:12px}
+.fadd input{flex:1;min-width:0;padding:10px 12px;border:1.5px solid var(--rule);border-radius:10px;background:var(--paper)}
+.linkish{background:none;border:0;padding:0;color:var(--muted);font-size:13px;text-decoration:underline;justify-self:start}
+#f-code::placeholder,#g-code::placeholder{text-transform:none;letter-spacing:0}
+.code{background:var(--drop-soft);color:var(--ink);border:1.5px dashed var(--drop)}

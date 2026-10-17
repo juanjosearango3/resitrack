@@ -205,8 +205,44 @@ function renderMine(){
     <div class="list">${(recOpen.length ? recOpen : rec.slice(0,6)).map(u => card(u,{k:"-r"})).join("") || '<div class="empty">Nada nuevo por ahora.</div>'}</div>`;
 }
 
+function personCard(id, gid){
+  const p = PEOPLE[id]; if (!p) return "";
+  const f = FOLLOWS.filter(x => x.user_id === id).map(x => [BY[x.uni_id], x]).filter(x => x[0]).sort((a,b) => sortU(a[0],b[0]));
+  const key = (gid || "f") + ":" + id;
+  const retar = id === ME.id ? "" : (RETAR_OPEN === key
+    ? `<div class="retar"><span class="hint">¿Cuántas preguntas?</span>${[3,5,10].map(n => `<button class="btn small" data-retar-go="${id}" data-g="${gid||""}" data-n="${n}">${n}</button>`).join("")}<button class="btn ghost small" data-retar-x>Cancelar</button></div>`
+    : `<button class="btn small retar-btn" data-retar="${key}">Retar</button>`);
+  return `<div class="person"><div class="hd">${avatar(id)}<div style="flex:1"><h3>${esc(p.alias)}${id===ME.id?" (tú)":""}</h3><div class="hint">${esc(p.city||"")}</div></div></div>
+    ${retar}
+    ${STREAKS[id] ? `<div class="pstreak">${id === ME.id
+      ? `Tu racha: ${STREAKS[id].solo ? fire(STREAKS[id].solo) : "0"}`
+      : `Batallas: ${STREAKS[id].together ? fire(STREAKS[id].together) : "0"}${atRisk(id) ? " ⌛" : ""} <span class="hint">· su racha ${STREAKS[id].solo}</span>`}</div>` : ""}
+    <div class="chips">${(p.specs||[]).map(s => `<span class="chip on">${esc(s)}</span>`).join("")}</div>
+    ${p.note ? `<div class="hint" style="font-size:14px">${esc(p.note)}</div>` : ""}
+    <div class="mini">${f.length ? f.map(([u,x]) => {
+      const i = STAGES.findIndex(s => s[0] === x.stage);
+      return `<div><span>${esc(u.name.split(" · ")[0].replace("Pontificia Universidad ","P. U. ").replace("Universidad ","U. "))}</span><span class="dots" title="${esc(STAGES[i]?.[1]||"")}">${STAGES.map((s,j) => `<i class="${j<=i?"f":""}"></i>`).join("")}</span></div>`;
+    }).join("") : '<span class="hint">Aún no sigue convocatorias.</span>'}</div>
+    ${gid === null && id !== ME.id ? `<button class="linkish" data-funfriend="${id}">Quitar de amigos</button>` : ""}</div>`;
+}
+
+function renderFriends(){
+  const code = PROFILE.friend_code || "";
+  const incoming = FREQS.filter(r => r.incoming), outgoing = FREQS.filter(r => !r.incoming);
+  const reqs = incoming.length ? `<div class="duebox"><h3>Solicitudes de amistad</h3><div class="chlist">${incoming.map(r =>
+    `<div class="chrow"><span><b>${esc(r.alias)}</b>${r.city?` · ${esc(r.city)}`:""} quiere ser tu amigo</span><span><button class="btn small" data-faccept="${r.other}">Aceptar</button> <button class="btn ghost small" data-freject="${r.other}">Rechazar</button></span></div>`).join("")}</div></div>` : "";
+  const cards = FRIENDS.map(id => personCard(id, null)).join("");
+  const cs = CHALLS.filter(c => !c.group_id).slice(0, 6);
+  return `${reqs}<h2>Tus amigos</h2><p class="sub">Para quienes no están en tus grupos. Tus amigos ven tu perfil y tu avance, y pueden retarte.</p>
+    <div class="fcode"><div><span class="hint">Tu código de amigo</span> <span class="code">${esc(code)}</span></div><button class="btn small" id="shareCode">Compartir invitación</button></div>
+    <form id="friendForm" class="fadd"><input id="f-code" maxlength="6" placeholder="Código de tu amigo" style="text-transform:uppercase" required><button class="btn small" type="submit">Agregar</button></form>
+    ${outgoing.length ? `<p class="hint">Esperando respuesta de: ${outgoing.map(r => esc(r.alias)).join(", ")}.</p>` : ""}
+    ${cards ? `<div class="people">${cards}</div>` : `<div class="empty">Aún no tienes amigos agregados. Comparte tu invitación o pide el código de alguien.</div>`}
+    ${cs.length ? `<h4 class="ghead">Retos con amigos</h4><div class="chlist">${cs.map(chRow).join("")}</div>` : ""}`;
+}
+
 function renderGroup(){
-  if (!ME){ $("p-group").innerHTML = gate("Tus grupos","Entra para crear un grupo, invitar amigos con un código y ver en qué va cada uno."); return; }
+  if (!ME){ $("p-group").innerHTML = gate("Tus amigos y grupos","Entra para agregar amigos, crear grupos y retarse."); return; }
   if (!PROFILE){ $("p-group").innerHTML = `<div class="empty">Primero crea tu perfil en la pestaña Para mí.</div>`; return; }
   const forms = `<div class="gforms">
     <form id="newGroup"><h4>Crear un grupo</h4><input id="g-name" maxlength="60" placeholder="Ej. Residencia 2027" required><button class="btn small" type="submit">Crear grupo</button></form>
@@ -214,35 +250,16 @@ function renderGroup(){
   </div>`;
   const cards = GROUPS.map(g => {
     const ids = MEMBERS.filter(m => m.group_id === g.id).map(m => m.user_id);
-    const people = ids.map(id => {
-      const p = PEOPLE[id];
-      if (!p) return "";
-      const f = FOLLOWS.filter(x => x.user_id === id).map(x => [BY[x.uni_id], x]).filter(x => x[0]).sort((a,b) => sortU(a[0],b[0]));
-      const key = g.id + ":" + id;
-      const retar = id === ME.id ? "" : (RETAR_OPEN === key
-        ? `<div class="retar"><span class="hint">¿Cuántas preguntas?</span>${[3,5,10].map(n => `<button class="btn small" data-retar-go="${id}" data-g="${g.id}" data-n="${n}">${n}</button>`).join("")}<button class="btn ghost small" data-retar-x>Cancelar</button></div>`
-        : `<button class="btn small retar-btn" data-retar="${key}">Retar</button>`);
-      return `<div class="person"><div class="hd">${avatar(id)}<div style="flex:1"><h3>${esc(p.alias)}${id===ME.id?" (tú)":""}</h3><div class="hint">${esc(p.city||"")}</div></div></div>
-        ${retar}
-        ${STREAKS[id] ? `<div class="pstreak">${id === ME.id
-          ? `Tu racha: ${STREAKS[id].solo ? fire(STREAKS[id].solo) : "0"}`
-          : `Batallas: ${STREAKS[id].together ? fire(STREAKS[id].together) : "0"}${atRisk(id) ? " ⌛" : ""} <span class="hint">· su racha ${STREAKS[id].solo}</span>`}</div>` : ""}
-        <div class="chips">${(p.specs||[]).map(s => `<span class="chip on">${esc(s)}</span>`).join("")}</div>
-        ${p.note ? `<div class="hint" style="font-size:14px">${esc(p.note)}</div>` : ""}
-        <div class="mini">${f.length ? f.map(([u,x]) => {
-          const i = STAGES.findIndex(s => s[0] === x.stage);
-          return `<div><span>${esc(u.name.split(" · ")[0].replace("Pontificia Universidad ","P. U. ").replace("Universidad ","U. "))}</span><span class="dots" title="${esc(STAGES[i]?.[1]||"")}">${STAGES.map((s,j) => `<i class="${j<=i?"f":""}"></i>`).join("")}</span></div>`;
-        }).join("") : '<span class="hint">Aún no sigue convocatorias.</span>'}</div></div>`;
-    }).join("");
+    const cs = CHALLS.filter(c => c.group_id === g.id).slice(0, 6);
     return `<div class="gcard"><div class="ghd"><h3>${esc(g.name)}</h3><div><span class="hint">Código para invitar</span> <span class="code">${esc(g.code)}</span></div></div>
       <p class="sub" style="margin:10px 0">${ids.length} ${ids.length===1?"integrante":"integrantes"}. Quien tenga el código puede unirse.</p>
-      <div class="people">${people}</div>
-      ${(() => { const cs = CHALLS.filter(c => c.group_id === g.id).slice(0, 6);
-        return `<h4 class="ghead">Retos en este grupo</h4>${cs.length ? `<div class="chlist">${cs.map(chRow).join("")}</div>` : `<p class="hint" style="margin:0">Todavía no hay retos. Toca Retar en la tarjeta de alguien.</p>`}`; })()}
+      <div class="people">${ids.map(id => personCard(id, g.id)).join("")}</div>
+      <h4 class="ghead">Retos en este grupo</h4>${cs.length ? `<div class="chlist">${cs.map(chRow).join("")}</div>` : `<p class="hint" style="margin:0">Todavía no hay retos. Toca Retar en la tarjeta de alguien.</p>`}
       <div style="margin-top:12px"><button class="btn ghost small" data-leave="${g.id}">Salir del grupo</button></div></div>`;
   }).join("");
-  $("p-group").innerHTML = `${pendingBox()}<h2>Tus grupos</h2><p class="sub">Puedes estar en varios. Cada grupo ve tu perfil y tu avance. Toca Retar en la tarjeta de alguien para desafiarlo.</p>${cards || '<div class="empty">Todavía no estás en ningún grupo. Crea uno y pásale el código a tus amigos.</div>'}${GROUPS.length ? '<h2>Otro grupo</h2>' : ''}${forms}`;
-  $("nGroup").textContent = pendingCount() || "";
+  $("p-group").innerHTML = `${pendingBox()}${renderFriends()}
+    <h2>Tus grupos</h2><p class="sub">Puedes estar en varios. Cada grupo ve tu perfil y tu avance.</p>${cards || '<div class="empty">Todavía no estás en ningún grupo. Crea uno y pásale el código a tus amigos.</div>'}${GROUPS.length ? '<h2>Otro grupo</h2>' : ''}${forms}`;
+  updateBadges();
 }
 
 function renderTop(){
@@ -259,7 +276,7 @@ function renderAllTabs(){
   if (tab === "group") renderGroup();
   if (tab === "study") renderStudy();
   $("nAll").textContent = DATA.length;
-  $("nGroup").textContent = pendingCount() || "";
+  updateBadges();
 }
 function setTab(t){
   tab = t;
@@ -274,14 +291,18 @@ function setTab(t){
 
 /* ---------- datos ---------- */
 async function loadAll(){
-  if (!ME){ PROFILE = null; PEOPLE = {}; GROUPS = []; MEMBERS = []; FOLLOWS = []; FEED = []; return; }
-  const [pr, gr, mb, fl, ch] = await Promise.all([
+  if (!ME){ PROFILE = null; PEOPLE = {}; GROUPS = []; MEMBERS = []; FOLLOWS = []; FEED = []; FRIENDS = []; FREQS = []; return; }
+  const [pr, gr, mb, fl, ch, fs, fr] = await Promise.all([
     SB.from("profiles").select("*"),
     SB.from("groups").select("*").order("created_at"),
     SB.from("group_members").select("group_id,user_id"),
     SB.from("follows").select("user_id,uni_id,stage"),
-    SB.from("changes").select("*").order("created_at",{ascending:false}).limit(40)
+    SB.from("changes").select("*").order("created_at",{ascending:false}).limit(40),
+    SB.from("friendships").select("*").eq("status","accepted"),
+    SB.rpc("friend_requests")
   ]);
+  FRIENDS = (fs.data || []).map(f => f.a === ME.id ? f.b : f.a);
+  FREQS = fr.data || [];
   PEOPLE = {}; (pr.data||[]).forEach(p => PEOPLE[p.id] = p);
   PROFILE = PEOPLE[ME.id] || null;
   GROUPS = gr.data || [];
@@ -336,7 +357,11 @@ $("pform").addEventListener("submit", async e => {
   if (!alias) return;
   const okSave = await saveProfile({ alias, city: $("f-city").value.trim() || null, note: $("f-note").value.trim() || null, specs: [...pickSpecs] });
   $("dlg").close();
-  if (okSave){ toast("Perfil guardado."); renderAllTabs(); }
+  if (okSave){
+    toast("Perfil guardado."); renderAllTabs();
+    let inv = null; try { inv = localStorage.getItem("rt-amigo"); } catch(e){}
+    if (inv && inv !== PROFILE.friend_code){ try { localStorage.removeItem("rt-amigo"); } catch(e){} await addFriend(inv); }
+  }
 });
 
 /* ---------- menú de cuenta ---------- */
@@ -487,6 +512,7 @@ const AREAS = {
 const LETTERS = ["A","B","C","D","E"];
 let DAILY = [], HISTORY = [], CHALLS = [], CH_ANS = [];
 let RETAR_OPEN = null, BACK_TAB = "study";
+let FRIENDS = [], FREQS = [];
 let PLAY = null;      // { id, rival, qs, picks }
 let RESULT = null;    // jsonb de challenge_result
 let studyBusy = false, studyLoaded = false;
@@ -506,8 +532,7 @@ async function loadStudy(){
   CHALLS = c.data || [];
   CH_ANS = a.data || [];
   const pend = CHALLS.filter(x => x.status === "pending" && !CH_ANS.some(r => r.challenge_id === x.id && r.user_id === ME.id)).length;
-  $("nStudy").textContent = pend || "";
-  $("nGroup").textContent = pend || "";
+  updateBadges();
   studyLoaded = true;
 }
 
@@ -576,6 +601,11 @@ const rivalOf = c => c.challenger === ME.id ? c.opponent : c.challenger;
 const myChAns = id => CH_ANS.find(r => r.challenge_id === id && r.user_id === ME.id);
 const isMyTurn = c => c.status === "pending" && !myChAns(c.id);
 const pendingCount = () => ME ? CHALLS.filter(isMyTurn).length : 0;
+function updateBadges(){
+  const p = pendingCount(), r = FREQS.filter(x => x.incoming).length;
+  $("nStudy").textContent = p || "";
+  $("nGroup").textContent = (p + r) || "";
+}
 function chRow(c){
   const rv = aliasOf(rivalOf(c)), my = myChAns(c.id);
   if (c.status === "declined") return `<div class="chrow"><span>${c.challenger===ME.id?`${esc(rv)} rechazó tu desafío`:`Rechazaste el desafío de ${esc(rv)}`}</span></div>`;
@@ -689,6 +719,29 @@ document.addEventListener("click", async e => {
     await loadStudy(); renderStudy(); return;
   }
   if (e.target.closest("#chBack")){ PLAY = null; RESULT = null; await loadStudy(); if (BACK_TAB !== "study") setTab(BACK_TAB); else renderStudy(); BACK_TAB = "study"; return; }
+  const fa = e.target.closest("[data-faccept],[data-freject]");
+  if (fa){
+    const other = fa.dataset.faccept || fa.dataset.freject, ok = !!fa.dataset.faccept;
+    const { error } = await SB.rpc("respond_friend", { p_other: other, p_accept: ok });
+    if (error){ toast(error.message); return; }
+    toast(ok ? "Ahora son amigos." : "Solicitud rechazada.");
+    await loadAll(); await loadStudy(); renderAllTabs(); return;
+  }
+  const uf2 = e.target.closest("[data-funfriend]");
+  if (uf2){
+    if (!confirm(`¿Quitar a ${aliasOf(uf2.dataset.funfriend)} de tus amigos?`)) return;
+    await SB.rpc("remove_friend", { p_other: uf2.dataset.funfriend });
+    await loadAll(); await loadStudy(); renderAllTabs(); return;
+  }
+  if (e.target.closest("#shareCode")){
+    const url = location.origin + "/?amigo=" + encodeURIComponent(PROFILE.friend_code);
+    const text = `${PROFILE.alias} te invita a ResiTrack para estudiar y retarse. Mi código de amigo es ${PROFILE.friend_code}.`;
+    try {
+      if (navigator.share) await navigator.share({ title: "ResiTrack", text, url });
+      else { await navigator.clipboard.writeText(text + " " + url); toast("Invitación copiada."); }
+    } catch(err){}
+    return;
+  }
   const ro = e.target.closest("[data-retar]");
   if (ro){ RETAR_OPEN = ro.dataset.retar; renderGroup(); return; }
   if (e.target.closest("[data-retar-x]")){ RETAR_OPEN = null; renderGroup(); return; }
@@ -696,7 +749,9 @@ document.addEventListener("click", async e => {
   if (rg){
     if (studyBusy) return; studyBusy = true;
     const who = rg.dataset.retarGo;
-    const { error } = await SB.rpc("create_challenge_in", { p_opponent: who, p_n: Number(rg.dataset.n), p_group: rg.dataset.g });
+    const { error } = rg.dataset.g
+      ? await SB.rpc("create_challenge_in", { p_opponent: who, p_n: Number(rg.dataset.n), p_group: rg.dataset.g })
+      : await SB.rpc("create_challenge", { p_opponent: who, p_n: Number(rg.dataset.n) });
     studyBusy = false;
     if (error){ toast(error.message); return; }
     RETAR_OPEN = null;
@@ -722,6 +777,16 @@ document.addEventListener("click", async e => {
   }
 });
 
+async function addFriend(code){
+  const { data, error } = await SB.rpc("send_friend_request", { p_code: code.trim().toUpperCase() });
+  if (error){ toast(error.message); return; }
+  toast({ enviada: "Solicitud enviada.", pendiente: "Ya le habías enviado la solicitud.", aceptada: "Ahora son amigos.", ya_amigos: "Ya son amigos." }[data] || "Listo.");
+  await loadAll(); await loadStudy(); renderAllTabs();
+}
+document.addEventListener("submit", async e => {
+  if (e.target.id !== "friendForm") return;
+  e.preventDefault(); addFriend($("f-code").value);
+});
 document.addEventListener("submit", async e => {
   if (e.target.id !== "chForm") return;
   e.preventDefault();
@@ -738,6 +803,10 @@ async function boot(){
   ME = data.session?.user || null;
   await loadAll();
   renderAllTabs();
+  if (ME && PROFILE){
+    let inv = null; try { inv = localStorage.getItem("rt-amigo"); } catch(e){}
+    if (inv && inv !== PROFILE.friend_code){ try { localStorage.removeItem("rt-amigo"); } catch(e){} history.replaceState(null, "", location.pathname); await addFriend(inv); }
+  }
   if (ME && PROFILE){ await loadStudy(); renderTop(); if (tab === "study") renderStudy(); if (tab === "group") renderGroup(); }
 }
 try { const t = localStorage.getItem("rt-tab"); if (t && ["all","mine","study","group"].includes(t)) tab = t; } catch(e){}
@@ -752,8 +821,11 @@ function showCover(){
 }
 ["startBtn","startBtn2"].forEach(id => $(id).addEventListener("click", showApp));
 $("brandBtn").addEventListener("click", showCover);
-// Si se entra desde un aviso (?tab=...), se salta la portada.
-if (new URLSearchParams(location.search).get("tab")) showApp();
+// Si se entra desde un aviso (?tab=...) o una invitación (?amigo=...), se salta la portada.
+{ const qp = new URLSearchParams(location.search);
+  const inv = qp.get("amigo");
+  if (inv){ try { localStorage.setItem("rt-amigo", inv); } catch(e){} tab = "group"; }
+  if (qp.get("tab") || inv) showApp(); }
 
 setTab(tab);
 boot();
