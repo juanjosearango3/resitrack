@@ -580,11 +580,17 @@ const fire = n => `<span class="fire" aria-label="racha de ${n} ${n===1?"día":"
 // Racha de batallas en riesgo: la llevan y hoy no han terminado ningún desafío juntos.
 const atRisk = id => { const t = STREAKS[id]; return t && t.together > 0 && !t.battled_today; };
 
+function streakHint(me){
+  if (me.done_today) return "Hoy ya sumaste. Vuelve mañana.";
+  if (bogotaDow() === 0 && !DAILY.length) return "Hoy es domingo de descanso: tu racha está a salvo.";
+  const what = isSimDay() ? "el simulacro de hoy" : `las ${DAILY.length || 10} de hoy`;
+  return me.solo ? `Termina ${what} para no perderla.` : `Termina ${what} para empezar tu racha.`;
+}
 function streakPanel(){
   const me = STREAKS[ME.id]; if (!me) return "";
   const mates = Object.values(STREAKS).filter(r => r.user_id !== ME.id)
     .sort((a,b) => (b.together - a.together) || aliasOf(a.user_id).localeCompare(aliasOf(b.user_id),"es")).slice(0, 10);
-  const big = `<div class="streak-me"><div class="streak-num">${me.solo}</div><div><b>🔥 ${me.solo === 1 ? "día seguido" : "días seguidos"}</b><div class="hint">${me.done_today ? "Hoy ya sumaste. Vuelve mañana." : me.solo ? "Termina las 10 de hoy para no perderla." : "Termina las 10 de hoy para empezar tu racha."}</div></div></div>`;
+  const big = `<div class="streak-me"><div class="streak-num">${me.solo}</div><div><b>🔥 ${me.solo === 1 ? "día seguido" : "días seguidos"}</b><div class="hint">${streakHint(me)}</div></div></div>`;
   const list = mates.length ? `<div class="streak-mates">${mates.map(r => `<span class="smate${atRisk(r.user_id)?" risk":""}" title="${r.together ? `${r.together} días seguidos con batalla` : "Aún no tienen racha de batallas"}">${avatar(r.user_id,"sm")}<span>${esc(aliasOf(r.user_id))}</span>${r.together ? fire(r.together) : `<span class="hint">0</span>`}${atRisk(r.user_id) ? `<span aria-label="en riesgo">⌛</span>` : ""}</span>`).join("")}</div>
     <p class="hint" style="margin:6px 0 0">Racha de batallas: sube cada día que terminan un desafío entre ustedes. ⌛ significa que hoy todavía no han tenido batalla.</p>` : "";
   return `<div class="streak-box">${big}${list}</div>`;
@@ -698,11 +704,32 @@ function renderResult(){
 }
 
 function renderCurrent(){ if (tab === "group") renderGroup(); else if (tab === "study") renderStudy(); else renderAllTabs(); }
+// Día de la semana en Bogotá: 0 = domingo … 6 = sábado.
+const DIAS = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
+function bogotaDow(){
+  const w = new Date().toLocaleDateString("en-US", { weekday: "short", timeZone: "America/Bogota" });
+  return ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].indexOf(w);
+}
+// Sábado de simulacro: el set de ese día trae más de 10 preguntas (o aún no está listo).
+const isSimDay = () => bogotaDow() === 6 && (!studyLoaded || !DAILY.length || DAILY.length > 10);
 function renderStudy(){
   const el = $("p-study");
-  if (!ME){ el.innerHTML = gate("Estudia con ResiTrack","Entra para responder las 10 preguntas del día y retar a tus amigos."); return; }
+  if (!ME){ el.innerHTML = gate("Estudia con ResiTrack","Entra para responder las preguntas del día y retar a tus amigos."); return; }
   if (!PROFILE){ el.innerHTML = `<div class="empty">Primero crea tu perfil en la pestaña Para mí.</div>`; return; }
-  el.innerHTML = `${rankPanel()}<h2>Preguntas de hoy</h2><p class="sub">Ocho de medicina (básicas, clínicas, quirúrgicas, salud pública y sistema de salud) y dos de cultura general. Cuenta tu primera respuesta.</p>
+  const dow = bogotaDow();
+  if (dow === 0 && !DAILY.length){
+    el.innerHTML = `${rankPanel()}<h2>Domingo: día de descanso</h2>
+      <p class="sub">Hoy no hay preguntas. Descansa: el domingo no rompe tu racha ni tus rachas de batallas. Si quieres, igual puedes retar a alguien. Mañana vuelven las preguntas diarias.</p>`;
+    return;
+  }
+  if (isSimDay()){
+    const n = DAILY.length || 50;
+    el.innerHTML = `${rankPanel()}<h2>Simulacro</h2>
+      <p class="sub">El simulacro del sábado abarca las preguntas de esta semana (lunes a viernes): ${n} preguntas en un orden nuevo y con las opciones reordenadas. Cuenta tu primera respuesta y, para sumar a tu racha, debes terminarlas todas.</p>
+      ${studyLoaded && !DAILY.length ? `<div class="empty">El simulacro de hoy todavía no está listo. Se arma a medianoche.</div>` : renderDaily()}`;
+    return;
+  }
+  el.innerHTML = `${rankPanel()}<h2>Preguntas diarias: ${DIAS[dow]}</h2><p class="sub">Ocho de medicina (básicas, clínicas, quirúrgicas, salud pública y sistema de salud) y dos de cultura general. Cuenta tu primera respuesta.</p>
     ${renderDaily()}`;
 }
 
