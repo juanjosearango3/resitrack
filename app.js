@@ -56,7 +56,7 @@ let statusFilter = "";
 // Práctica (repaso, áreas, simulacro por universidad), liga de grupo y quiz en vivo
 let PRAC = null;          // { screen, mode, title, qs, picks, uni, startedAt, endsAt, result }
 let REV = { due_now: 0, upcoming: 0, mastered: 0, next_due: null };
-let AREA_STATS = [], BANK = 0, SIM_HIST = [], LEAGUE = {};
+let AREA_STATS = [], BANK = 0, SIM_HIST = [], LEAGUE = {}, SIM_POOL = {};
 let STUDY_VIEW = null;    // null = menú de Estudiar; "daily" = preguntas del día
 let LIVE = null;          // { room, code, st, endsAt, busy }
 
@@ -1062,10 +1062,12 @@ const SIM_FMT = {
 };
 const pctOf = (ok, n) => n ? Math.round(100 * ok / n) : 0;
 async function loadPractice(){
-  const [r, a, b, h] = await Promise.all([
+  const [r, a, b, h, sp] = await Promise.all([
     SB.rpc("review_summary"), SB.rpc("my_area_stats"), SB.rpc("bank_size"),
-    SB.from("sim_attempts").select("uni,n,correct,secs,created_at").order("created_at", { ascending: false }).limit(6)
+    SB.from("sim_attempts").select("uni,n,correct,secs,created_at").order("created_at", { ascending: false }).limit(6),
+    SB.rpc("sim_pool")
   ]);
+  SIM_POOL = Object.fromEntries((sp.data || []).map(x => [x.uni, x]));
   REV = r.data?.[0] || REV;
   AREA_STATS = a.data || [];
   BANK = b.data || 0;
@@ -1124,7 +1126,7 @@ function renderAreas(){
     }).join("")}</div>`;
 }
 function simPlan(uni){
-  const f = SIM_FMT[uni], n = Math.min(f.n, BANK);
+  const f = SIM_FMT[uni], n = Math.min(f.n, SIM_POOL[uni]?.total ?? BANK);
   return { n, mins: Math.max(5, Math.round(f.mins * n / f.n)) };
 }
 function renderSimSetup(){
@@ -1136,7 +1138,8 @@ function renderSimSetup(){
     <div class="counts" style="margin:6px 0 10px">${Object.entries(SIM_FMT).map(([k, v]) => `<button type="button" class="count" data-pr-uni="${k}" aria-pressed="${pick === k}">${v.name}</button>`).join("")}</div>
     ${f ? `<div class="sim-card">
       <p style="margin:0 0 8px">${esc(f.note)}</p>
-      ${plan.n < f.n ? `<p class="hint" style="margin:0 0 8px">Hoy el banco tiene ${BANK} preguntas, así que este simulacro trae ${plan.n} en ${plan.mins} minutos (el mismo ritmo). Cada día hábil entran 10 nuevas; el simulacro completo de ${f.n} estará cuando el banco llegue a ${f.n}.</p>` : ""}
+      ${SIM_POOL[pick]?.own ? `<p class="hint" style="margin:0 0 8px">Primero salen las <b>${SIM_POOL[pick].own}</b> preguntas de exámenes reales de ${f.name} (reconstrucciones de años anteriores, verificadas con la evidencia actual); el resto, del banco general.</p>` : ""}
+      ${plan.n < f.n ? `<p class="hint" style="margin:0 0 8px">Hoy hay ${plan.n} preguntas disponibles para ${f.name}, así que este simulacro trae ${plan.n} en ${plan.mins} minutos (el mismo ritmo). El banco crece cada semana.</p>` : ""}
       <div class="sim-go"><span><b>${plan.n}</b> preguntas · <b>${plan.mins}</b> min</span><button type="button" class="btn" data-pr-start ${plan.n < 5 ? "disabled" : ""}>Empezar simulacro</button></div>
       ${plan.n < 5 ? `<p class="hint" style="margin:8px 0 0">Todavía no hay suficientes preguntas en el banco.</p>` : ""}
     </div>` : `<p class="hint">Elige la universidad.</p>`}
