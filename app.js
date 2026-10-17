@@ -280,7 +280,8 @@ function renderGroup(){
   }).join("");
   if (PLAY){ $("p-group").innerHTML = renderPlay(); return; }
   if (RESULT){ $("p-group").innerHTML = renderResult(); return; }
-  $("p-group").innerHTML = `${pushBanner()}${pendingBox()}${streakPanel()}${renderFriends()}
+  if (SD){ $("p-group").innerHTML = renderStudyDate(); return; }
+  $("p-group").innerHTML = `${pushBanner()}${pendingBox()}${streakPanel()}${sdEntry()}${renderFriends()}
     <h2>Tus grupos</h2><p class="sub">Puedes estar en varios. Cada grupo ve tu perfil y tu avance.</p>${cards || '<div class="empty">Todavía no estás en ningún grupo. Crea uno y pásale el código a tus amigos.</div>'}${GROUPS.length ? '<h2>Otro grupo</h2>' : ''}${forms}`;
   updateBadges();
 }
@@ -795,22 +796,21 @@ function renderStudy(){
   const el = $("p-study");
   if (!ME){ el.innerHTML = gate("Estudia con ResiTrack","Entra para responder las preguntas del día y retar a tus amigos."); return; }
   if (!PROFILE){ el.innerHTML = `<div class="empty">Primero crea tu perfil en la pestaña Para mí.</div>`; return; }
-  if (SD){ el.innerHTML = renderStudyDate(); return; }
   const dow = bogotaDow();
   if (dow === 0 && !DAILY.length){
-    el.innerHTML = `${rankPanel()}${sdEntry()}<h2>Domingo: día de descanso</h2>
+    el.innerHTML = `${rankPanel()}<h2>Domingo: día de descanso</h2>
       <p class="sub">Hoy no hay preguntas. Descansa: el domingo no rompe tu racha ni tus rachas de batallas. Si quieres, igual puedes retar a alguien. Mañana vuelven las preguntas diarias.</p>`;
     return;
   }
   if (isSimDay()){
     const n = DAILY.length || 50;
-    el.innerHTML = `${rankPanel()}${sdEntry()}<h2>Simulacro</h2>
+    el.innerHTML = `${rankPanel()}<h2>Simulacro</h2>
       <p class="sub">El simulacro del sábado abarca las preguntas de esta semana (lunes a viernes): ${n} preguntas en un orden nuevo y con las opciones reordenadas. Cuenta tu primera respuesta y, para sumar a tu racha, debes terminarlas todas.</p>
       <p class="sub"><b>Como en el examen real, la retroalimentación es al final:</b> mientras respondes no verás si acertaste. Cuando termines las ${n} aparecen tu puntaje, las respuestas correctas, las explicaciones y las fuentes.</p>
       ${studyLoaded && !DAILY.length ? `<div class="empty">El simulacro de hoy todavía no está listo. Se arma a medianoche.</div>` : renderDaily()}`;
     return;
   }
-  el.innerHTML = `${rankPanel()}${sdEntry()}<h2>Preguntas diarias: ${DIAS[dow]}</h2><p class="sub">Ocho de medicina (básicas, clínicas, quirúrgicas, salud pública y sistema de salud) y dos de cultura general. Cuenta tu primera respuesta.</p>
+  el.innerHTML = `${rankPanel()}<h2>Preguntas diarias: ${DIAS[dow]}</h2><p class="sub">Ocho de medicina (básicas, clínicas, quirúrgicas, salud pública y sistema de salud) y dos de cultura general. Cuenta tu primera respuesta.</p>
     ${renderDaily()}`;
 }
 
@@ -1074,7 +1074,7 @@ function renderStudyDate(){
     ${board.some(b => b.n) ? `<div class="sd-board"><h3>Marcador</h3><ol>${board.map(b => `<li><span>${esc(b.nm)}</span><b>${b.ok}</b><span class="hint">de ${b.n}</span></li>`).join("")}</ol><button type="button" class="linkish" data-sd-reset>Reiniciar marcador</button></div>` : ""}`;
 }
 function shareable(id){ return !!PEOPLE[id]?.alias; }
-function sdRender(keep){ const y = window.scrollY; renderStudy(); if (keep !== false) window.scrollTo(0, y); }
+function sdRender(keep){ const y = window.scrollY; renderGroup(); if (keep !== false) window.scrollTo(0, y); }
 async function sdFetch(){
   let { data } = await SB.rpc("study_date_question", { p_exclude: SD.asked, p_area: SD.area || null });
   if (!data || !data.length){ SD.asked = []; ({ data } = await SB.rpc("study_date_question", { p_exclude: [], p_area: SD.area || null })); }
@@ -1105,9 +1105,9 @@ function sdSpin(){
 document.addEventListener("click", e => {
   const t = e.target;
   if (t.closest("[data-totop]")){ window.scrollTo({ top: 0, behavior: "smooth" }); return; }
-  if (t.closest("[data-sd-open]")){ SD = { names: sdLoadNames(), scores: {}, asked: [], area: "", rot: 0, spinning: false, turn: null, q: null, pick: null }; renderStudy(); window.scrollTo(0, 0); return; }
+  if (t.closest("[data-sd-open]")){ SD = { names: sdLoadNames(), scores: {}, asked: [], area: "", rot: 0, spinning: false, turn: null, q: null, pick: null }; if (tab !== "group") setTab("group"); else renderGroup(); window.scrollTo(0, 0); return; }
   if (!SD) return;
-  if (t.closest("[data-sd-close]")){ SD = null; renderStudy(); window.scrollTo(0, 0); return; }
+  if (t.closest("[data-sd-close]")){ SD = null; renderGroup(); window.scrollTo(0, 0); return; }
   const del = t.closest("[data-sd-del]"); if (del){ SD.names.splice(Number(del.dataset.sdDel), 1); sdSaveNames(); sdRender(); return; }
   const qk = t.closest("[data-sd-quick]"); if (qk){ if (SD.names.length < 12 && !SD.names.includes(qk.dataset.sdQuick)){ SD.names.push(qk.dataset.sdQuick); sdSaveNames(); } sdRender(); return; }
   const ar = t.closest("[data-sd-area]"); if (ar){ SD.area = ar.dataset.sdArea; sdRender(); return; }
