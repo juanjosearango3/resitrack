@@ -574,7 +574,10 @@ function optList(q, opts){
 }
 
 function feedback(ok, explanation, source){
-  return `<div class="fb ${ok?"fb-ok":"fb-bad"}"><b>${ok?"Correcta.":"Incorrecta."}</b> ${esc(explanation)}${source?`<div class="hint" style="margin-top:6px">Fuente: ${esc(source)}</div>`:""}</div>`;
+  // La explicación puede venir en varios párrafos separados por una línea en blanco.
+  const paras = String(explanation || "").split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
+  const body = paras.map((p, i) => `<p>${i === 0 ? `<b>${ok?"Correcta.":"Incorrecta."}</b> ` : ""}${esc(p).replace(/^OJO:/, "<b>OJO:</b>")}</p>`).join("");
+  return `<div class="fb ${ok?"fb-ok":"fb-bad"}">${body}${source?`<div class="hint" style="margin-top:6px">Fuente: ${esc(source)}</div>`:""}</div>`;
 }
 
 function renderDaily(){

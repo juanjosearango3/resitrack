@@ -290,3 +290,4 @@ footer{margin-top:36px;font-size:14px;color:var(--muted)}
 .guide .cover-more h2:first-child{margin-top:22px}
 .guide-go{margin-top:18px;width:100%;padding:12px 18px}
 .person [data-fadd],.person [data-faccept]{justify-self:start}
+.fb p{margin:0 0 8px}.fb p:last-of-type{margin-bottom:0}
