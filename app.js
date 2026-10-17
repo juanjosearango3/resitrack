@@ -521,7 +521,7 @@ function streakPanel(){
   const me = STREAKS[ME.id]; if (!me) return "";
   const mates = Object.values(STREAKS).filter(r => r.user_id !== ME.id)
     .sort((a,b) => (b.together - a.together) || aliasOf(a.user_id).localeCompare(aliasOf(b.user_id),"es")).slice(0, 10);
-  const big = `<div class="streak-me"><div class="streak-num">${me.solo}</div><div><b>${me.solo === 1 ? "día seguido" : "días seguidos"}</b><div class="hint">${me.done_today ? "Hoy ya sumaste. Vuelve mañana." : me.solo ? "Termina las 10 de hoy para no perderla." : "Termina las 10 de hoy para empezar tu racha."}</div></div></div>`;
+  const big = `<div class="streak-me"><div class="streak-num">${me.solo}</div><div><b>🔥 ${me.solo === 1 ? "día seguido" : "días seguidos"}</b><div class="hint">${me.done_today ? "Hoy ya sumaste. Vuelve mañana." : me.solo ? "Termina las 10 de hoy para no perderla." : "Termina las 10 de hoy para empezar tu racha."}</div></div></div>`;
   const list = mates.length ? `<div class="streak-mates">${mates.map(r => `<span class="smate${atRisk(r.user_id)?" risk":""}" title="${r.together ? `Llevan ${r.together} días seguidos` : "Aún no tienen racha juntos"}">${avatar(r.user_id,"sm")}<span>${esc(aliasOf(r.user_id))}</span>${r.together ? fire(r.together) : `<span class="hint">0</span>`}${atRisk(r.user_id) ? `<span aria-label="en riesgo">⌛</span>` : ""}</span>`).join("")}</div>
     <p class="hint" style="margin:6px 0 0">La racha con alguien sube cada día que los dos terminan las 10 preguntas. ⌛ significa que hoy falta uno de los dos.</p>` : "";
   return `<div class="streak-box">${big}${list}</div>`;
