@@ -226,7 +226,7 @@ function renderGroup(){
         ${retar}
         ${STREAKS[id] ? `<div class="pstreak">${id === ME.id
           ? `Tu racha: ${STREAKS[id].solo ? fire(STREAKS[id].solo) : "0"}`
-          : `Juntos: ${STREAKS[id].together ? fire(STREAKS[id].together) : "0"}${atRisk(id) ? " ⌛" : ""} <span class="hint">· su racha ${STREAKS[id].solo}</span>`}</div>` : ""}
+          : `Batallas: ${STREAKS[id].together ? fire(STREAKS[id].together) : "0"}${atRisk(id) ? " ⌛" : ""} <span class="hint">· su racha ${STREAKS[id].solo}</span>`}</div>` : ""}
         <div class="chips">${(p.specs||[]).map(s => `<span class="chip on">${esc(s)}</span>`).join("")}</div>
         ${p.note ? `<div class="hint" style="font-size:14px">${esc(p.note)}</div>` : ""}
         <div class="mini">${f.length ? f.map(([u,x]) => {
@@ -498,7 +498,7 @@ async function loadStudy(){
     SB.rpc("my_study_history"),
     SB.from("challenges").select("*").order("created_at", { ascending: false }).limit(30),
     SB.from("challenge_answers").select("challenge_id,user_id,score"),
-    SB.rpc("my_streaks")
+    SB.rpc("streaks_v2")
   ]);
   STREAKS = Object.fromEntries((k.data || []).map(r => [r.user_id, r]));
   DAILY = d.data || [];
@@ -514,16 +514,16 @@ async function loadStudy(){
 let STREAKS = {};
 const myStreak = () => STREAKS[ME?.id]?.solo || 0;
 const fire = n => `<span class="fire" aria-label="racha de ${n} ${n===1?"día":"días"}">🔥${n}</span>`;
-// Racha con alguien en riesgo: la llevan y alguno de los dos no ha terminado hoy.
-const atRisk = id => { const t = STREAKS[id], m = STREAKS[ME?.id]; return t && t.together > 0 && !(t.done_today && m?.done_today); };
+// Racha de batallas en riesgo: la llevan y hoy no han terminado ningún desafío juntos.
+const atRisk = id => { const t = STREAKS[id]; return t && t.together > 0 && !t.battled_today; };
 
 function streakPanel(){
   const me = STREAKS[ME.id]; if (!me) return "";
   const mates = Object.values(STREAKS).filter(r => r.user_id !== ME.id)
     .sort((a,b) => (b.together - a.together) || aliasOf(a.user_id).localeCompare(aliasOf(b.user_id),"es")).slice(0, 10);
   const big = `<div class="streak-me"><div class="streak-num">${me.solo}</div><div><b>🔥 ${me.solo === 1 ? "día seguido" : "días seguidos"}</b><div class="hint">${me.done_today ? "Hoy ya sumaste. Vuelve mañana." : me.solo ? "Termina las 10 de hoy para no perderla." : "Termina las 10 de hoy para empezar tu racha."}</div></div></div>`;
-  const list = mates.length ? `<div class="streak-mates">${mates.map(r => `<span class="smate${atRisk(r.user_id)?" risk":""}" title="${r.together ? `Llevan ${r.together} días seguidos` : "Aún no tienen racha juntos"}">${avatar(r.user_id,"sm")}<span>${esc(aliasOf(r.user_id))}</span>${r.together ? fire(r.together) : `<span class="hint">0</span>`}${atRisk(r.user_id) ? `<span aria-label="en riesgo">⌛</span>` : ""}</span>`).join("")}</div>
-    <p class="hint" style="margin:6px 0 0">La racha con alguien sube cada día que los dos terminan las 10 preguntas. ⌛ significa que hoy falta uno de los dos.</p>` : "";
+  const list = mates.length ? `<div class="streak-mates">${mates.map(r => `<span class="smate${atRisk(r.user_id)?" risk":""}" title="${r.together ? `${r.together} días seguidos con batalla` : "Aún no tienen racha de batallas"}">${avatar(r.user_id,"sm")}<span>${esc(aliasOf(r.user_id))}</span>${r.together ? fire(r.together) : `<span class="hint">0</span>`}${atRisk(r.user_id) ? `<span aria-label="en riesgo">⌛</span>` : ""}</span>`).join("")}</div>
+    <p class="hint" style="margin:6px 0 0">Racha de batallas: sube cada día que terminan un desafío entre ustedes. ⌛ significa que hoy todavía no han tenido batalla.</p>` : "";
   return `<div class="streak-box">${big}${list}</div>`;
 }
 
@@ -650,7 +650,7 @@ document.addEventListener("click", async e => {
       const h = HISTORY.find(x => x.day === new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" }));
       if (h){ h.answered++; if (r?.is_correct) h.correct++; }
       if (DAILY.every(x => x.my_choice != null)){
-        const k = await SB.rpc("my_streaks");
+        const k = await SB.rpc("streaks_v2");
         STREAKS = Object.fromEntries((k.data || []).map(x => [x.user_id, x]));
         renderTop();
         toast(`🔥 ${myStreak()} ${myStreak()===1?"día":"días"} seguidos. ¡Racha al día!`);
@@ -711,6 +711,8 @@ document.addEventListener("click", async e => {
     const r = data?.[0], cid = PLAY.id, rival = PLAY.rival;
     PLAY = null;
     if (r?.status === "done"){
+      const k = await SB.rpc("streaks_v2");
+      STREAKS = Object.fromEntries((k.data || []).map(x => [x.user_id, x]));
       const rr = await SB.rpc("challenge_result", { p_cid: cid });
       RESULT = rr.data || null;
     } else {
