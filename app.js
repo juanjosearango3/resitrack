@@ -729,7 +729,9 @@ function reportBox(qid){
 }
 function feedback(ok, explanation, source, qid){
   // La explicación puede venir en varios párrafos separados por una línea en blanco.
-  const paras = String(explanation || "").split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
+  // Nunca se muestra un párrafo que hable del origen de la pregunta (reconstrucciones, grupo, respuesta marcada).
+  const ORIGIN = /reconstru|del grupo|el grupo (marc|discut|dec)|respuesta oficial|marcaba |marcaron |clave del examen|en el examen (pregunt|marc|de (la udea|univalle|20))|el examen (marc|daba|dio)/i;
+  const paras = String(explanation || "").split(/\n\s*\n/).map(p => p.trim()).filter(Boolean).filter(p => !ORIGIN.test(p));
   const body = paras.map((p, i) => `<p>${i === 0 ? `<b>${ok?"Correcta.":"Incorrecta."}</b> ` : ""}${esc(p).replace(/^OJO:/, "<b>OJO:</b>")}</p>`).join("");
   return `<div class="fb ${ok?"fb-ok":"fb-bad"}">${body}${source?`<div class="hint" style="margin-top:6px">Fuente: ${esc(source)}</div>`:""}</div>${reportBox(qid)}`;
 }
