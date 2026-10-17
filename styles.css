@@ -387,3 +387,5 @@ img.av{border-radius:50%;aspect-ratio:1/1;object-fit:cover}
 .install-done{font-weight:700;color:var(--drop);margin:4px 0 0}
 .install.is-done{border-width:1px}
 .install-os[hidden],.install-done[hidden],.install-now[hidden]{display:none}
+.inv-banner{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;line-height:1.5}
+.inv-banner .code{font-size:18px}

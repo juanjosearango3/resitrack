@@ -243,7 +243,7 @@ function personDetail(id, gid){
     ${gid && id !== ME.id && !FRIENDS.includes(id) ? (() => {
       const rq = FREQS.find(r => r.other === id);
       if (rq && rq.incoming) return `<button class="btn small" data-faccept="${id}">Aceptar solicitud de amistad</button>`;
-      if (rq) return `<span class="hint">Solicitud de amistad enviada</span>`;
+      if (rq) return `<span class="hint">Solicitud de amistad enviada</span> <button class="linkish" data-fcancel="${id}" data-alias="${esc(PEOPLE[id]?.alias || "")}">Cancelar solicitud</button>`;
       return `<button class="btn ghost small" data-fadd="${id}">Agregar amigo</button>`;
     })() : (gid && FRIENDS.includes(id) ? `<span class="hint">Ya son amigos</span>` : "")}</div>`;
 }
@@ -258,7 +258,8 @@ function renderFriends(){
   return `${reqs}<h2>Tus amigos</h2><p class="sub">Para quienes no están en tus grupos. Tus amigos ven tu perfil y tu avance, y pueden retarte.</p>
     <div class="fcode"><div><span class="hint">Tu código de amigo</span> <span class="code">${esc(code)}</span></div><button class="btn small" id="shareCode">Compartir invitación</button></div>
     <form id="friendForm" class="fadd"><input id="f-code" maxlength="6" placeholder="Código de tu amigo" style="text-transform:uppercase" required><button class="btn small" type="submit">Agregar</button></form>
-    ${outgoing.length ? `<p class="hint">Esperando respuesta de: ${outgoing.map(r => esc(r.alias)).join(", ")}.</p>` : ""}
+    ${outgoing.length ? `<h4 class="ghead">Solicitudes enviadas</h4><div class="chlist">${outgoing.map(r =>
+      `<div class="chrow"><span><b>${esc(r.alias)}</b>${r.city?` · ${esc(r.city)}`:""} · esperando respuesta</span><span><button class="btn ghost small" data-fcancel="${r.other}" data-alias="${esc(r.alias)}">Cancelar</button></span></div>`).join("")}</div>` : ""}
     ${cards ? `<div class="plist">${cards}</div>` : `<div class="empty">Aún no tienes amigos agregados. Comparte tu invitación o pide el código de alguien.</div>`}
     ${cs.length ? `<h4 class="ghead">Retos con amigos</h4><div class="chlist">${cs.map(chRow).join("")}</div>` : ""}`;
 }
@@ -268,8 +269,22 @@ document.addEventListener("toggle", e => {
   const d = e.target;
   if (d && d.matches && d.matches("details.gcard")){ try { localStorage.setItem("rt-g-" + d.dataset.gid, d.open ? "1" : "0"); } catch(err){} }
 }, true);
+// Invitación abierta en el navegador del celular: quien ya instaló la app puede seguir allá con el código.
+let INVITE_IN_BROWSER = null;
+{ const inv = new URLSearchParams(location.search).get("amigo");
+  const mobile = /android|iphone|ipad|ipod/i.test(navigator.userAgent);
+  const standalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
+  if (inv && mobile && !standalone) INVITE_IN_BROWSER = inv.toUpperCase().slice(0, 6); }
+function inviteBanner(){
+  if (!INVITE_IN_BROWSER) return "";
+  return `<div class="banner inv-banner"><b>¿Ya tienes ResiTrack instalada?</b> Abre la app desde tu pantalla de inicio, entra a Amigos y escribe este código en "Código de tu amigo": <span class="code">${esc(INVITE_IN_BROWSER)}</span><button class="btn small" type="button" data-inv-copy>Copiar código</button><button class="linkish" type="button" data-inv-x>Seguir aquí en el navegador</button></div>`;
+}
+document.addEventListener("click", async e => {
+  if (e.target.closest("[data-inv-copy]")){ try { await navigator.clipboard.writeText(INVITE_IN_BROWSER); toast("Código copiado."); } catch(err){ toast("Código: " + INVITE_IN_BROWSER); } return; }
+  if (e.target.closest("[data-inv-x]")){ INVITE_IN_BROWSER = null; renderGroup(); }
+});
 function renderGroup(){
-  if (!ME){ $("p-group").innerHTML = gate("Tus amigos y grupos","Entra para agregar amigos, crear grupos y retarse."); return; }
+  if (!ME){ $("p-group").innerHTML = inviteBanner() + gate("Tus amigos y grupos","Entra para agregar amigos, crear grupos y retarse."); return; }
   if (!PROFILE){ $("p-group").innerHTML = `<div class="empty">Primero crea tu perfil en la pestaña Para mí.</div>`; return; }
   const forms = `<div class="gforms">
     <form id="newGroup"><h4>Crear un grupo</h4><input id="g-name" maxlength="60" placeholder="Ej. Residencia 2027" required><button class="btn small" type="submit">Crear grupo</button></form>
@@ -290,7 +305,7 @@ function renderGroup(){
   if (RESULT){ $("p-group").innerHTML = renderResult(); return; }
   if (SD){ $("p-group").innerHTML = renderStudyDate(); return; }
   if (PERSON_OPEN && $("pdlg").open) renderPersonDlg();
-  $("p-group").innerHTML = `${pushBanner()}${pendingBox()}${streakPanel()}${sdEntry()}${renderFriends()}
+  $("p-group").innerHTML = `${inviteBanner()}${pushBanner()}${pendingBox()}${streakPanel()}${sdEntry()}${renderFriends()}
     <h2>Tus grupos</h2><p class="sub">Puedes estar en varios. Cada grupo ve tu perfil y tu avance.</p>${cards || '<div class="empty">Todavía no estás en ningún grupo. Crea uno y pásale el código a tus amigos.</div>'}${GROUPS.length ? '<h2>Otro grupo</h2>' : ''}${forms}`;
   updateBadges();
 }
@@ -889,6 +904,14 @@ document.addEventListener("click", async e => {
     const { error } = await SB.rpc("respond_friend", { p_other: other, p_accept: ok });
     if (error){ toast(error.message); return; }
     toast(ok ? "Ahora son amigos." : "Solicitud rechazada.");
+    await loadAll(); await loadStudy(); renderAllTabs(); return;
+  }
+  const fc = e.target.closest("[data-fcancel]");
+  if (fc){
+    if (!confirm(`¿Cancelar la solicitud de amistad a ${fc.dataset.alias || "esta persona"}?`)) return;
+    const { error } = await SB.rpc("respond_friend", { p_other: fc.dataset.fcancel, p_accept: false });
+    if (error){ toast(error.message); return; }
+    toast("Solicitud cancelada.");
     await loadAll(); await loadStudy(); renderAllTabs(); return;
   }
   const fad = e.target.closest("[data-fadd]");
