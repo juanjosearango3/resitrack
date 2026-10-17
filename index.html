@@ -50,7 +50,7 @@
     <dl class="tabs-help">
       <dt>Explorar</dt><dd>Todas las universidades. Busca por especialidad (por ejemplo, "plástica") o filtra por ciudad y estado: abiertas, en proceso, por confirmar o cerradas. Cada tarjeta trae cronograma, requisitos, cómo se califica, tips y la fuente oficial.</dd>
       <dt>Para mí</dt><dd>Lo que sigues con tu avance, las novedades de esas convocatorias y las que coinciden con tus especialidades.</dd>
-      <dt>Estudiar</dt><dd>De lunes a viernes, 10 preguntas nuevas cada día: 8 casos clínicos de nivel examen de residencia (ciencias básicas, clínicas, quirúrgicas, salud pública y sistema de salud) y 2 de cultura general. Al responder ves si acertaste, el porqué y la fuente. Cuenta tu primera respuesta. El sábado, simulacro con las preguntas de lunes a viernes (hasta 50, en orden nuevo); el domingo, descanso. Arriba está el ranking de aciertos: de la semana, del mes o histórico, de todos o solo de tus amigos y grupos.</dd>
+      <dt>Estudiar</dt><dd>De lunes a viernes, 10 preguntas nuevas cada día: 8 casos clínicos de nivel examen de residencia (ciencias básicas, clínicas, quirúrgicas, salud pública y sistema de salud) y 2 de cultura general. Al responder ves si acertaste, el porqué y la fuente. Cuenta tu primera respuesta. El sábado, simulacro con las preguntas de lunes a viernes (hasta 50, en orden nuevo); el domingo, descanso. Arriba está el ranking de aciertos: de la semana, del mes o histórico, de todos o solo de tus amigos y grupos. Si estudian juntos en persona, abran Study Date: una ruleta con sus nombres que elige a quién le toca responder una pregunta del banco.</dd>
       <dt>Amigos</dt><dd>Tus rachas 🔥 (⌛ significa que hoy todavía no has tenido batalla con esa persona), los desafíos pendientes, tus amigos y tus grupos: solicitudes de amistad, tu código para que te agreguen, en qué va cada persona y el botón para retarla. Gana el desafío quien acierte más, y el feedback aparece cuando los dos terminan. Tu perfil y tu avance solo los ven tus amigos y la gente de tus grupos.</dd>
     </dl>
 
@@ -97,6 +97,7 @@
 
 <dialog id="dlg"><form class="form" id="pform" method="dialog">
   <h2 id="dlgTitle">Tu perfil</h2>
+  <div class="ph-row"><span class="ph" id="f-ph" aria-hidden="true"></span><div class="ph-act"><label class="btn ghost small" for="f-photo">Elegir foto</label><input type="file" id="f-photo" accept="image/*" hidden><button type="button" class="linkish" id="f-photo-del" hidden>Quitar foto</button><span class="hint">La ven tus amigos y la gente de tus grupos.</span></div></div>
   <label>Cómo te llaman<input id="f-alias" maxlength="40" required></label>
   <label>Ciudad donde vives<input id="f-city" maxlength="60"></label>
   <div><label style="margin-bottom:6px">Especialidades que te interesan <span class="hint">Elige una o varias</span></label><div class="pick" id="f-specs"></div></div>

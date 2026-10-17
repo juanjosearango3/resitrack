@@ -59,7 +59,8 @@ const aliasOf = id => PEOPLE[id]?.alias || "Alguien";
 const initials = s => (s||"?").trim().split(/\s+/).slice(0,2).map(w => w[0]).join("").toUpperCase();
 function hue(s){ let h = 0; for (const c of String(s)) h = (h*31 + c.charCodeAt(0)) % 360; return h; }
 function avatar(id, cls){
-  const a = aliasOf(id);
+  const a = aliasOf(id), u = PEOPLE[id]?.avatar_url;
+  if (u) return `<img class="av ${cls||""}" src="${esc(u)}" alt="" title="${esc(a)}" loading="lazy" decoding="async">`;
   return `<span class="av ${cls||""}" style="background:hsl(${hue(a)} 45% 82%);color:#1d2a33" title="${esc(a)}">${esc(initials(a))}</span>`;
 }
 
@@ -254,6 +255,11 @@ function renderFriends(){
     ${cs.length ? `<h4 class="ghead">Retos con amigos</h4><div class="chlist">${cs.map(chRow).join("")}</div>` : ""}`;
 }
 
+function groupOpen(id){ try { return localStorage.getItem("rt-g-" + id) === "1"; } catch(e){ return false; } }
+document.addEventListener("toggle", e => {
+  const d = e.target;
+  if (d && d.matches && d.matches("details.gcard")){ try { localStorage.setItem("rt-g-" + d.dataset.gid, d.open ? "1" : "0"); } catch(err){} }
+}, true);
 function renderGroup(){
   if (!ME){ $("p-group").innerHTML = gate("Tus amigos y grupos","Entra para agregar amigos, crear grupos y retarse."); return; }
   if (!PROFILE){ $("p-group").innerHTML = `<div class="empty">Primero crea tu perfil en la pestaña Para mí.</div>`; return; }
@@ -264,11 +270,13 @@ function renderGroup(){
   const cards = GROUPS.map(g => {
     const ids = MEMBERS.filter(m => m.group_id === g.id).map(m => m.user_id);
     const cs = CHALLS.filter(c => c.group_id === g.id).slice(0, 6);
-    return `<div class="gcard"><div class="ghd"><h3>${esc(g.name)}</h3><div><span class="hint">Código para invitar</span> <span class="code">${esc(g.code)}</span></div></div>
-      <p class="sub" style="margin:10px 0">${ids.length} ${ids.length===1?"integrante":"integrantes"}. Quien tenga el código puede unirse.</p>
+    const pend = cs.filter(isMyTurn).length;
+    return `<details class="gcard" data-gid="${g.id}"${groupOpen(g.id)?" open":""}><summary class="gsum"><span class="gsum-txt"><b class="gname">${esc(g.name)}</b><span class="hint">${ids.length} ${ids.length===1?"integrante":"integrantes"}${pend?` · <span class="due">${pend} ${pend===1?"reto pendiente":"retos pendientes"}</span>`:""}</span></span><span class="chev" aria-hidden="true"></span></summary>
+      <div class="gbody"><div class="ghd"><div><span class="hint">Código para invitar</span> <span class="code">${esc(g.code)}</span></div></div>
+      <p class="sub" style="margin:10px 0">Quien tenga el código puede unirse.</p>
       <div class="people">${ids.map(id => personCard(id, g.id)).join("")}</div>
       <h4 class="ghead">Retos en este grupo</h4>${cs.length ? `<div class="chlist">${cs.map(chRow).join("")}</div>` : `<p class="hint" style="margin:0">Todavía no hay retos. Toca Retar en la tarjeta de alguien.</p>`}
-      <div style="margin-top:12px"><button class="btn ghost small" data-leave="${g.id}">Salir del grupo</button></div></div>`;
+      <div style="margin-top:12px"><button class="btn ghost small" data-leave="${g.id}">Salir del grupo</button></div></div></details>`;
   }).join("");
   if (PLAY){ $("p-group").innerHTML = renderPlay(); return; }
   if (RESULT){ $("p-group").innerHTML = renderResult(); return; }
@@ -356,6 +364,8 @@ function openProfile(){
   $("f-alias").value = PROFILE?.alias || "";
   $("f-city").value  = PROFILE?.city  || "";
   $("f-note").value  = PROFILE?.note  || "";
+  PHOTO = { blob: null, remove: false };
+  photoPreview();
   $("f-specs").innerHTML = allSpecs.map(s => `<button type="button" data-spec="${esc(s)}" aria-pressed="${pickSpecs.has(s)}">${esc(s)}</button>`).join("");
   $("dlg").showModal();
 }
@@ -366,11 +376,54 @@ $("f-specs").addEventListener("click", e => {
   b.setAttribute("aria-pressed", pickSpecs.has(s));
 });
 $("f-cancel").addEventListener("click", () => $("dlg").close());
+/* foto de perfil: se recorta cuadrada a 256 px en el teléfono antes de subirla */
+let PHOTO = { blob: null, remove: false };
+function photoPreview(){
+  const el = $("f-ph"), url = PHOTO.blob ? URL.createObjectURL(PHOTO.blob) : (!PHOTO.remove && PROFILE?.avatar_url) || "";
+  el.innerHTML = url ? `<img src="${esc(url)}" alt="">` : `<span>${esc(initials($("f-alias").value || PROFILE?.alias || "?"))}</span>`;
+  $("f-photo-del").hidden = !url;
+}
+async function squareJpeg(file, size = 256){
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((ok, bad) => { const im = new Image(); im.onload = () => ok(im); im.onerror = bad; im.src = url; });
+    const side = Math.min(img.naturalWidth, img.naturalHeight);
+    const c = document.createElement("canvas"); c.width = c.height = size;
+    c.getContext("2d").drawImage(img, (img.naturalWidth - side) / 2, (img.naturalHeight - side) / 2, side, side, 0, 0, size, size);
+    return await new Promise(ok => c.toBlob(ok, "image/jpeg", 0.85));
+  } finally { URL.revokeObjectURL(url); }
+}
+$("f-photo").addEventListener("change", async e => {
+  const f = e.target.files && e.target.files[0]; e.target.value = "";
+  if (!f) return;
+  if (!/^image\//.test(f.type)){ toast("Elige una imagen."); return; }
+  try { PHOTO = { blob: await squareJpeg(f), remove: false }; photoPreview(); }
+  catch(err){ toast("No pude leer esa imagen. Prueba con otra."); }
+});
+$("f-photo-del").addEventListener("click", () => { PHOTO = { blob: null, remove: true }; photoPreview(); });
+const AV_PREFIX = "/storage/v1/object/public/avatars/";
+async function savePhoto(){
+  const old = PROFILE?.avatar_url, oldPath = old && old.includes(AV_PREFIX) ? old.split(AV_PREFIX)[1] : null;
+  if (PHOTO.blob){
+    const path = `${ME.id}/${Date.now()}.jpg`;
+    const up = await SB.storage.from("avatars").upload(path, PHOTO.blob, { contentType: "image/jpeg", upsert: false, cacheControl: "31536000" });
+    if (up.error){ toast("No pude subir la foto."); return undefined; }
+    if (oldPath) SB.storage.from("avatars").remove([oldPath]);
+    return SB.storage.from("avatars").getPublicUrl(path).data.publicUrl;
+  }
+  if (PHOTO.remove){ if (oldPath) SB.storage.from("avatars").remove([oldPath]); return null; }
+  return old || null;
+}
 $("pform").addEventListener("submit", async e => {
   e.preventDefault();
   const alias = $("f-alias").value.trim();
   if (!alias) return;
-  const okSave = await saveProfile({ alias, city: $("f-city").value.trim() || null, note: $("f-note").value.trim() || null, specs: [...pickSpecs] });
+  $("f-save").disabled = true;
+  const avatar_url = await savePhoto();
+  const patch = { alias, city: $("f-city").value.trim() || null, note: $("f-note").value.trim() || null, specs: [...pickSpecs] };
+  if (avatar_url !== undefined) patch.avatar_url = avatar_url;
+  const okSave = await saveProfile(patch);
+  $("f-save").disabled = false;
   $("dlg").close();
   if (okSave){
     toast("Perfil guardado."); renderAllTabs();
@@ -663,7 +716,7 @@ function renderDaily(){
       ${answered && q.correct != null ? feedback(q.is_correct, q.explanation, q.source, q.id) : answered ? `<p class="hint" style="margin:6px 0 0">Respuesta guardada. La retroalimentación aparece al final del simulacro.</p>` : ""}
     </article>`;
   }).join("");
-  return head + `<div class="qlist">${cards}</div>`;
+  return head + `<div class="qlist">${cards}</div><div class="totop"><button type="button" class="btn ghost" data-totop>Volver arriba</button></div>`;
 }
 
 function mates(){
@@ -742,21 +795,22 @@ function renderStudy(){
   const el = $("p-study");
   if (!ME){ el.innerHTML = gate("Estudia con ResiTrack","Entra para responder las preguntas del día y retar a tus amigos."); return; }
   if (!PROFILE){ el.innerHTML = `<div class="empty">Primero crea tu perfil en la pestaña Para mí.</div>`; return; }
+  if (SD){ el.innerHTML = renderStudyDate(); return; }
   const dow = bogotaDow();
   if (dow === 0 && !DAILY.length){
-    el.innerHTML = `${rankPanel()}<h2>Domingo: día de descanso</h2>
+    el.innerHTML = `${rankPanel()}${sdEntry()}<h2>Domingo: día de descanso</h2>
       <p class="sub">Hoy no hay preguntas. Descansa: el domingo no rompe tu racha ni tus rachas de batallas. Si quieres, igual puedes retar a alguien. Mañana vuelven las preguntas diarias.</p>`;
     return;
   }
   if (isSimDay()){
     const n = DAILY.length || 50;
-    el.innerHTML = `${rankPanel()}<h2>Simulacro</h2>
+    el.innerHTML = `${rankPanel()}${sdEntry()}<h2>Simulacro</h2>
       <p class="sub">El simulacro del sábado abarca las preguntas de esta semana (lunes a viernes): ${n} preguntas en un orden nuevo y con las opciones reordenadas. Cuenta tu primera respuesta y, para sumar a tu racha, debes terminarlas todas.</p>
       <p class="sub"><b>Como en el examen real, la retroalimentación es al final:</b> mientras respondes no verás si acertaste. Cuando termines las ${n} aparecen tu puntaje, las respuestas correctas, las explicaciones y las fuentes.</p>
       ${studyLoaded && !DAILY.length ? `<div class="empty">El simulacro de hoy todavía no está listo. Se arma a medianoche.</div>` : renderDaily()}`;
     return;
   }
-  el.innerHTML = `${rankPanel()}<h2>Preguntas diarias: ${DIAS[dow]}</h2><p class="sub">Ocho de medicina (básicas, clínicas, quirúrgicas, salud pública y sistema de salud) y dos de cultura general. Cuenta tu primera respuesta.</p>
+  el.innerHTML = `${rankPanel()}${sdEntry()}<h2>Preguntas diarias: ${DIAS[dow]}</h2><p class="sub">Ocho de medicina (básicas, clínicas, quirúrgicas, salud pública y sistema de salud) y dos de cultura general. Cuenta tu primera respuesta.</p>
     ${renderDaily()}`;
 }
 
@@ -966,4 +1020,114 @@ document.addEventListener("submit", async e => {
   REPORTED.add(qid); REPORT_OPEN = null;
   const y = window.scrollY; renderCurrent(); window.scrollTo(0, y);
   toast(data === "ya" ? "Ya habías reportado esta pregunta." : "Gracias. Revisamos la pregunta y la corregimos si hay un error.");
+});
+
+/* ---------- Study Date: ruleta para estudiar en persona ---------- */
+let SD = null; // { names, scores:{name:{ok,n}}, asked:[], area, rot, spinning, turn, q, pick }
+const SD_COLORS = ["#0b8a6c","#0d2a4a","#2f6f9f","#1f5f52","#3f5d7a","#14485f","#127a63","#24527a","#456b5f","#2b4a6b"];
+function sdLoadNames(){ try { return JSON.parse(localStorage.getItem("rt-sd-names") || "[]").filter(x => typeof x === "string").slice(0, 12); } catch(e){ return []; } }
+function sdSaveNames(){ try { localStorage.setItem("rt-sd-names", JSON.stringify(SD.names)); } catch(e){} }
+function sdEntry(){
+  return `<div class="sd-entry"><div><h3>Study Date</h3><p class="hint">¿Estudian juntos en persona? Pongan sus nombres en la ruleta: a quien le salga, responde una pregunta del banco de ResiTrack.</p></div><button type="button" class="btn" data-sd-open>Abrir Study Date</button></div>`;
+}
+function sdWheel(){
+  const n = SD.names.length, R = 140, C = 150;
+  if (n < 2) return `<div class="sd-wheel-empty">Agreguen al menos dos nombres para girar la ruleta.</div>`;
+  const a = 360 / n, pt = (deg, r) => { const t = deg * Math.PI / 180; return [C + r * Math.sin(t), C - r * Math.cos(t)]; };
+  const slices = SD.names.map((name, i) => {
+    const [x1, y1] = pt(i * a, R), [x2, y2] = pt((i + 1) * a, R), large = a > 180 ? 1 : 0;
+    const mid = i * a + a / 2, [tx, ty] = pt(mid, R * 0.62);
+    const label = name.length > 12 ? name.slice(0, 11) + "…" : name;
+    const path = n === 1 ? `<circle cx="${C}" cy="${C}" r="${R}"/>` : `<path d="M${C},${C} L${x1.toFixed(2)},${y1.toFixed(2)} A${R},${R} 0 ${large} 1 ${x2.toFixed(2)},${y2.toFixed(2)} Z" fill="${SD_COLORS[i % SD_COLORS.length]}"/>`;
+    return `${path}<text x="${tx.toFixed(2)}" y="${ty.toFixed(2)}" transform="rotate(${mid - 90 + (mid > 180 ? 180 : 0)} ${tx.toFixed(2)} ${ty.toFixed(2)})" text-anchor="middle" dominant-baseline="middle">${esc(label)}</text>`;
+  }).join("");
+  return `<div class="sd-wheel-wrap"><span class="sd-pointer" aria-hidden="true"></span>
+    <svg class="sd-wheel" viewBox="0 0 300 300" role="img" aria-label="Ruleta con ${n} nombres"><g id="sdRot" style="transform:rotate(${SD.rot}deg)">${slices}<circle cx="${C}" cy="${C}" r="${R}" fill="none" stroke="var(--sheet)" stroke-width="3"/></g><circle cx="${C}" cy="${C}" r="18" fill="var(--sheet)" stroke="var(--rule)" stroke-width="2"/></svg></div>`;
+}
+function renderStudyDate(){
+  const known = [...new Set(Object.keys(PEOPLE).filter(id => id !== ME.id && shareable(id)).map(aliasOf))].filter(a => !SD.names.includes(a)).slice(0, 10);
+  const me = PROFILE?.alias;
+  const quick = [me, ...known].filter(a => a && !SD.names.includes(a));
+  const board = SD.names.map(nm => ({ nm, ...(SD.scores[nm] || { ok: 0, n: 0 }) })).sort((x, y) => (y.ok - x.ok) || (x.n - y.n));
+  const areaChips = [["", "Todas"], ...Object.entries(AREAS)].map(([k, t]) => `<button type="button" class="count" data-sd-area="${k}" aria-pressed="${(SD.area || "") === k}">${t}</button>`).join("");
+  let turn = "";
+  if (SD.turn){
+    const q = SD.q;
+    turn = `<div class="sd-turn"><p class="sd-who">Le toca a <b>${esc(SD.turn)}</b></p>${!q ? `<div class="empty">Buscando una pregunta…</div>` : `<article class="qcard">
+      <div class="qmeta"><span class="chip on">${esc(AREAS[q.area] || q.area)}</span>${SD.pick != null && q.topic ? `<span class="hint">${esc(q.topic)}</span>` : ""}</div>
+      <p class="stem">${esc(q.stem)}</p>
+      ${optList(q, { kind: "sd", pick: SD.pick, correct: SD.pick != null ? q.correct : null, locked: SD.pick != null })}
+      ${SD.pick != null ? feedback(SD.pick === q.correct, q.explanation, q.source, q.id) : `<p class="hint" style="margin:8px 0 0">Lean la pregunta en voz alta. ${esc(SD.turn)} elige su respuesta y se toca aquí.</p>`}
+    </article>`}</div>`;
+  }
+  return `<div class="playhead"><button class="btn ghost small" type="button" data-sd-close>Salir</button><h2 style="margin:0">Study Date</h2></div>
+    <p class="sub">Para estudiar en persona con un solo celular: giren la ruleta, a quien le salga responde una pregunta del banco (nunca la de hoy) y ResiTrack lleva el marcador. No cuenta para el ranking ni las rachas.</p>
+    <div class="sd-names">
+      <div class="sd-chips">${SD.names.map((nm, i) => `<span class="sd-name"><i style="background:${SD_COLORS[i % SD_COLORS.length]}"></i>${esc(nm)}<button type="button" aria-label="Quitar a ${esc(nm)}" data-sd-del="${i}">×</button></span>`).join("") || '<span class="hint">Todavía no hay nombres.</span>'}</div>
+      <form class="sd-add" data-sd-add><input name="nm" maxlength="24" placeholder="Nombre de quien juega" autocomplete="off"><button class="btn small" type="submit">Agregar</button></form>
+      ${quick.length ? `<div class="sd-quick counts"><span class="hint">Agregar rápido:</span>${quick.map(a => `<button type="button" class="count" data-sd-quick="${esc(a)}">+ ${esc(a)}</button>`).join("")}</div>` : ""}
+    </div>
+    <div class="sd-areas counts"><span class="hint">Tema:</span>${areaChips}</div>
+    ${sdWheel()}
+    <div class="sd-actions"><button type="button" class="btn" data-sd-spin ${SD.names.length < 2 || SD.spinning || (SD.turn && SD.pick == null) ? "disabled" : ""}>${SD.turn ? "Girar otra vez" : "Girar la ruleta"}</button></div>
+    ${turn}
+    ${board.some(b => b.n) ? `<div class="sd-board"><h3>Marcador</h3><ol>${board.map(b => `<li><span>${esc(b.nm)}</span><b>${b.ok}</b><span class="hint">de ${b.n}</span></li>`).join("")}</ol><button type="button" class="linkish" data-sd-reset>Reiniciar marcador</button></div>` : ""}`;
+}
+function shareable(id){ return !!PEOPLE[id]?.alias; }
+function sdRender(keep){ const y = window.scrollY; renderStudy(); if (keep !== false) window.scrollTo(0, y); }
+async function sdFetch(){
+  let { data } = await SB.rpc("study_date_question", { p_exclude: SD.asked, p_area: SD.area || null });
+  if (!data || !data.length){ SD.asked = []; ({ data } = await SB.rpc("study_date_question", { p_exclude: [], p_area: SD.area || null })); }
+  SD.q = (data && data[0]) || null;
+  if (!SD.q){ toast("Todavía no hay preguntas de ese tema en el banco."); SD.turn = null; }
+  else SD.asked.push(SD.q.id);
+  sdRender();
+}
+function sdSpin(){
+  const n = SD.names.length; if (n < 2 || SD.spinning) return;
+  // Le toca a alguien de quienes menos han respondido, para que todos pasen.
+  const turns = SD.names.map(nm => (SD.scores[nm]?.n || 0)), min = Math.min(...turns);
+  const pool = SD.names.map((nm, i) => i).filter(i => turns[i] === min);
+  const idx = pool[Math.floor(Math.random() * pool.length)];
+  const a = 360 / n, center = idx * a + a / 2 + (Math.random() - 0.5) * a * 0.6;
+  const cur = ((SD.rot % 360) + 360) % 360, target = ((360 - center) % 360 + 360) % 360;
+  const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  SD.rot = SD.rot + (reduce ? 0 : 360 * 5) + ((target - cur + 360) % 360);
+  SD.spinning = true; SD.turn = null; SD.q = null; SD.pick = null;
+  sdRender();
+  const g = document.getElementById("sdRot");
+  const done = () => { SD.spinning = false; SD.turn = SD.names[idx]; sdRender(); sdFetch(); };
+  if (!g || reduce){ if (g) g.style.transform = `rotate(${SD.rot}deg)`; done(); return; }
+  g.style.transition = "none";
+  requestAnimationFrame(() => { g.style.transition = "transform 3.6s cubic-bezier(.17,.67,.21,1)"; g.style.transform = `rotate(${SD.rot}deg)`; });
+  setTimeout(done, 3700);
+}
+document.addEventListener("click", e => {
+  const t = e.target;
+  if (t.closest("[data-totop]")){ window.scrollTo({ top: 0, behavior: "smooth" }); return; }
+  if (t.closest("[data-sd-open]")){ SD = { names: sdLoadNames(), scores: {}, asked: [], area: "", rot: 0, spinning: false, turn: null, q: null, pick: null }; renderStudy(); window.scrollTo(0, 0); return; }
+  if (!SD) return;
+  if (t.closest("[data-sd-close]")){ SD = null; renderStudy(); window.scrollTo(0, 0); return; }
+  const del = t.closest("[data-sd-del]"); if (del){ SD.names.splice(Number(del.dataset.sdDel), 1); sdSaveNames(); sdRender(); return; }
+  const qk = t.closest("[data-sd-quick]"); if (qk){ if (SD.names.length < 12 && !SD.names.includes(qk.dataset.sdQuick)){ SD.names.push(qk.dataset.sdQuick); sdSaveNames(); } sdRender(); return; }
+  const ar = t.closest("[data-sd-area]"); if (ar){ SD.area = ar.dataset.sdArea; sdRender(); return; }
+  if (t.closest("[data-sd-spin]")){ sdSpin(); return; }
+  if (t.closest("[data-sd-reset]")){ SD.scores = {}; SD.turn = null; SD.q = null; SD.pick = null; sdRender(); return; }
+  const op = t.closest('.opt[data-kind="sd"]');
+  if (op && !op.disabled && SD.q && SD.pick == null){
+    SD.pick = Number(op.dataset.i);
+    const sc = SD.scores[SD.turn] || (SD.scores[SD.turn] = { ok: 0, n: 0 });
+    sc.n++; if (SD.pick === SD.q.correct) sc.ok++;
+    sdRender();
+  }
+});
+document.addEventListener("submit", e => {
+  const f = e.target.closest("[data-sd-add]"); if (!f || !SD) return;
+  e.preventDefault();
+  const nm = f.nm.value.trim().replace(/\s+/g, " ");
+  if (!nm) return;
+  if (SD.names.includes(nm)){ toast("Ese nombre ya está en la ruleta."); return; }
+  if (SD.names.length >= 12){ toast("La ruleta admite hasta 12 nombres."); return; }
+  SD.names.push(nm); sdSaveNames(); sdRender();
+  setTimeout(() => document.querySelector("[data-sd-add] input")?.focus(), 0);
 });
