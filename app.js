@@ -315,9 +315,8 @@ function renderGroup(){
   }).join("");
   if (PLAY){ $("p-group").innerHTML = renderPlay(); return; }
   if (RESULT){ $("p-group").innerHTML = renderResult(); return; }
-  if (LIVE){ $("p-group").innerHTML = renderLive(); return; }
   if (PERSON_OPEN && $("pdlg").open) renderPersonDlg();
-  $("p-group").innerHTML = `${inviteBanner()}${pushBanner()}${friendReqBox()}${pendingBox()}${streakPanel()}${liveEntry()}${renderFriends()}
+  $("p-group").innerHTML = `${inviteBanner()}${pushBanner()}${friendReqBox()}${pendingBox()}${streakPanel()}${renderFriends()}
     <h2>Tus grupos</h2><p class="sub">Puedes estar en varios. Cada grupo ve tu perfil y tu avance.</p>${cards || '<div class="empty">Todavía no estás en ningún grupo. Crea uno y pásale el código a tus amigos.</div>'}${GROUPS.length ? '<h2>Otro grupo</h2>' : ''}${forms}`;
   updateBadges();
 }
@@ -836,6 +835,8 @@ function renderStudy(){
   if (!PROFILE){ el.innerHTML = `<div class="empty">Primero crea tu perfil en la pestaña Para mí.</div>`; return; }
   if (PRAC){ el.innerHTML = renderPractice(); return; }
   if (SD){ el.innerHTML = renderStudyDate(); return; }
+  if (LIVE){ el.innerHTML = renderLive(); return; }
+  if (STUDY_VIEW === "sd"){ el.innerHTML = sdMenu(); return; }
   if (STUDY_VIEW !== "daily"){ el.innerHTML = `${rankPanel()}${studyHub()}`; return; }
   const back = `<div class="playhead"><button class="btn ghost small" type="button" data-study-hub>Volver</button></div>`;
   const dow = bogotaDow();
@@ -1090,7 +1091,7 @@ function studyHub(){
     ${card("data-study-daily", sim ? "Simulacro del sábado" : "Preguntas diarias", dline, dhot)}
     ${card('data-pr="refuerzo"', "Reforzar debilidades", rline, REV.due_now > 0)}
     ${card('data-pr="sim"', "Simulacro por universidad", tu ? `Tu examen: ${tu.name}` : "UdeA o Univalle", false)}
-    ${card("data-sd-open", "Study Date", "Ruleta para estudiar en persona", false)}
+    ${card("data-sd-menu", "Study Date", "Ruleta o quiz en vivo con tus amigos", false)}
   </div>`;
 }
 function prHead(title, extra){
@@ -1206,6 +1207,7 @@ setInterval(() => {
 document.addEventListener("click", async e => {
   const t = e.target;
   if (t.closest("[data-study-daily]")){ STUDY_VIEW = "daily"; renderStudy(); window.scrollTo(0, 0); return; }
+  if (t.closest("[data-sd-menu]")){ STUDY_VIEW = "sd"; renderStudy(); window.scrollTo(0, 0); return; }
   if (t.closest("[data-study-hub]")){ STUDY_VIEW = null; renderStudy(); window.scrollTo(0, 0); return; }
   const pr = t.closest("[data-pr]");
   if (pr){
@@ -1354,8 +1356,14 @@ function leaguePanel(gid){
 
 /* ---------- quiz en vivo ---------- */
 let LIVE_POLL = null;
+function sdMenu(){
+  return `<div class="playhead"><button class="btn ghost small" type="button" data-study-hub>Volver</button><h2 style="margin:0;flex:1">Study Date</h2></div>
+    <p class="sub">Dos formas de estudiar con tus amigos. Ninguna cuenta para el ranking ni las rachas.</p>
+    <div class="sd-entry"><div><h3>Ruleta</h3><p class="hint">Para cuando están juntos con un solo celular: ponen sus nombres, giran la ruleta y a quien le salga responde una pregunta del banco. ResiTrack lleva el marcador.</p></div><button type="button" class="btn" data-sd-open>Abrir la ruleta</button></div>
+    ${liveEntry()}`;
+}
 function liveEntry(){
-  return `<div class="sd-entry live-entry"><div><h3>Quiz en vivo</h3><p class="hint">Para estudiar en grupo a distancia: todos responden la misma pregunta al tiempo y gana quien acierte más rápido.</p></div>
+  return `<div class="sd-entry live-entry"><div><h3>Quiz en vivo</h3><p class="hint">Cada quien desde su celular, juntos o a distancia: todos responden la misma pregunta al tiempo y gana quien acierte más rápido. Quien lo crea comparte un código de 5 letras.</p></div>
     <form class="live-new" data-live-new>
       <label>Tema<select name="area"><option value="">Todas</option>${Object.entries(AREAS).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select></label>
       <label>Preguntas<select name="n"><option>5</option><option selected>10</option><option>15</option></select></label>
@@ -1368,7 +1376,8 @@ async function liveOpen(code){
   const { data, error } = await SB.rpc("live_join", { p_code: code });
   if (error){ toast(error.message); return; }
   LIVE = { room: data, code: code.toUpperCase(), st: null, endsAt: 0, key: "" };
-  if (tab !== "group") setTab("group");
+  STUDY_VIEW = "sd";
+  if (tab !== "study") setTab("study");
   await livePoll(true);
   if (LIVE_POLL) clearInterval(LIVE_POLL);
   LIVE_POLL = setInterval(() => { if (document.visibilityState === "visible") livePoll(); }, 1500);
@@ -1376,7 +1385,7 @@ async function liveOpen(code){
 function liveClose(){
   LIVE = null; if (LIVE_POLL) clearInterval(LIVE_POLL); LIVE_POLL = null;
   try { history.replaceState(null, "", location.pathname); } catch(e){}
-  renderGroup(); window.scrollTo(0, 0);
+  STUDY_VIEW = "sd"; renderStudy(); window.scrollTo(0, 0);
 }
 async function livePoll(force){
   if (!LIVE || LIVE.busy) return;
@@ -1388,7 +1397,7 @@ async function livePoll(force){
     if (st.status === "q") LIVE.endsAt = Date.now() + st.left_ms;
     const changed = force || key !== LIVE.key;
     LIVE.st = st; LIVE.key = key;
-    if (changed && tab === "group" && !PLAY && !SD){ const y = st.status === LIVE.lastStatus ? window.scrollY : 0; $("p-group").innerHTML = renderLive(); window.scrollTo(0, y); }
+    if (changed && tab === "study" && !PRAC && !SD){ const y = st.status === LIVE.lastStatus ? window.scrollY : 0; $("p-study").innerHTML = renderLive(); window.scrollTo(0, y); }
     LIVE.lastStatus = st.status;
   } finally { if (LIVE) LIVE.busy = false; }
 }
@@ -1408,7 +1417,7 @@ function renderLive(){
   const head = `<div class="playhead"><button class="btn ghost small" type="button" data-live-x>Salir</button><h2 style="margin:0;flex:1">Quiz en vivo</h2><span class="code">${esc(L.code)}</span></div>`;
   if (!st) return head + `<div class="empty">Conectando…</div>`;
   if (st.status === "lobby"){
-    return `${head}<div class="live-lobby"><p class="sub" style="margin:0">Pídanle a todos que entren a <b>Amigos → Quiz en vivo</b> y escriban este código:</p>
+    return `${head}<div class="live-lobby"><p class="sub" style="margin:0">Pídanle a todos que entren a <b>Estudiar → Study Date → Quiz en vivo</b> y escriban este código:</p>
       <div class="live-code">${esc(L.code)}</div>
       <button class="btn ghost small" type="button" data-live-share>Compartir código</button>
       <h4 class="ghead">${st.players.length} ${st.players.length === 1 ? "jugador" : "jugadores"}</h4>
@@ -1518,7 +1527,7 @@ $("brandBtn").addEventListener("click", showCover);
 { const qp = new URLSearchParams(location.search);
   const inv = qp.get("amigo");
   if (inv){ try { localStorage.setItem("rt-amigo", inv); } catch(e){} tab = "group"; }
-  if (qp.get("quiz")) tab = "group";
+  if (qp.get("quiz")) tab = "study";
   if (qp.get("tab") || inv || qp.get("quiz")) showApp(); }
 
 setTab(tab);
