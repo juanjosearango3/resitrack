@@ -530,7 +530,8 @@ async function loadStudy(){
     SB.rpc("my_study_history"),
     SB.from("challenges").select("*").order("created_at", { ascending: false }).limit(30),
     SB.from("challenge_answers").select("challenge_id,user_id,score"),
-    SB.rpc("streaks_v2")
+    SB.rpc("streaks_v2"),
+    loadRank()
   ]);
   STREAKS = Object.fromEntries((k.data || []).map(r => [r.user_id, r]));
   DAILY = d.data || [];
@@ -543,6 +544,28 @@ async function loadStudy(){
 }
 
 let STREAKS = {};
+let RANK = { period: "week", scope: "all", rows: [], open: false };
+async function loadRank(){
+  const { data } = await SB.rpc("leaderboard", { p_period: RANK.period, p_scope: RANK.scope });
+  RANK.rows = data || [];
+}
+function rankPanel(){
+  const rows = RANK.rows, me = rows.find(r => r.is_me);
+  const medal = p => p === 1 ? "🥇" : p === 2 ? "🥈" : p === 3 ? "🥉" : p;
+  const pct = r => r.answered ? Math.round(100 * r.correct / r.answered) + " %" : "–";
+  const shown = RANK.open ? rows : rows.slice(0, 5);
+  const list = shown.map(r => `<li class="${r.is_me ? "me-row" : ""}"><span class="rpos">${medal(r.pos)}</span><span class="rname">${esc(r.alias)}${r.is_me ? " (tú)" : ""}</span><span class="rscore"><b>${r.correct}</b> <span class="hint">${pct(r)}</span></span></li>`).join("");
+  const meExtra = me && !shown.includes(me) ? `<li class="me-row sep"><span class="rpos">${me.pos}</span><span class="rname">${esc(me.alias)} (tú)</span><span class="rscore"><b>${me.correct}</b> <span class="hint">${pct(me)}</span></span></li>` : "";
+  const chip = (k, v, label) => `<button class="count" data-rank-${k}="${v}" aria-pressed="${RANK[k] === v}">${label}</button>`;
+  return `<div class="rank-box">
+    <div class="rank-hd"><h3>Ranking</h3><span class="hint">aciertos en las preguntas diarias</span></div>
+    <div class="counts" style="margin:8px 0 4px">${chip("period","week","Esta semana")}${chip("period","month","Este mes")}${chip("period","all","Siempre")}</div>
+    <div class="counts" style="margin:0 0 8px">${chip("scope","all","Todos")}${chip("scope","mine","Mis amigos y grupos")}</div>
+    ${rows.some(r => r.answered > 0) ? `<ol class="rank">${list}${meExtra}</ol>
+      ${rows.length > 5 ? `<button class="linkish" id="rankMore">${RANK.open ? "Ver menos" : `Ver las ${rows.length} posiciones`}</button>` : ""}`
+      : `<p class="hint" style="margin:0">Todavía nadie ha respondido en este periodo. Sé el primero en el ranking.</p>`}
+  </div>`;
+}
 const myStreak = () => STREAKS[ME?.id]?.solo || 0;
 const fire = n => `<span class="fire" aria-label="racha de ${n} ${n===1?"día":"días"}">🔥${n}</span>`;
 // Racha de batallas en riesgo: la llevan y hoy no han terminado ningún desafío juntos.
@@ -670,7 +693,7 @@ function renderStudy(){
   if (!PROFILE){ el.innerHTML = `<div class="empty">Primero crea tu perfil en la pestaña Para mí.</div>`; return; }
   if (PLAY){ el.innerHTML = renderPlay(); return; }
   if (RESULT){ el.innerHTML = renderResult(); return; }
-  el.innerHTML = `${pushBanner()}${pendingBox()}${streakPanel()}<h2>Preguntas de hoy</h2><p class="sub">Ocho de medicina (básicas, clínicas, quirúrgicas, salud pública y sistema de salud) y dos de cultura general. Cuenta tu primera respuesta.</p>
+  el.innerHTML = `${pushBanner()}${pendingBox()}${streakPanel()}${rankPanel()}<h2>Preguntas de hoy</h2><p class="sub">Ocho de medicina (básicas, clínicas, quirúrgicas, salud pública y sistema de salud) y dos de cultura general. Cuenta tu primera respuesta.</p>
     ${renderDaily()}${renderChallenges()}`;
 }
 
@@ -691,6 +714,7 @@ document.addEventListener("click", async e => {
       if (DAILY.every(x => x.my_choice != null)){
         const k = await SB.rpc("streaks_v2");
         STREAKS = Object.fromEntries((k.data || []).map(x => [x.user_id, x]));
+        await loadRank();
         renderTop();
         toast(`🔥 ${myStreak()} ${myStreak()===1?"día":"días"} seguidos. ¡Racha al día!`);
       }
@@ -758,6 +782,13 @@ document.addEventListener("click", async e => {
     } catch(err){}
     return;
   }
+  const rk = e.target.closest("[data-rank-period],[data-rank-scope]");
+  if (rk){
+    if (rk.dataset.rankPeriod) RANK.period = rk.dataset.rankPeriod;
+    if (rk.dataset.rankScope) RANK.scope = rk.dataset.rankScope;
+    await loadRank(); const y = window.scrollY; renderStudy(); window.scrollTo(0, y); return;
+  }
+  if (e.target.closest("#rankMore")){ RANK.open = !RANK.open; const y = window.scrollY; renderStudy(); window.scrollTo(0, y); return; }
   const ro = e.target.closest("[data-retar]");
   if (ro){ RETAR_OPEN = ro.dataset.retar; renderGroup(); return; }
   if (e.target.closest("[data-retar-x]")){ RETAR_OPEN = null; renderGroup(); return; }
