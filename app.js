@@ -622,10 +622,13 @@ function renderDaily(){
   if (!studyLoaded) return `<div class="empty">Cargando preguntas…</div>`;
   if (!DAILY.length) return `<div class="empty">Las preguntas de hoy todavía no están listas. Se publican cada madrugada.</div>`;
   const done = DAILY.filter(q => q.my_choice != null), ok = done.filter(q => q.is_correct).length;
-  const strip = DAILY.map(q => `<i class="${q.my_choice==null?"":q.is_correct?"ok":"bad"}" title="${q.slot}"></i>`).join("");
+  // En el simulacro el servidor no entrega aciertos ni explicaciones hasta terminar todas.
+  const hidden = done.some(q => q.is_correct == null);
+  const strip = DAILY.map(q => `<i class="${q.my_choice==null?"":q.is_correct==null?"done":q.is_correct?"ok":"bad"}" title="${q.slot}"></i>`).join("");
   const head = `<div class="sheet-head"><div class="strip" aria-label="Avance de hoy">${strip}</div>
-    <p class="sub" style="margin:6px 0 0">${done.length === DAILY.length
+    <p class="sub" style="margin:6px 0 0">${done.length === DAILY.length && !hidden
       ? `Terminaste: <b>${ok} de ${DAILY.length}</b> correctas.`
+      : hidden ? `${done.length} de ${DAILY.length} respondidas. Verás tu resultado y la retroalimentación al terminar.`
       : `${done.length} de ${DAILY.length} respondidas${done.length?`, ${ok} correctas`:""}.`}
 </p></div>`;
   const cards = DAILY.map(q => {
@@ -634,7 +637,7 @@ function renderDaily(){
       <div class="qmeta"><span class="qn">${q.slot}</span><span class="chip on">${esc(AREAS[q.area]||q.area)}</span>${answered && q.topic ? `<span class="hint">${esc(q.topic)}</span>` : ""}</div>
       <p class="stem">${esc(q.stem)}</p>
       ${optList(q, { kind:"daily", pick: q.my_choice, correct: answered ? q.correct : null, locked: answered })}
-      ${answered ? feedback(q.is_correct, q.explanation, q.source) : ""}
+      ${answered && q.correct != null ? feedback(q.is_correct, q.explanation, q.source) : answered ? `<p class="hint" style="margin:6px 0 0">Respuesta guardada. La retroalimentación aparece al final del simulacro.</p>` : ""}
     </article>`;
   }).join("");
   return head + `<div class="qlist">${cards}</div>`;
@@ -726,6 +729,7 @@ function renderStudy(){
     const n = DAILY.length || 50;
     el.innerHTML = `${rankPanel()}<h2>Simulacro</h2>
       <p class="sub">El simulacro del sábado abarca las preguntas de esta semana (lunes a viernes): ${n} preguntas en un orden nuevo y con las opciones reordenadas. Cuenta tu primera respuesta y, para sumar a tu racha, debes terminarlas todas.</p>
+      <p class="sub"><b>Como en el examen real, la retroalimentación es al final:</b> mientras respondes no verás si acertaste. Cuando termines las ${n} aparecen tu puntaje, las respuestas correctas, las explicaciones y las fuentes.</p>
       ${studyLoaded && !DAILY.length ? `<div class="empty">El simulacro de hoy todavía no está listo. Se arma a medianoche.</div>` : renderDaily()}`;
     return;
   }
@@ -748,6 +752,11 @@ document.addEventListener("click", async e => {
       const h = HISTORY.find(x => x.day === new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" }));
       if (h){ h.answered++; if (r?.is_correct) h.correct++; }
       if (DAILY.every(x => x.my_choice != null)){
+        if (DAILY.some(x => x.correct == null)){
+          const fresh = await SB.rpc("get_daily");
+          if (fresh.data) DAILY = fresh.data;
+          HISTORY = (await SB.rpc("my_study_history")).data || HISTORY;
+        }
         const k = await SB.rpc("streaks_v2");
         STREAKS = Object.fromEntries((k.data || []).map(x => [x.user_id, x]));
         await loadRank();
