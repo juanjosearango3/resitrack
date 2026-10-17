@@ -445,3 +445,19 @@ img.av{border-radius:50%;aspect-ratio:1/1;object-fit:cover}
 .live-bar{height:6px;border-radius:99px;background:var(--off-bg);overflow:hidden;margin-bottom:10px}
 .live-bar i{display:block;height:100%;background:var(--drop);transition:width .25s linear}
 @media (prefers-reduced-motion:reduce){.live-bar i{transition:none}}
+
+/* Menú de Estudiar */
+.hub{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0 6px}
+.hub-card{display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;gap:10px;min-height:118px;text-align:left;background:var(--sheet);border:1px solid var(--rule);border-radius:16px;padding:14px;color:var(--ink);font:inherit;cursor:pointer}
+.hub-card b{font-family:var(--f-display);font-size:18px;line-height:1.2}
+.hub-card span{font-size:14px;color:var(--muted);line-height:1.35}
+.hub-card.hot{border:2px solid var(--drop);background:var(--drop-soft)}
+.hub-card.hot span{color:var(--ink)}
+.hub-card:focus-visible{outline:3px solid var(--drop);outline-offset:2px}
+/* Resumen en Para mí */
+.sw-box{background:var(--sheet);border:1px solid var(--rule);border-radius:14px;padding:14px 16px;margin:10px 0 4px}
+.sw-hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.sw-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}
+.sw-grid > div > div{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.sw-chip{font-size:14px;border:1px solid var(--rule);border-radius:8px;padding:3px 8px}
+.sw-box .btn{margin-top:10px}

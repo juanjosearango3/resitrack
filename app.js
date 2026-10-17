@@ -51,12 +51,13 @@ let GROUPS = [];          // mis grupos
 let MEMBERS = [];         // filas de group_members visibles
 let FOLLOWS = [];         // mis follows + los de mi grupo
 let FEED = [];            // cambios recientes
-let tab = "all";
+let tab = "mine";
 let statusFilter = "";
 // Práctica (repaso, áreas, simulacro por universidad), liga de grupo y quiz en vivo
 let PRAC = null;          // { screen, mode, title, qs, picks, uni, startedAt, endsAt, result }
 let REV = { due_now: 0, upcoming: 0, mastered: 0, next_due: null };
 let AREA_STATS = [], BANK = 0, SIM_HIST = [], LEAGUE = {};
+let STUDY_VIEW = null;    // null = menú de Estudiar; "daily" = preguntas del día
 let LIVE = null;          // { room, code, st, endsAt, busy }
 
 const myFollow = id => FOLLOWS.find(f => f.uni_id === id && f.user_id === ME?.id);
@@ -211,7 +212,7 @@ function renderMine(){
   const fol = FOLLOWS.filter(f => f.user_id === ME.id).map(f => BY[f.uni_id]).filter(Boolean).sort(sortU);
   const rec = DATA.filter(u => !myFollow(u.id) && (PROFILE.specs||[]).some(s => OF(u).includes(s))).sort(sortU);
   const recOpen = rec.filter(u => ["open","tbd"].includes(status(u).k));
-  $("p-mine").innerHTML = `${pushBanner()}${countdownBox()}${feedHtml()}
+  $("p-mine").innerHTML = `${pushBanner()}${countdownBox()}${strengthsBox()}${feedHtml()}
     <h2>Lo que sigues</h2><p class="sub">Toca los óvalos para marcar tu avance. Tus grupos lo ven.</p>
     <div class="list">${fol.map(u => card(u,{k:"-m"})).join("") || '<div class="empty">Aún no sigues ninguna convocatoria. Abajo están las que coinciden con tus especialidades.</div>'}</div>
     <h2>Para tus especialidades</h2><p class="sub">${esc((PROFILE.specs||[]).join(", ") || "Elige especialidades en tu perfil")}. Primero las abiertas o por confirmar.</p>
@@ -314,10 +315,9 @@ function renderGroup(){
   }).join("");
   if (PLAY){ $("p-group").innerHTML = renderPlay(); return; }
   if (RESULT){ $("p-group").innerHTML = renderResult(); return; }
-  if (SD){ $("p-group").innerHTML = renderStudyDate(); return; }
   if (LIVE){ $("p-group").innerHTML = renderLive(); return; }
   if (PERSON_OPEN && $("pdlg").open) renderPersonDlg();
-  $("p-group").innerHTML = `${inviteBanner()}${pushBanner()}${friendReqBox()}${pendingBox()}${streakPanel()}${sdEntry()}${liveEntry()}${renderFriends()}
+  $("p-group").innerHTML = `${inviteBanner()}${pushBanner()}${friendReqBox()}${pendingBox()}${streakPanel()}${liveEntry()}${renderFriends()}
     <h2>Tus grupos</h2><p class="sub">Puedes estar en varios. Cada grupo ve tu perfil y tu avance.</p>${cards || '<div class="empty">Todavía no estás en ningún grupo. Crea uno y pásale el código a tus amigos.</div>'}${GROUPS.length ? '<h2>Otro grupo</h2>' : ''}${forms}`;
   updateBadges();
 }
@@ -835,21 +835,24 @@ function renderStudy(){
   if (!ME){ el.innerHTML = gate("Estudia con ResiTrack","Entra para responder las preguntas del día y retar a tus amigos."); return; }
   if (!PROFILE){ el.innerHTML = `<div class="empty">Primero crea tu perfil en la pestaña Para mí.</div>`; return; }
   if (PRAC){ el.innerHTML = renderPractice(); return; }
+  if (SD){ el.innerHTML = renderStudyDate(); return; }
+  if (STUDY_VIEW !== "daily"){ el.innerHTML = `${rankPanel()}${studyHub()}`; return; }
+  const back = `<div class="playhead"><button class="btn ghost small" type="button" data-study-hub>Volver</button></div>`;
   const dow = bogotaDow();
   if (dow === 0 && !DAILY.length){
-    el.innerHTML = `${rankPanel()}${practiceStrip()}<h2>Domingo: día de descanso</h2>
+    el.innerHTML = `${back}<h2>Domingo: día de descanso</h2>
       <p class="sub">Hoy no hay preguntas. Descansa: el domingo no rompe tu racha ni tus rachas de batallas. Si quieres, igual puedes retar a alguien. Mañana vuelven las preguntas diarias.</p>`;
     return;
   }
   if (isSimDay()){
     const n = DAILY.length || 50;
-    el.innerHTML = `${rankPanel()}${practiceStrip()}<h2>Simulacro</h2>
+    el.innerHTML = `${back}<h2>Simulacro</h2>
       <p class="sub">El simulacro del sábado abarca las preguntas de esta semana (lunes a viernes): ${n} preguntas en un orden nuevo y con las opciones reordenadas. Cuenta tu primera respuesta y, para sumar a tu racha, debes terminarlas todas.</p>
       <p class="sub"><b>Como en el examen real, la retroalimentación es al final:</b> mientras respondes no verás si acertaste. Cuando termines las ${n} aparecen tu puntaje, las respuestas correctas, las explicaciones y las fuentes.</p>
       ${studyLoaded && !DAILY.length ? `<div class="empty">El simulacro de hoy todavía no está listo. Se arma a medianoche.</div>` : renderDaily()}`;
     return;
   }
-  el.innerHTML = `${rankPanel()}${practiceStrip()}<h2>Preguntas diarias: ${DIAS[dow]}</h2><p class="sub">Ocho de medicina (básicas, clínicas, quirúrgicas, salud pública y sistema de salud) y dos de cultura general. Cuenta tu primera respuesta.</p>
+  el.innerHTML = `${back}<h2>Preguntas diarias: ${DIAS[dow]}</h2><p class="sub">Ocho de medicina (básicas, clínicas, quirúrgicas, salud pública y sistema de salud) y dos de cultura general. Cuenta tu primera respuesta.</p>
     ${renderDaily()}`;
 }
 
@@ -1070,13 +1073,24 @@ function weakestArea(){
   const c = AREA_STATS.filter(x => x.answered >= 3 && x.area !== "cultura").sort((x, y) => (x.correct / x.answered) - (y.correct / y.answered));
   return c[0] && c[0].correct < c[0].answered ? c[0] : null;
 }
-function practiceStrip(){
+function studyHub(){
+  const dow = bogotaDow(), sim = isSimDay(), n = DAILY.length;
+  const done = DAILY.filter(q => q.my_choice != null).length, ok = DAILY.filter(q => q.is_correct).length;
+  let dline, dhot = false;
+  if (!studyLoaded) dline = "Cargando…";
+  else if (dow === 0 && !n) dline = "Hoy es domingo: descanso";
+  else if (!n) dline = sim ? "El simulacro se arma a medianoche" : "Se publican cada madrugada";
+  else if (done < n){ dline = sim ? `${done} de ${n} respondidas` : `${n - done} por responder hoy`; dhot = true; }
+  else dline = DAILY.some(q => q.correct == null) ? "Entregado" : `Terminaste: ${ok} de ${n}`;
   const w = weakestArea();
-  const rv = REV.due_now ? `${REV.due_now} para hoy` : REV.upcoming ? `próximo: ${fmtS(REV.next_due)}` : "sin errores pendientes";
-  return `<div class="pr-strip" role="group" aria-label="Practicar más">
-    <button type="button" class="pr-btn${REV.due_now ? " hot" : ""}" data-pr="review"><b>Repaso</b><span>${rv}</span></button>
-    <button type="button" class="pr-btn" data-pr="areas"><b>Mis áreas</b><span>${w ? `más floja: ${esc(AREAS[w.area])}` : "tus aciertos por área"}</span></button>
-    <button type="button" class="pr-btn" data-pr="sim"><b>Simulacro</b><span>UdeA o Univalle</span></button>
+  const rline = REV.due_now ? `${REV.due_now} para repasar hoy` : w ? `Más floja: ${AREAS[w.area]}` : REV.upcoming ? `Próximo repaso: ${fmtS(REV.next_due)}` : "Tus aciertos por área";
+  const tu = PROFILE?.target_uni && SIM_FMT[PROFILE.target_uni];
+  const card = (attr, title, line, hot) => `<button type="button" class="hub-card${hot ? " hot" : ""}" ${attr}><b>${title}</b><span>${esc(line)}</span></button>`;
+  return `<div class="hub">
+    ${card("data-study-daily", sim ? "Simulacro del sábado" : "Preguntas diarias", dline, dhot)}
+    ${card('data-pr="refuerzo"', "Reforzar debilidades", rline, REV.due_now > 0)}
+    ${card('data-pr="sim"', "Simulacro por universidad", tu ? `Tu examen: ${tu.name}` : "UdeA o Univalle", false)}
+    ${card("data-sd-open", "Study Date", "Ruleta para estudiar en persona", false)}
   </div>`;
 }
 function prHead(title, extra){
@@ -1086,8 +1100,14 @@ function renderAreas(){
   const rows = Object.keys(AREAS).map(k => AREA_STATS.find(x => x.area === k) || { area: k, answered: 0, correct: 0, topics: [] });
   const w = weakestArea();
   const any = rows.some(r => r.answered);
-  return `${prHead("Mis áreas")}
-    <p class="sub">Tus aciertos en las preguntas diarias, por área. Toca Practicar para hacer 10 preguntas del banco de esa área: primero las que no has visto o fallaste. No cuentan para el ranking ni las rachas, y lo que falles pasa a tu repaso.</p>
+  const rev = REV.due_now
+    ? `<div class="sim-go"><span><b>${REV.due_now}</b> ${REV.due_now === 1 ? "pregunta fallada vuelve" : "preguntas falladas vuelven"} hoy</span><button type="button" class="btn" data-pr="review">Repasar</button></div>`
+    : `<p style="margin:0">${REV.upcoming ? `Hoy no tienes repaso. El próximo es el <b>${fmtS(REV.next_due)}</b> (${REV.upcoming} en cola).` : "Aún no tienes errores para repasar."}</p>`;
+  return `${prHead("Reforzar debilidades")}
+    <div class="sim-card"><h3 style="margin:0 0 6px">Repaso de errores</h3>${rev}
+      <p class="hint" style="margin:8px 0 0">Lo que fallas vuelve a los 3 días; si lo aciertas, a los 7; si lo vuelves a acertar, queda dominado.${REV.mastered ? ` Llevas ${REV.mastered} ${REV.mastered === 1 ? "dominada" : "dominadas"}.` : ""}</p></div>
+    <h3 style="margin:18px 0 4px">Por área</h3>
+    <p class="sub">Tus aciertos en las preguntas diarias. Practicar trae 10 preguntas del banco de esa área, primero las que no has visto o fallaste. No cuenta para el ranking ni las rachas, y lo que falles pasa a tu repaso.</p>
     ${any ? "" : `<div class="empty">Todavía no hay datos. Responde las preguntas diarias y aquí verás en qué vas bien y en qué no.</div>`}
     <div class="areas">${rows.map(r => {
       const p = pctOf(r.correct, r.answered), weak = w && w.area === r.area;
@@ -1139,7 +1159,7 @@ function renderRun(){
   }).join("");
   const bar = sim
     ? `<div class="submitbar"><span class="hint">${done} de ${P.qs.length}</span><button class="btn" type="button" data-pr-finish>Terminar y ver resultado</button></div>`
-    : done === P.qs.length ? `<div class="sim-card" style="margin-top:14px"><b>Listo: ${P.qs.filter((q, i) => P.picks[i] === q.correct).length} de ${P.qs.length} correctas.</b>${P.mode === "review" ? ` ${REV.due_now ? `Te quedan ${REV.due_now} para hoy.` : "Terminaste el repaso de hoy."}` : ""}<div style="margin-top:10px"><button class="btn small" type="button" data-pr-back>Volver a Estudiar</button></div></div>` : "";
+    : done === P.qs.length ? `<div class="sim-card" style="margin-top:14px"><b>Listo: ${P.qs.filter((q, i) => P.picks[i] === q.correct).length} de ${P.qs.length} correctas.</b>${P.mode === "review" ? ` ${REV.due_now ? `Te quedan ${REV.due_now} para hoy.` : "Terminaste el repaso de hoy."}` : ""}<div style="margin-top:10px"><button class="btn small" type="button" data-pr-back>Volver</button></div></div>` : "";
   return `${prHead(esc(P.title), clock)}<p class="sub">${intro}</p><div class="qlist">${cards}</div>${bar}`;
 }
 function renderSimResult(){
@@ -1185,6 +1205,8 @@ setInterval(() => {
 
 document.addEventListener("click", async e => {
   const t = e.target;
+  if (t.closest("[data-study-daily]")){ STUDY_VIEW = "daily"; renderStudy(); window.scrollTo(0, 0); return; }
+  if (t.closest("[data-study-hub]")){ STUDY_VIEW = null; renderStudy(); window.scrollTo(0, 0); return; }
   const pr = t.closest("[data-pr]");
   if (pr){
     const k = pr.dataset.pr;
@@ -1195,14 +1217,14 @@ document.addEventListener("click", async e => {
       if (!data?.length){ toast("Hoy no tienes repaso."); return; }
       PRAC = { screen: "run", mode: "review", title: "Repaso de errores", qs: data, picks: data.map(() => null) };
     }
-    if (k === "areas") PRAC = { screen: "areas" };
+    if (k === "areas" || k === "refuerzo") PRAC = { screen: "areas" };
     if (k === "sim") PRAC = { screen: "simsetup", uni: PROFILE?.target_uni && SIM_FMT[PROFILE.target_uni] ? PROFILE.target_uni : null };
     renderStudy(); window.scrollTo(0, 0); return;
   }
   if (!PRAC) return;
   if (t.closest("[data-pr-back]")){
     if (PRAC.mode === "sim" && PRAC.screen === "run" && PRAC.picks.some(x => x != null) && !confirm("¿Salir del simulacro? Se pierde lo que llevas.")) return;
-    const back = PRAC.screen === "run" && PRAC.mode === "area" ? { screen: "areas" } : null;
+    const back = PRAC.screen === "run" && (PRAC.mode === "area" || PRAC.mode === "review") ? { screen: "areas" } : null;
     PRAC = back; renderStudy(); window.scrollTo(0, 0);
     loadPractice().then(() => { if (tab === "study") renderStudy(); });
     return;
@@ -1246,6 +1268,31 @@ document.addEventListener("click", async e => {
       SB.rpc("review_add", { p_qids: [q.id] });
     }
   }
+});
+
+/* ---------- resumen de fortalezas y debilidades (Para mí) ---------- */
+function strengthsBox(){
+  const rows = AREA_STATS.filter(x => x.answered >= 3);
+  const tot = AREA_STATS.reduce((a, x) => [a[0] + x.correct, a[1] + x.answered], [0, 0]);
+  if (!tot[1]) return "";
+  const by = [...rows].sort((a, b) => (b.correct / b.answered) - (a.correct / a.answered));
+  const strong = by.filter(x => x.correct / x.answered >= 0.7).slice(0, 2);
+  const weak = [...by].reverse().filter(x => x.correct / x.answered < 0.6).slice(0, 2);
+  const chip = x => `<span class="sw-chip">${esc(AREAS[x.area] || x.area)} <b>${pctOf(x.correct, x.answered)} %</b></span>`;
+  const last = SIM_HIST[0];
+  return `<div class="sw-box">
+    <div class="sw-hd"><h3 style="margin:0">Tu resumen de estudio</h3><span class="hint">${tot[0]} de ${tot[1]} correctas · ${pctOf(tot[0], tot[1])} %</span></div>
+    <div class="sw-grid">
+      <div><span class="hint">Fortalezas</span><div>${strong.map(chip).join("") || `<span class="hint">Aún sin datos suficientes</span>`}</div></div>
+      <div><span class="hint">Por reforzar</span><div>${weak.map(chip).join("") || `<span class="hint">${rows.length ? "Nada por debajo del 60 %" : "Aún sin datos suficientes"}</span>`}</div></div>
+    </div>
+    <p class="hint" style="margin:8px 0 0">${REV.due_now ? `Tienes ${REV.due_now} ${REV.due_now === 1 ? "pregunta" : "preguntas"} de repaso para hoy. ` : ""}${last ? `Último simulacro (${esc(SIM_FMT[last.uni]?.name || last.uni)}): ${pctOf(last.correct, last.n)} %. ` : ""}Las áreas cuentan desde 3 respuestas.</p>
+    <button type="button" class="btn small" data-go-refuerzo>Reforzar en Estudiar</button>
+  </div>`;
+}
+document.addEventListener("click", e => {
+  if (!e.target.closest("[data-go-refuerzo]")) return;
+  PRAC = { screen: "areas" }; setTab("study"); window.scrollTo(0, 0);
 });
 
 /* ---------- cuenta regresiva al examen ---------- */
@@ -1545,7 +1592,7 @@ function renderStudyDate(){
     ${board.some(b => b.n) ? `<div class="sd-board"><h3>Marcador</h3><ol>${board.map(b => `<li><span>${esc(b.nm)}</span><b>${b.ok}</b><span class="hint">de ${b.n}</span></li>`).join("")}</ol><button type="button" class="linkish" data-sd-reset>Reiniciar marcador</button></div>` : ""}`;
 }
 function shareable(id){ return !!PEOPLE[id]?.alias; }
-function sdRender(keep){ const y = window.scrollY; renderGroup(); if (keep !== false) window.scrollTo(0, y); }
+function sdRender(keep){ const y = window.scrollY; renderStudy(); if (keep !== false) window.scrollTo(0, y); }
 async function sdFetch(){
   let { data } = await SB.rpc("study_date_question", { p_exclude: SD.asked, p_area: SD.area || null });
   if (!data || !data.length){ SD.asked = []; ({ data } = await SB.rpc("study_date_question", { p_exclude: [], p_area: SD.area || null })); }
@@ -1576,9 +1623,9 @@ function sdSpin(){
 document.addEventListener("click", e => {
   const t = e.target;
   if (t.closest("[data-totop]")){ window.scrollTo({ top: 0, behavior: "smooth" }); return; }
-  if (t.closest("[data-sd-open]")){ SD = { names: sdLoadNames(), scores: {}, asked: [], area: "", rot: 0, spinning: false, turn: null, q: null, pick: null }; if (tab !== "group") setTab("group"); else renderGroup(); window.scrollTo(0, 0); return; }
+  if (t.closest("[data-sd-open]")){ SD = { names: sdLoadNames(), scores: {}, asked: [], area: "", rot: 0, spinning: false, turn: null, q: null, pick: null }; if (tab !== "study") setTab("study"); else renderStudy(); window.scrollTo(0, 0); return; }
   if (!SD) return;
-  if (t.closest("[data-sd-close]")){ SD = null; renderGroup(); window.scrollTo(0, 0); return; }
+  if (t.closest("[data-sd-close]")){ SD = null; renderStudy(); window.scrollTo(0, 0); return; }
   const del = t.closest("[data-sd-del]"); if (del){ SD.names.splice(Number(del.dataset.sdDel), 1); sdSaveNames(); sdRender(); return; }
   const qk = t.closest("[data-sd-quick]"); if (qk){ if (SD.names.length < 12 && !SD.names.includes(qk.dataset.sdQuick)){ SD.names.push(qk.dataset.sdQuick); sdSaveNames(); } sdRender(); return; }
   const ar = t.closest("[data-sd-area]"); if (ar){ SD.area = ar.dataset.sdArea; sdRender(); return; }
