@@ -1565,7 +1565,7 @@ function sdWheel(){
     const [x1, y1] = pt(i * a, R), [x2, y2] = pt((i + 1) * a, R), large = a > 180 ? 1 : 0;
     const mid = i * a + a / 2, [tx, ty] = pt(mid, R * 0.62);
     const label = name.length > 12 ? name.slice(0, 11) + "…" : name;
-    const path = n === 1 ? `<circle cx="${C}" cy="${C}" r="${R}"/>` : `<path d="M${C},${C} L${x1.toFixed(2)},${y1.toFixed(2)} A${R},${R} 0 ${large} 1 ${x2.toFixed(2)},${y2.toFixed(2)} Z" fill="${SD_COLORS[i % SD_COLORS.length]}"/>`;
+    const path = n === 1 ? `<circle cx="${C}" cy="${C}" r="${R}"/>` : `<path d="M${C},${C} L${x1.toFixed(2)},${y1.toFixed(2)} A${R},${R} 0 ${large} 1 ${x2.toFixed(2)},${y2.toFixed(2)} Z" fill="${SD_COLORS[i % SD_COLORS.length]}"${sdAway(name) ? ' opacity=".28"' : ""}/>`;
     return `${path}<text x="${tx.toFixed(2)}" y="${ty.toFixed(2)}" transform="rotate(${mid - 90 + (mid > 180 ? 180 : 0)} ${tx.toFixed(2)} ${ty.toFixed(2)})" text-anchor="middle" dominant-baseline="middle">${esc(label)}</text>`;
   }).join("");
   return `<div class="sd-wheel-wrap"><span class="sd-pointer" aria-hidden="true"></span>
@@ -1590,21 +1590,26 @@ function renderStudyDate(){
   return `<div class="playhead"><button class="btn ghost small" type="button" data-sd-close>Salir</button><h2 style="margin:0">Study Date</h2></div>
     <p class="sub">Para estudiar en persona con un solo celular: giren la ruleta, a quien le salga responde una pregunta del banco (nunca la de hoy) y ResiTrack lleva el marcador. No cuenta para el ranking ni las rachas.</p>
     <div class="sd-names">
-      <div class="sd-chips">${SD.names.map((nm, i) => `<span class="sd-name"><i style="background:${SD_COLORS[i % SD_COLORS.length]}"></i>${esc(nm)}<button type="button" aria-label="Quitar a ${esc(nm)}" data-sd-del="${i}">×</button></span>`).join("") || '<span class="hint">Todavía no hay nombres.</span>'}</div>
+      <div class="sd-chips">${SD.names.map((nm, i) => `<span class="sd-name${sdAway(nm) ? " away" : ""}"><button type="button" class="sd-away" data-sd-away="${i}" aria-pressed="${sdAway(nm)}" title="${sdAway(nm) ? "Volver a incluir" : "Poner en pausa"}"><i style="background:${SD_COLORS[i % SD_COLORS.length]}"></i>${esc(nm)}${sdAway(nm) ? " · en pausa" : ""}</button><button type="button" aria-label="Quitar a ${esc(nm)}" data-sd-del="${i}">×</button></span>`).join("") || '<span class="hint">Todavía no hay nombres.</span>'}</div>
+      ${SD.names.length ? `<p class="hint" style="margin:6px 0 0">Si alguien sale un momento, toca su nombre para ponerlo en pausa: la ruleta no lo escoge hasta que lo vuelvas a tocar.</p>` : ""}
       <form class="sd-add" data-sd-add><input name="nm" maxlength="24" placeholder="Nombre de quien juega" autocomplete="off"><button class="btn small" type="submit">Agregar</button></form>
       ${quick.length ? `<div class="sd-quick counts"><span class="hint">Agregar rápido:</span>${quick.map(a => `<button type="button" class="count" data-sd-quick="${esc(a)}">+ ${esc(a)}</button>`).join("")}</div>` : ""}
     </div>
     <div class="sd-areas counts"><span class="hint">Tema:</span>${areaChips}</div>
     ${sdWheel()}
-    <div class="sd-actions"><button type="button" class="btn" data-sd-spin ${SD.names.length < 2 || SD.spinning || (SD.turn && SD.pick == null) ? "disabled" : ""}>${SD.turn ? "Girar otra vez" : "Girar la ruleta"}</button></div>
+    <div class="sd-actions"><button type="button" class="btn" data-sd-spin ${sdActive().length < 1 || SD.names.length < 2 || SD.spinning ? "disabled" : ""}>${SD.turn && SD.pick == null ? "Saltar y girar otra vez" : SD.turn ? "Girar otra vez" : "Girar la ruleta"}</button></div>
     ${turn}
     ${board.some(b => b.n) ? `<div class="sd-board"><h3>Marcador</h3><ol>${board.map(b => `<li><span>${esc(b.nm)}</span><b>${b.ok}</b><span class="hint">de ${b.n}</span></li>`).join("")}</ol><button type="button" class="linkish" data-sd-reset>Reiniciar marcador</button></div>` : ""}`;
 }
+const sdAway = nm => !!SD?.away?.includes(nm);
+const sdActive = () => SD.names.filter(nm => !sdAway(nm));
 function shareable(id){ return !!PEOPLE[id]?.alias; }
 function sdRender(keep){ const y = window.scrollY; renderStudy(); if (keep !== false) window.scrollTo(0, y); }
 async function sdFetch(){
+  const seq = SD.seq = (SD.seq || 0) + 1;
   let { data } = await SB.rpc("study_date_question", { p_exclude: SD.asked, p_area: SD.area || null });
   if (!data || !data.length){ SD.asked = []; ({ data } = await SB.rpc("study_date_question", { p_exclude: [], p_area: SD.area || null })); }
+  if (!SD || SD.seq !== seq) return;
   SD.q = (data && data[0]) || null;
   if (!SD.q){ toast("Todavía no hay preguntas de ese tema en el banco."); SD.turn = null; }
   else SD.asked.push(SD.q.id);
@@ -1612,9 +1617,14 @@ async function sdFetch(){
 }
 function sdSpin(){
   const n = SD.names.length; if (n < 2 || SD.spinning) return;
-  // Le toca a alguien de quienes menos han respondido, para que todos pasen.
-  const turns = SD.names.map(nm => (SD.scores[nm]?.n || 0)), min = Math.min(...turns);
-  const pool = SD.names.map((nm, i) => i).filter(i => turns[i] === min);
+  // Si se salta a alguien sin responder, cuenta como turno para el reparto (no para el marcador).
+  if (SD.turn && SD.pick == null) SD.skips[SD.turn] = (SD.skips[SD.turn] || 0) + 1;
+  // Le toca a alguien de quienes menos turnos llevan, sin contar a quienes están en pausa.
+  const act = SD.names.map((nm, i) => i).filter(i => !sdAway(SD.names[i]));
+  if (!act.length){ toast("Todos están en pausa. Toca un nombre para incluirlo."); return; }
+  const turns = SD.names.map(nm => (SD.scores[nm]?.n || 0) + (SD.skips[nm] || 0));
+  const min = Math.min(...act.map(i => turns[i]));
+  const pool = act.filter(i => turns[i] === min);
   const idx = pool[Math.floor(Math.random() * pool.length)];
   const a = 360 / n, center = idx * a + a / 2 + (Math.random() - 0.5) * a * 0.6;
   const cur = ((SD.rot % 360) + 360) % 360, target = ((360 - center) % 360 + 360) % 360;
@@ -1623,23 +1633,25 @@ function sdSpin(){
   SD.spinning = true; SD.turn = null; SD.q = null; SD.pick = null;
   sdRender();
   const g = document.getElementById("sdRot");
-  const done = () => { SD.spinning = false; SD.turn = SD.names[idx]; sdRender(); sdFetch(); };
+  const done = () => { if (!SD) return; SD.spinning = false; SD.turn = SD.names[idx]; sdRender(); sdFetch(); };
   if (!g || reduce){ if (g) g.style.transform = `rotate(${SD.rot}deg)`; done(); return; }
   g.style.transition = "none";
   requestAnimationFrame(() => { g.style.transition = "transform 3.6s cubic-bezier(.17,.67,.21,1)"; g.style.transform = `rotate(${SD.rot}deg)`; });
-  setTimeout(done, 3700);
+  setTimeout(() => { if (SD && SD.spinning) done(); }, 3700);
 }
 document.addEventListener("click", e => {
   const t = e.target;
   if (t.closest("[data-totop]")){ window.scrollTo({ top: 0, behavior: "smooth" }); return; }
-  if (t.closest("[data-sd-open]")){ SD = { names: sdLoadNames(), scores: {}, asked: [], area: "", rot: 0, spinning: false, turn: null, q: null, pick: null }; if (tab !== "study") setTab("study"); else renderStudy(); window.scrollTo(0, 0); return; }
+  if (t.closest("[data-sd-open]")){ SD = { names: sdLoadNames(), scores: {}, skips: {}, away: [], asked: [], area: "", rot: 0, spinning: false, turn: null, q: null, pick: null }; if (tab !== "study") setTab("study"); else renderStudy(); window.scrollTo(0, 0); return; }
   if (!SD) return;
   if (t.closest("[data-sd-close]")){ SD = null; renderStudy(); window.scrollTo(0, 0); return; }
-  const del = t.closest("[data-sd-del]"); if (del){ SD.names.splice(Number(del.dataset.sdDel), 1); sdSaveNames(); sdRender(); return; }
+  const aw = t.closest("[data-sd-away]");
+  if (aw){ const nm = SD.names[Number(aw.dataset.sdAway)]; SD.away = sdAway(nm) ? SD.away.filter(x => x !== nm) : [...SD.away, nm]; sdRender(); return; }
+  const del = t.closest("[data-sd-del]"); if (del){ const gone = SD.names.splice(Number(del.dataset.sdDel), 1)[0]; if (gone === SD.turn){ SD.turn = null; SD.q = null; SD.pick = null; } SD.away = SD.away.filter(x => x !== gone); sdSaveNames(); sdRender(); return; }
   const qk = t.closest("[data-sd-quick]"); if (qk){ if (SD.names.length < 12 && !SD.names.includes(qk.dataset.sdQuick)){ SD.names.push(qk.dataset.sdQuick); sdSaveNames(); } sdRender(); return; }
   const ar = t.closest("[data-sd-area]"); if (ar){ SD.area = ar.dataset.sdArea; sdRender(); return; }
   if (t.closest("[data-sd-spin]")){ sdSpin(); return; }
-  if (t.closest("[data-sd-reset]")){ SD.scores = {}; SD.turn = null; SD.q = null; SD.pick = null; sdRender(); return; }
+  if (t.closest("[data-sd-reset]")){ SD.scores = {}; SD.skips = {}; SD.turn = null; SD.q = null; SD.pick = null; sdRender(); return; }
   const op = t.closest('.opt[data-kind="sd"]');
   if (op && !op.disabled && SD.q && SD.pick == null){
     SD.pick = Number(op.dataset.i);

@@ -461,3 +461,6 @@ img.av{border-radius:50%;aspect-ratio:1/1;object-fit:cover}
 .sw-grid > div > div{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
 .sw-chip{font-size:14px;border:1px solid var(--rule);border-radius:8px;padding:3px 8px}
 .sw-box .btn{margin-top:10px}
+.sd-name .sd-away{display:inline-flex;align-items:center;gap:6px;font:inherit;font-weight:700;color:var(--ink);font-size:inherit;padding:0}
+.sd-name.away{opacity:.6;border-style:dashed}
+.sd-name.away .sd-away{font-weight:400}
