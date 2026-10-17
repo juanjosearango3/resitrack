@@ -223,7 +223,13 @@ function personCard(id, gid){
       const i = STAGES.findIndex(s => s[0] === x.stage);
       return `<div><span>${esc(u.name.split(" · ")[0].replace("Pontificia Universidad ","P. U. ").replace("Universidad ","U. "))}</span><span class="dots" title="${esc(STAGES[i]?.[1]||"")}">${STAGES.map((s,j) => `<i class="${j<=i?"f":""}"></i>`).join("")}</span></div>`;
     }).join("") : '<span class="hint">Aún no sigue convocatorias.</span>'}</div>
-    ${gid === null && id !== ME.id ? `<button class="linkish" data-funfriend="${id}">Quitar de amigos</button>` : ""}</div>`;
+    ${gid === null && id !== ME.id ? `<button class="linkish" data-funfriend="${id}">Quitar de amigos</button>` : ""}
+    ${gid && id !== ME.id && !FRIENDS.includes(id) ? (() => {
+      const rq = FREQS.find(r => r.other === id);
+      if (rq && rq.incoming) return `<button class="btn small" data-faccept="${id}">Aceptar solicitud de amistad</button>`;
+      if (rq) return `<span class="hint">Solicitud de amistad enviada</span>`;
+      return `<button class="btn ghost small" data-fadd="${id}">Agregar amigo</button>`;
+    })() : (gid && FRIENDS.includes(id) ? `<span class="hint">Ya son amigos</span>` : "")}</div>`;
 }
 
 function renderFriends(){
@@ -727,6 +733,13 @@ document.addEventListener("click", async e => {
     toast(ok ? "Ahora son amigos." : "Solicitud rechazada.");
     await loadAll(); await loadStudy(); renderAllTabs(); return;
   }
+  const fad = e.target.closest("[data-fadd]");
+  if (fad){
+    const { data, error } = await SB.rpc("send_friend_request_to", { p_other: fad.dataset.fadd });
+    if (error){ toast(error.message); return; }
+    toast({ enviada: `Solicitud enviada a ${aliasOf(fad.dataset.fadd)}.`, aceptada: "Ahora son amigos.", ya_amigos: "Ya son amigos.", pendiente: "Ya le habías enviado la solicitud." }[data] || "Listo.");
+    await loadAll(); await loadStudy(); renderAllTabs(); return;
+  }
   const uf2 = e.target.closest("[data-funfriend]");
   if (uf2){
     if (!confirm(`¿Quitar a ${aliasOf(uf2.dataset.funfriend)} de tus amigos?`)) return;
@@ -812,14 +825,21 @@ async function boot(){
 try { const t = localStorage.getItem("rt-tab"); if (t && ["all","mine","study","group"].includes(t)) tab = t; } catch(e){}
 // Al abrir un aviso, la URL trae la pestaña (?tab=study).
 { const t = new URLSearchParams(location.search).get("tab"); if (t && ["all","mine","study","group"].includes(t)) tab = t; }
-/* ---------- portada ---------- */
-function showApp(){
-  $("cover").hidden = true; $("app").hidden = false; window.scrollTo(0, 0);
+/* ---------- portada e instrucciones ---------- */
+const views = ["cover","guide","app"];
+function show(v){ views.forEach(k => $(k).hidden = k !== v); window.scrollTo(0, 0); }
+function showApp(){ show("app"); }
+function showCover(){ show("cover"); }
+// Usuario "viejo": ya vio las instrucciones en este dispositivo o ya tiene perfil.
+function isReturning(){
+  let seen = false; try { seen = localStorage.getItem("rt-guia") === "1"; } catch(e){}
+  return seen || !!PROFILE;
 }
-function showCover(){
-  $("app").hidden = true; $("cover").hidden = false; window.scrollTo(0, 0);
-}
-["startBtn","startBtn2"].forEach(id => $(id).addEventListener("click", showApp));
+function showGuide(){ $("guideSkip").hidden = !isReturning(); show("guide"); }
+function finishGuide(){ try { localStorage.setItem("rt-guia", "1"); } catch(e){} showApp(); }
+$("startBtn").addEventListener("click", showGuide);
+$("guideDone").addEventListener("click", finishGuide);
+$("guideSkip").addEventListener("click", finishGuide);
 $("brandBtn").addEventListener("click", showCover);
 // Si se entra desde un aviso (?tab=...) o una invitación (?amigo=...), se salta la portada.
 { const qp = new URLSearchParams(location.search);
