@@ -179,7 +179,7 @@ function pushBanner(){
   const iOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
   const standalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
   if (iOS && !standalone)
-    return `<div class="banner">Para recibir avisos en iPhone, toca Compartir en Safari y elige <b>Agregar a pantalla de inicio</b>. Luego abre ResiTrack desde ahí.</div>`;
+    return `<div class="banner"><span>Para recibir avisos en iPhone, instala la app: en Safari toca Compartir y elige <b>Agregar a pantalla de inicio</b>. Luego abre ResiTrack desde ahí.</span></div>`;
   if (Notification.permission === "granted") return "";
   if (Notification.permission === "denied")
     return `<div class="banner">Los avisos están bloqueados en este navegador. Actívalos en los ajustes del sitio si quieres recibirlos.</div>`;
@@ -250,12 +250,17 @@ function personDetail(id, gid){
 
 function renderFriends(){
   const code = PROFILE.friend_code || "";
-  const incoming = FREQS.filter(r => r.incoming), outgoing = FREQS.filter(r => !r.incoming);
-  const reqs = incoming.length ? `<div class="duebox"><h3>Solicitudes de amistad</h3><div class="chlist">${incoming.map(r =>
+  return renderFriendsBody(code, FREQS.filter(r => !r.incoming));
+}
+function friendReqBox(){
+  const incoming = FREQS.filter(r => r.incoming);
+  return incoming.length ? `<div class="duebox"><h3>Solicitudes de amistad</h3><div class="chlist">${incoming.map(r =>
     `<div class="chrow"><span><b>${esc(r.alias)}</b>${r.city?` · ${esc(r.city)}`:""} quiere ser tu amigo</span><span><button class="btn small" data-faccept="${r.other}">Aceptar</button> <button class="btn ghost small" data-freject="${r.other}">Rechazar</button></span></div>`).join("")}</div></div>` : "";
+}
+function renderFriendsBody(code, outgoing){
   const cards = FRIENDS.map(id => personCard(id, null)).join("");
   const cs = CHALLS.filter(c => !c.group_id).slice(0, 6);
-  return `${reqs}<h2>Tus amigos</h2><p class="sub">Para quienes no están en tus grupos. Tus amigos ven tu perfil y tu avance, y pueden retarte.</p>
+  return `<h2>Tus amigos</h2><p class="sub">Para quienes no están en tus grupos. Tus amigos ven tu perfil y tu avance, y pueden retarte.</p>
     <div class="fcode"><div><span class="hint">Tu código de amigo</span> <span class="code">${esc(code)}</span></div><button class="btn small" id="shareCode">Compartir invitación</button></div>
     <form id="friendForm" class="fadd"><input id="f-code" maxlength="6" placeholder="Código de tu amigo" style="text-transform:uppercase" required><button class="btn small" type="submit">Agregar</button></form>
     ${outgoing.length ? `<h4 class="ghead">Solicitudes enviadas</h4><div class="chlist">${outgoing.map(r =>
@@ -305,7 +310,7 @@ function renderGroup(){
   if (RESULT){ $("p-group").innerHTML = renderResult(); return; }
   if (SD){ $("p-group").innerHTML = renderStudyDate(); return; }
   if (PERSON_OPEN && $("pdlg").open) renderPersonDlg();
-  $("p-group").innerHTML = `${inviteBanner()}${pushBanner()}${pendingBox()}${streakPanel()}${sdEntry()}${renderFriends()}
+  $("p-group").innerHTML = `${inviteBanner()}${pushBanner()}${friendReqBox()}${pendingBox()}${streakPanel()}${sdEntry()}${renderFriends()}
     <h2>Tus grupos</h2><p class="sub">Puedes estar en varios. Cada grupo ve tu perfil y tu avance.</p>${cards || '<div class="empty">Todavía no estás en ningún grupo. Crea uno y pásale el código a tus amigos.</div>'}${GROUPS.length ? '<h2>Otro grupo</h2>' : ''}${forms}`;
   updateBadges();
 }
@@ -1010,6 +1015,25 @@ async function boot(){
   }
   if (ME && PROFILE){ await loadStudy(); renderTop(); if (tab === "study") renderStudy(); if (tab === "group") renderGroup(); }
 }
+// Al volver a la app (o al llegar un aviso) se recargan solicitudes, retos y rachas: la app instalada no se recarga sola.
+let LAST_REFRESH = Date.now(), REFRESHING = false;
+async function refreshData(force){
+  if (!ME || REFRESHING) return;
+  if (!force && Date.now() - LAST_REFRESH < 20000) return;
+  REFRESHING = true;
+  try {
+    await loadAll(); if (PROFILE) await loadStudy();
+    LAST_REFRESH = Date.now();
+    if (PLAY || SD) renderTop(); else renderAllTabs();
+  } catch(e){} finally { REFRESHING = false; }
+}
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") refreshData(); });
+window.addEventListener("pageshow", e => { if (e.persisted) refreshData(true); });
+if ("serviceWorker" in navigator) navigator.serviceWorker.addEventListener("message", e => {
+  if (!e.data || e.data.type !== "rt-refresh") return;
+  if (e.data.tab && ["all","mine","study","group"].includes(e.data.tab) && !PLAY && !SD) setTab(e.data.tab);
+  refreshData(true);
+});
 try { const t = localStorage.getItem("rt-tab"); if (t && ["all","mine","study","group"].includes(t)) tab = t; } catch(e){}
 // Al abrir un aviso, la URL trae la pestaña (?tab=study).
 { const t = new URLSearchParams(location.search).get("tab"); if (t && ["all","mine","study","group"].includes(t)) tab = t; }

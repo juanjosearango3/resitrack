@@ -12,7 +12,10 @@ self.addEventListener("push", event => {
     tag: d.tag || "resitrack",
     data: { url: d.url || "/" }
   };
-  event.waitUntil(self.registration.showNotification(title, options));
+  event.waitUntil(Promise.all([
+    self.registration.showNotification(title, options),
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(list => list.forEach(c => c.postMessage({ type: "rt-refresh" })))
+  ]));
 });
 
 self.addEventListener("notificationclick", event => {
@@ -20,8 +23,9 @@ self.addEventListener("notificationclick", event => {
   const url = (event.notification.data && event.notification.data.url) || "/";
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(list => {
+      const tab = new URL(url, self.location.origin).searchParams.get("tab");
       for (const c of list) {
-        if ("navigate" in c) c.navigate(url).catch(() => {});
+        c.postMessage({ type: "rt-refresh", tab });
         if ("focus" in c) return c.focus();
       }
       return self.clients.openWindow(url);
