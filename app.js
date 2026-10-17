@@ -730,7 +730,7 @@ function reportBox(qid){
 function feedback(ok, explanation, source, qid){
   // La explicación puede venir en varios párrafos separados por una línea en blanco.
   // Nunca se muestra un párrafo que hable del origen de la pregunta (reconstrucciones, grupo, respuesta marcada).
-  const ORIGIN = /reconstru|del grupo|el grupo (marc|discut|dec)|respuesta oficial|marcaba |marcaron |clave del examen|en el examen (pregunt|marc|de (la udea|univalle|20))|el examen (marc|daba|dio)/i;
+  const ORIGIN = /reconstru|el grupo (marc|discut|dec|dij)|respuesta oficial|marcaba |marcaron |clave del examen|en el examen (pregunt|marc|basta|de (la udea|univalle|20))|el examen (marc|daba|dio)/i;
   const paras = String(explanation || "").split(/\n\s*\n/).map(p => p.trim()).filter(Boolean).filter(p => !ORIGIN.test(p));
   const body = paras.map((p, i) => `<p>${i === 0 ? `<b>${ok?"Correcta.":"Incorrecta."}</b> ` : ""}${esc(p).replace(/^OJO:/, "<b>OJO:</b>")}</p>`).join("");
   return `<div class="fb ${ok?"fb-ok":"fb-bad"}">${body}${source?`<div class="hint" style="margin-top:6px">Fuente: ${esc(source)}</div>`:""}</div>${reportBox(qid)}`;
@@ -781,7 +781,7 @@ function chRow(c){
   if (c.status === "done"){
     const th = CH_ANS.find(r => r.challenge_id === c.id && r.user_id !== ME.id), a = my?.score ?? 0, b = th?.score ?? 0;
     const verdict = a > b ? "Ganaste" : a < b ? "Perdiste" : "Empate";
-    return `<div class="chrow"><span><b>${verdict}</b> contra ${esc(rv)} · ${a}–${b}</span><button class="btn ghost small" data-chres="${c.id}">Ver feedback</button></div>`;
+    return `<div class="chrow"><span><b>${verdict}</b> contra ${esc(rv)} · ${a}–${b}</span><button class="btn ghost small" data-chres="${c.id}">Ver retroalimentación</button></div>`;
   }
   if (my) return `<div class="chrow"><span>Respondiste (${my.score}/${c.question_ids.length}). Esperando a ${esc(rv)}.</span><button class="btn ghost small" data-chres="${c.id}">Ver retroalimentación</button></div>`;
   return `<div class="chrow due"><span>${c.challenger===ME.id?`Tu desafío a ${esc(rv)}`:`<b>${esc(rv)}</b> te retó`} · ${c.question_ids.length} preguntas</span>
