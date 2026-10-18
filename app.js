@@ -1636,15 +1636,22 @@ function sdSpin(){
   const a = 360 / n, center = idx * a + a / 2 + (Math.random() - 0.5) * a * 0.6;
   const cur = ((SD.rot % 360) + 360) % 360, target = ((360 - center) % 360 + 360) % 360;
   const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  SD.rot = SD.rot + (reduce ? 0 : 360 * 5) + ((target - cur + 360) % 360);
+  const from = SD.rot, dur = reduce ? 1200 : 4200;
+  SD.rot = SD.rot + 360 * (reduce ? 1 : 6) + ((target - cur + 360) % 360);
   SD.spinning = true; SD.turn = null; SD.q = null; SD.pick = null;
   sdRender();
+  // El render pinta la ruleta ya en la posición final: la regresamos a la inicial y animamos desde ahí.
   const g = document.getElementById("sdRot");
   const done = () => { if (!SD) return; SD.spinning = false; SD.turn = SD.names[idx]; sdRender(); sdFetch(); };
-  if (!g || reduce){ if (g) g.style.transform = `rotate(${SD.rot}deg)`; done(); return; }
+  if (!g){ done(); return; }
   g.style.transition = "none";
-  requestAnimationFrame(() => { g.style.transition = "transform 3.6s cubic-bezier(.17,.67,.21,1)"; g.style.transform = `rotate(${SD.rot}deg)`; });
-  setTimeout(() => { if (SD && SD.spinning) done(); }, 3700);
+  g.style.transform = `rotate(${from}deg)`;
+  g.getBoundingClientRect();
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    g.style.transition = `transform ${dur}ms cubic-bezier(.12,.6,.12,1)`;
+    g.style.transform = `rotate(${SD.rot}deg)`;
+  }));
+  setTimeout(() => { if (SD && SD.spinning) done(); }, dur + 150);
 }
 document.addEventListener("click", e => {
   const t = e.target;
