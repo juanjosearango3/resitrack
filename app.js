@@ -1038,6 +1038,8 @@ async function boot(){
     let inv = null; try { inv = localStorage.getItem("rt-amigo"); } catch(e){}
     if (inv && inv !== PROFILE.friend_code){ try { localStorage.removeItem("rt-amigo"); } catch(e){} history.replaceState(null, "", location.pathname); await addFriend(inv); }
   }
+  if (ME){ let want = null; try { want = localStorage.getItem("rt-push-want"); } catch(e){}
+    if (want && "Notification" in window && Notification.permission === "granted"){ try { localStorage.removeItem("rt-push-want"); } catch(e){} enablePush(); } }
   if (ME && PROFILE){ await loadStudy(); renderTop(); if (tab === "study") renderStudy(); if (tab === "group") renderGroup(); if (tab === "mine") renderMine(); }
   const qz = new URLSearchParams(location.search).get("quiz");
   if (qz && ME && PROFILE) liveOpen(qz.trim().toUpperCase().slice(0, 5));
@@ -1518,13 +1520,38 @@ function setupInstall(justInstalled){
   $("installAndroid").hidden = !!standalone || iOS;
   $("installDesk").hidden = !!standalone || iOS || android;
 }
+// Paso de avisos debajo de la instalación. Antes de iniciar sesión solo se pide el permiso; la suscripción se completa al entrar.
+function setupPushStep(){
+  const box = $("pushStep"); if (!box) return;
+  const ua = navigator.userAgent;
+  const iOS = /iphone|ipad|ipod/i.test(ua) || (/macintosh/i.test(ua) && navigator.maxTouchPoints > 1);
+  const standalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
+  const ok = "Notification" in window && "serviceWorker" in navigator && "PushManager" in window;
+  const txt = $("pushStepTxt"), btn = $("pushStepBtn");
+  box.hidden = false; box.classList.remove("is-on"); btn.hidden = true;
+  if (iOS && !standalone){ txt.textContent = "En iPhone los avisos solo funcionan con la app instalada: haz los pasos de arriba, abre ResiTrack desde el ícono y activa aquí los avisos."; return; }
+  if (!ok){ box.hidden = true; return; }
+  if (Notification.permission === "granted"){ box.classList.add("is-on"); txt.textContent = "Avisos activados en este celular."; return; }
+  if (Notification.permission === "denied"){ txt.textContent = "Los avisos están bloqueados para ResiTrack. Actívalos en los ajustes del celular (Notificaciones) y vuelve a esta pantalla."; return; }
+  txt.textContent = "Así te enteras cuando un amigo te rete, cuando termine un duelo y cuando cambie una convocatoria que sigues.";
+  btn.hidden = false;
+}
+$("pushStepBtn").addEventListener("click", async () => {
+  if (ME){ await enablePush(); setupPushStep(); return; }
+  try {
+    const perm = await Notification.requestPermission();
+    if (perm === "granted"){ try { localStorage.setItem("rt-push-want", "1"); } catch(e){} toast("Listo. Al iniciar sesión quedan activados."); }
+    else toast("No activaste los avisos.");
+  } catch(e){ toast("No pude activar los avisos."); }
+  setupPushStep();
+});
 $("installNow").addEventListener("click", async () => {
   if (!INSTALL_EVT) return;
   INSTALL_EVT.prompt();
   try { await INSTALL_EVT.userChoice; } catch(e){}
   INSTALL_EVT = null; setupInstall();
 });
-function showGuide(){ $("guideSkip").hidden = !isReturning(); setupInstall(); show("guide"); }
+function showGuide(){ $("guideSkip").hidden = !isReturning(); setupInstall(); setupPushStep(); show("guide"); }
 function finishGuide(){ try { localStorage.setItem("rt-guia", "1"); } catch(e){} showApp(); }
 $("startBtn").addEventListener("click", showGuide);
 $("guideDone").addEventListener("click", finishGuide);

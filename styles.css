@@ -387,7 +387,10 @@ img.av{border-radius:50%;aspect-ratio:1/1;object-fit:cover}
 .install-now{width:100%;margin:6px 0 2px;padding:12px 18px}
 .install-done{font-weight:700;color:var(--drop);margin:4px 0 0}
 .install.is-done{border-width:1px}
-.install-os[hidden],.install-done[hidden],.install-now[hidden]{display:none}
+.install-os[hidden],.install-done[hidden],.install-now[hidden],.push-step[hidden]{display:none}
+.push-step{margin-top:18px;padding-top:4px;border-top:1px solid var(--rule)}
+.push-step p{margin:0 0 8px}
+.push-step.is-on p{font-weight:700;color:var(--drop)}
 .inv-banner{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;line-height:1.5}
 .inv-banner .code{font-size:18px}
 
