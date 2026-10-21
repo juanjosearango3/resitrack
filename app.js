@@ -1660,24 +1660,33 @@ function setupInstall(justInstalled){
   $("installIos").hidden = !!standalone || android;
   $("installAndroid").hidden = !!standalone || iOS;
   $("installDesk").hidden = !!standalone || iOS || android;
+  // Ya instalada: no hay pasos que mostrar.
+  if ($("installHow")) $("installHow").hidden = !!standalone;
 }
 // Paso de avisos debajo de la instalación. Antes de iniciar sesión solo se pide el permiso; la suscripción se completa al entrar.
-function setupPushStep(){
+async function setupPushStep(){
   const box = $("pushStep"); if (!box) return;
   const ua = navigator.userAgent;
   const iOS = /iphone|ipad|ipod/i.test(ua) || (/macintosh/i.test(ua) && navigator.maxTouchPoints > 1);
   const standalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
   const ok = "Notification" in window && "serviceWorker" in navigator && "PushManager" in window;
   const txt = $("pushStepTxt"), btn = $("pushStepBtn");
-  box.hidden = false; box.classList.remove("is-on"); btn.hidden = true;
-  if (iOS && !standalone){ txt.textContent = "En iPhone los avisos solo funcionan con la app instalada: haz los pasos de arriba, abre ResiTrack desde el ícono y activa aquí los avisos."; return; }
-  if (!ok){ box.hidden = true; return; }
-  if (Notification.permission === "granted"){ box.classList.add("is-on"); txt.textContent = "Avisos activados en este celular."; return; }
-  if (Notification.permission === "denied"){ txt.textContent = "Los avisos están bloqueados para ResiTrack. Actívalos en los ajustes del celular (Notificaciones) y vuelve a esta pantalla."; return; }
-  txt.textContent = "Así te enteras cuando un amigo te rete, cuando termine un duelo y cuando cambie una convocatoria que sigues.";
-  btn.hidden = false;
+  // El botón siempre se ve; cambia su texto y si se puede tocar según el estado real.
+  const set = (t, label, on, disabled) => { txt.textContent = t; btn.textContent = label; btn.disabled = !!disabled; box.classList.toggle("is-on", !!on); };
+  box.hidden = false; btn.hidden = false;
+  if (iOS && !standalone) return set("En iPhone los avisos solo funcionan con la app instalada: instálala, ábrela desde el ícono y vuelve a este paso.", "Activar avisos", false, true);
+  if (!ok) return set("Este navegador no admite avisos. Ábrela instalada en tu celular para activarlos.", "Activar avisos", false, true);
+  if (Notification.permission === "denied") return set("Los avisos están bloqueados para ResiTrack. Actívalos en los ajustes del celular (Notificaciones) y luego toca el botón.", "Ya los activé", false, false);
+  if (Notification.permission === "granted"){
+    // Con sesión iniciada, además debe existir la suscripción de este celular.
+    const subbed = ME ? await navigator.serviceWorker.ready.then(r => r.pushManager.getSubscription()).catch(() => null) : true;
+    if (subbed) return set("Avisos activados en este celular.", "✓ Avisos activados", true, true);
+    return set("Falta conectar los avisos de este celular con tu cuenta.", "Activar avisos", false, false);
+  }
+  set("Así te enteras cuando un amigo te rete, cuando termine un duelo y cuando cambie una convocatoria que sigues.", "Activar avisos", false, false);
 }
 $("pushStepBtn").addEventListener("click", async () => {
+  if ("Notification" in window && Notification.permission === "denied"){ setupPushStep(); return; }
   if (ME){ await enablePush(); setupPushStep(); return; }
   try {
     const perm = await Notification.requestPermission();

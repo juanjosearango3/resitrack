@@ -40,7 +40,12 @@
     <div class="ob-bar"><button class="ob-back" type="button" data-ob-back="cover" aria-label="Volver"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg></button></div>
     <h2 class="ob-welcome">¡Bienvenido a <span>ResiTrack!</span></h2>
     <p class="ob-lead ob-center">Únete a miles de estudiantes de medicina que se preparan juntos para la residencia.</p>
-    <div class="ob-hero-art" aria-hidden="true"></div>
+    <ul class="ob-feats">
+      <li><span class="ob-fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg></span><span><b>Convocatorias actualizadas</b>Fechas, requisitos y cómo califica cada universidad, desde la fuente oficial.</span></li>
+      <li><span class="ob-fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg></span><span><b>Preguntas tipo examen</b>10 diarias con el porqué y la fuente, verificadas con la guía vigente.</span></li>
+      <li><span class="ob-fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20V12M10 20V6M15 20v-9M20 20V9"/></svg></span><span><b>Simulacros y progreso</b>Tus fortalezas y lo que debes reforzar, por área.</span></li>
+      <li><span class="ob-fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.5" r="3"/><circle cx="17" cy="9.5" r="2.5"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5M15 14.2c2.5-.4 4.6 1 5.2 4.3"/></svg></span><span><b>Estudia con tus amigos</b>Retos, rachas y la liga semanal de tu grupo.</span></li>
+    </ul>
     <button type="button" class="ob-choice hot" data-ob-go="p1"><span class="ob-ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="8" r="3.5"/><path d="M3.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5M19 8v6M16 11h6"/></svg></span><span class="ob-ct"><b>Primera vez</b><span>Crea tu cuenta y empieza tu camino a la residencia.</span></span><svg class="ob-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m9 6 6 6-6 6"/></svg></button>
     <button type="button" class="ob-choice" data-ob-login><span class="ob-ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.6-3.6 3.4-5.5 7-5.5s6.4 1.9 7 5.5"/></svg></span><span class="ob-ct"><b>Ya tengo cuenta</b><span>Inicia sesión y continúa con tu avance.</span></span><svg class="ob-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m9 6 6 6-6 6"/></svg></button>
   </div>
@@ -56,7 +61,7 @@
       <div class="ob-cb"><b>Se instala en tu celular</b><span>Desde el navegador. Toma 10 segundos.</span>
         <p class="install-done" id="installDone" hidden>Ya la tienes instalada.</p>
         <button class="btn small install-now" id="installNow" type="button" hidden>Instalar ResiTrack</button>
-        <details class="ob-how"><summary>Ver cómo instalarla</summary>
+        <details class="ob-how" id="installHow"><summary>Ver cómo instalarla</summary>
           <div class="install-os" id="installIos">
             <h3>iPhone</h3>
             <ol class="steps">
@@ -82,7 +87,7 @@
     <div class="ob-card">
       <span class="ob-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 1.5h-15z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/></svg></span>
       <div class="ob-cb"><b>Activa los avisos</b><span>Te notificamos sobre nuevas convocatorias y retos.</span>
-        <div class="push-step" id="pushStep" hidden><p id="pushStepTxt"></p><button class="btn small install-now" id="pushStepBtn" type="button">Activar avisos</button></div>
+        <div class="push-step" id="pushStep"><p id="pushStepTxt"></p><button class="btn small install-now" id="pushStepBtn" type="button">Activar avisos</button></div>
       </div>
     </div>
     <div class="ob-card">
