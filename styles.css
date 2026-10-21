@@ -744,3 +744,68 @@ img.av{border-radius:50%;aspect-ratio:1/1;object-fit:cover}
 .sd-hub[disabled]{opacity:.6}
 .live-code{display:flex;justify-content:center;gap:8px;padding:0;border:0;background:none;font-size:inherit;letter-spacing:0}
 .live-code span{width:48px;height:60px;display:inline-flex;align-items:center;justify-content:center;font-family:var(--f-display);font-weight:800;font-size:30px;color:var(--drop);background:var(--drop-soft);border:1.5px solid color-mix(in srgb,var(--rt-primary) 55%,transparent);border-radius:12px}
+/* ===== Amigos según la referencia ===== */
+.fseg{margin:2px 0 14px}
+.seg-n{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:var(--bad);color:var(--sheet);font-size:11px;font-weight:800;margin-left:4px}
+.fcode{display:flex;background:linear-gradient(140deg,color-mix(in srgb,var(--rt-primary) 16%,var(--sheet)),var(--sheet) 70%);border-color:color-mix(in srgb,var(--rt-primary) 35%,var(--rule))}
+.fcode-lbl{font-family:var(--f-display);font-weight:700;font-size:15px}
+.fcode .code{font-size:30px;letter-spacing:.14em;padding:4px 0;border:0;background:none;color:var(--ink)}
+.fcode-note{margin:0;font-size:13.5px;color:var(--muted);line-height:1.4}
+.fcode-art{width:72px;height:72px;align-self:flex-start}
+.fadd{margin:0 0 14px}
+.stat{text-align:left;font:inherit;cursor:pointer}
+.league-card{display:flex;align-items:center;gap:12px;width:100%;text-align:left;font:inherit;color:var(--ink);cursor:pointer;background:var(--sheet);border:1px solid var(--rule);border-radius:var(--r-card);padding:14px;margin:0 0 14px;box-shadow:var(--shadow)}
+.lg-ico{flex:none;width:46px;height:46px;border-radius:13px;display:inline-flex;align-items:center;justify-content:center;color:var(--warn);background:color-mix(in srgb,var(--rt-warning) 18%,transparent)}
+.lg-ico svg{width:26px;height:26px}
+.lg-txt{flex:1;display:grid;gap:2px;min-width:0}
+.lg-t{font-family:var(--f-display);font-weight:700;font-size:15px}
+.lg-txt b{font-family:var(--f-display);font-weight:800;font-size:20px}
+.lg-side{display:grid;justify-items:end;gap:8px}
+.lg-more{display:inline-flex;align-items:center;gap:2px;color:var(--drop);font-family:var(--f-display);font-weight:700;font-size:13.5px;white-space:nowrap}
+.lg-more svg{width:15px;height:15px}
+.sec{margin:6px 0 16px}
+.sec-hd{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.sec-h{font-family:var(--f-display);font-weight:800;font-size:17px;margin:0 0 10px}
+.sec-hd .sec-h{margin-bottom:10px}
+.sec-more{display:inline-flex;align-items:center;gap:2px;background:none;border:0;padding:0 0 10px;color:var(--drop);font-family:var(--f-display);font-weight:700;font-size:14px}
+.sec-more svg{width:15px;height:15px}
+/* Retos: fila como en la referencia */
+.chrow{display:grid;grid-template-columns:auto 1fr auto;align-items:center;column-gap:12px;row-gap:8px;padding:12px;box-shadow:inset 3px 0 0 var(--rule-strong)}
+.ch-ico{width:44px;height:44px;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;color:var(--drop);background:color-mix(in srgb,var(--rt-primary) 15%,transparent)}
+.ch-ico svg{width:24px;height:24px}
+.ch-body{display:grid;gap:1px;min-width:0}
+.ch-body b{font-family:var(--f-display);font-size:15.5px}
+.ch-side{display:grid;justify-items:end;gap:4px;text-align:right}
+.ch-side .hint{font-size:12.5px}
+.ch-act{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px}
+.chrow .ch-tag{order:0;margin:0}
+.ch-tag.off{color:var(--muted);background:var(--raise)}
+.chrow.ch-wait .ch-ico{color:var(--warn);background:color-mix(in srgb,var(--rt-warning) 16%,transparent)}
+.chrow.ch-win .ch-ico{color:var(--ok);background:color-mix(in srgb,var(--ok) 16%,transparent)}
+.chrow.ch-lose .ch-ico,.chrow.ch-off .ch-ico{color:var(--muted);background:var(--raise)}
+.chrow.ch-off .ch-ico{color:var(--bad);background:color-mix(in srgb,var(--bad) 14%,transparent)}
+/* Personas */
+.prow-txt{display:grid;min-width:0}
+.prow-sub{font-size:13px;color:var(--muted)}
+.prow-who{flex:1 1 0;min-width:0}
+.prow{flex-wrap:wrap}
+.prow-fire{margin-left:auto}
+.req-act{display:flex;gap:6px}
+.btn-ok{background:var(--rt-primary);border-color:var(--rt-primary);color:var(--on-btn)}
+.btn-no{background:color-mix(in srgb,var(--rt-danger) 16%,transparent);border-color:transparent;color:var(--bad)}
+.btn-no:hover{background:color-mix(in srgb,var(--rt-danger) 26%,transparent);border-color:transparent}
+/* Grupos */
+.gsum{gap:12px}
+.g-ico{flex:none;width:44px;height:44px;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;color:var(--drop);background:color-mix(in srgb,var(--rt-primary) 15%,transparent)}
+.g-ico svg{width:24px;height:24px}
+.gsum-txt{flex:1}
+.g-code{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--raise);border-radius:12px;padding:8px 12px}
+.g-code .code{font-size:18px;padding:2px 10px}
+.gseg{margin:0 0 12px}
+.gseg .count{font-size:14px}
+.fv-h{margin-top:4px}
+button.chrow{width:100%;text-align:left;font:inherit;color:var(--ink);cursor:pointer;grid-template-columns:auto 1fr auto 16px;border:1px solid var(--rule)}
+button.chrow > svg:last-child{width:16px;height:16px;color:var(--muted)}
+button.chrow:hover{border-color:var(--rule-strong)}
+.ch-body b{line-height:1.25}
+.gseg .count{white-space:nowrap;font-size:13.5px;padding:0 6px}

@@ -90,6 +90,7 @@ let LIVE = null;          // { room, code, st, endsAt, busy }
 const myFollow = id => FOLLOWS.find(f => f.uni_id === id && f.user_id === ME?.id);
 const aliasOf = id => PEOPLE[id]?.alias || "Alguien";
 const initials = s => (s||"?").trim().split(/\s+/).slice(0,2).map(w => w[0]).join("").toUpperCase();
+const avA = (a, cls) => `<span class="av ${cls||""}" style="background:hsl(${hue(a)} 45% 82%);color:#1d2a33" title="${esc(a)}">${esc(initials(a))}</span>`;
 function hue(s){ let h = 0; for (const c of String(s)) h = (h*31 + c.charCodeAt(0)) % 360; return h; }
 function avatar(id, cls){
   const a = aliasOf(id), u = PEOPLE[id]?.avatar_url;
@@ -254,8 +255,10 @@ function personCard(id, gid){
   const p = PEOPLE[id]; if (!p) return "";
   const key = (gid || "f") + ":" + id;
   const open = RETAR_OPEN === key;
+  const k = STREAKS[id]?.together || 0;
+  const fire = id !== ME.id && k ? `<span class="prow-fire" title="Racha de batallas">🔥 ${k} ${k === 1 ? "día" : "días"}${atRisk(id) ? ` <span aria-label="en riesgo">⌛</span>` : ""}</span>` : "";
   const act = id === ME.id ? `<span class="hint">Tú</span>` : `<button class="btn small retar-btn" data-retar="${key}">Retar</button>`;
-  return `<div class="prow"><button type="button" class="prow-who" data-person="${id}" data-g="${gid||""}">${avatar(id, "md")}<span class="prow-name">${esc(p.alias)}</span>${id !== ME.id && STREAKS[id]?.together ? `<span class="prow-fire">🔥 ${STREAKS[id].together} ${STREAKS[id].together === 1 ? "día" : "días"}</span>` : ""}</button>${act}
+  return `<div class="prow"><button type="button" class="prow-who" data-person="${id}" data-g="${gid||""}">${avatar(id, "md")}<span class="prow-txt"><span class="prow-name">${esc(p.alias)}</span>${p.city ? `<span class="prow-sub">${esc(p.city)}</span>` : ""}</span></button>${fire}${act}
     ${open ? `<div class="retar"><span class="hint">¿Cuántas preguntas?</span>${[3,5,10].map(n => `<button class="btn small" data-retar-go="${id}" data-g="${gid||""}" data-n="${n}">${n}</button>`).join("")}<button class="btn ghost small" data-retar-x>Cancelar</button></div>` : ""}</div>`;
 }
 function personDetail(id, gid){
@@ -286,24 +289,31 @@ function personDetail(id, gid){
 }
 
 function renderFriends(){
-  const code = PROFILE.friend_code || "";
-  return renderFriendsBody(code, FREQS.filter(r => !r.incoming));
+  return renderFriendsBody(PROFILE.friend_code || "", FREQS.filter(r => !r.incoming));
 }
 function friendReqBox(){
   const incoming = FREQS.filter(r => r.incoming);
-  return incoming.length ? `<div class="duebox" id="sec-solic"><h3>Solicitudes de amistad</h3><div class="chlist">${incoming.map(r =>
-    `<div class="chrow"><span><b>${esc(r.alias)}</b>${r.city?` · ${esc(r.city)}`:""} quiere ser tu amigo</span><span><button class="btn small" data-faccept="${r.other}">Aceptar</button> <button class="btn ghost small" data-freject="${r.other}">Rechazar</button></span></div>`).join("")}</div></div>` : "";
+  return incoming.length ? `<section class="sec" id="sec-solic"><h3 class="sec-h">Solicitudes recibidas</h3><div class="plist">${incoming.map(r =>
+    `<div class="prow"><span class="prow-who">${PEOPLE[r.other] ? avatar(r.other, "md") : avA(r.alias, "md")}<span class="prow-txt"><span class="prow-name">${esc(r.alias)}</span>${r.city ? `<span class="prow-sub">${esc(r.city)}</span>` : ""}</span></span><span class="req-act"><button class="btn small btn-ok" data-faccept="${r.other}">Aceptar</button><button class="btn small btn-no" data-freject="${r.other}">Rechazar</button></span></div>`).join("")}</div></section>` : "";
 }
 function renderFriendsBody(code, outgoing){
   const cards = FRIENDS.map(id => personCard(id, null)).join("");
-  const cs = CHALLS.filter(c => !c.group_id).slice(0, 6);
-  return `<h2 id="sec-amigos">Tus amigos</h2><p class="sub">Para quienes no están en tus grupos. Tus amigos ven tu perfil y tu avance, y pueden retarte.</p>
-    <div class="fcode"><div class="fcode-main"><span class="hint">Tu código de amigo</span><div class="fcode-row"><span class="code">${esc(code)}</span><button type="button" class="icon-btn" data-copy-code aria-label="Copiar código">${I.copy}</button></div><button class="btn" id="shareCode">${I.share}Compartir invitación</button></div><span class="fcode-art" aria-hidden="true">${I.userplus}</span></div>
-    <form id="friendForm" class="fadd"><input id="f-code" maxlength="6" placeholder="Código de tu amigo" style="text-transform:uppercase" required><button class="btn small" type="submit">Agregar</button></form>
-    ${outgoing.length ? `<h4 class="ghead">Solicitudes enviadas</h4><div class="chlist">${outgoing.map(r =>
-      `<div class="chrow"><span><b>${esc(r.alias)}</b>${r.city?` · ${esc(r.city)}`:""} · esperando respuesta</span><span><button class="btn ghost small" data-fcancel="${r.other}" data-alias="${esc(r.alias)}">Cancelar</button></span></div>`).join("")}</div>` : ""}
-    ${cards ? `<div class="plist">${cards}</div>` : `<div class="empty">Aún no tienes amigos agregados. Comparte tu invitación o pide el código de alguien.</div>`}
-    ${cs.length ? `<h4 class="ghead">Retos con amigos</h4><div class="chlist">${cs.map(chRow).join("")}</div>` : ""}`;
+  const nIn = FREQS.filter(r => r.incoming).length;
+  const invite = `<div class="fcode"><div class="fcode-main"><span class="fcode-lbl">Tu código de invitación</span><div class="fcode-row"><span class="code">${esc(code)}</span><button type="button" class="icon-btn" data-copy-code aria-label="Copiar código">${I.copy}</button></div><button class="btn" id="shareCode">${I.share}Compartir invitación</button><p class="fcode-note">Invita a tus colegas y construye tu red de estudio en ResiTrack.</p></div><span class="fcode-art" aria-hidden="true">${I.userplus}</span></div>
+    <form id="friendForm" class="fadd"><input id="f-code" maxlength="6" placeholder="Código de tu amigo" style="text-transform:uppercase" required><button class="btn small" type="submit">Agregar</button></form>`;
+  const stat = (act, n, t, ico, hot) => `<button type="button" class="stat${hot ? " hot" : ""}" ${act}><span class="stat-ico">${ico}</span><b>${n}</b><span>${t}</span></button>`;
+  const stats = `<div class="stats">${stat('data-goto="sec-amigos"', FRIENDS.length, FRIENDS.length === 1 ? "Amigo" : "Amigos", I.users)}${stat(`data-goto="${nIn ? "sec-solic" : "sec-amigos"}"`, nIn, nIn === 1 ? "Solicitud pendiente" : "Solicitudes pendientes", I.doc, nIn > 0)}${stat('data-fview="grupos"', GROUPS.length, GROUPS.length === 1 ? "Grupo de estudio" : "Grupos de estudio", I.users)}</div>`;
+  // Liga: la del primer grupo con al menos dos personas.
+  const g = GROUPS.find(x => (LEAGUE[x.id] || []).length >= 2), L = g ? LEAGUE[g.id] : [], meL = L.find(r => r.user_id === ME.id);
+  const league = g && meL ? `<button type="button" class="league-card" data-fview="grupos" data-open-g="${g.id}"><span class="lg-ico">${I.trophy}</span><span class="lg-txt"><span class="lg-t">Liga semanal <span class="hint">· ${esc(g.name)}</span></span><b>${meL.correct ? `Puesto #${meL.pos}` : "Sin aciertos aún"} <span class="hint">de ${L.length}</span></b><span class="hint">${meL.correct} ${meL.correct === 1 ? "acierto" : "aciertos"} esta semana</span></span><span class="lg-side"><span class="lg-more">Ver tabla ${I.chev}</span><span class="stack">${L.slice(0, 3).map(r => avatar(r.user_id, "sm")).join("")}</span></span></button>` : "";
+  const all = [...CHALLS].sort((a, b) => isMyTurn(b) - isMyTurn(a));
+  const shown = FRIEND_ALL ? all : all.slice(0, 4);
+  const retos = all.length ? `<section class="sec"><div class="sec-hd"><h3 class="sec-h">Retos recientes</h3>${all.length > 4 ? `<button type="button" class="sec-more" data-fall>${FRIEND_ALL ? "Ver menos" : "Ver todos"} ${I.chev}</button>` : ""}</div><div class="chlist">${shown.map(chRow).join("")}</div></section>` : "";
+  return `${invite}${stats}${league}${retos}${friendReqBox()}
+    <section class="sec" id="sec-amigos"><h3 class="sec-h">Tus amigos (${FRIENDS.length})</h3>
+    ${cards ? `<div class="plist">${cards}</div><p class="hint" style="margin:8px 2px 0">🔥 Racha de batallas: sube cada día que terminan un desafío entre ustedes. ⌛ significa que hoy todavía no han tenido batalla.</p>` : `<div class="empty">Aún no tienes amigos agregados. Comparte tu invitación o pide el código de alguien.</div>`}</section>
+    ${outgoing.length ? `<section class="sec"><h3 class="sec-h">Solicitudes enviadas</h3><div class="plist">${outgoing.map(r =>
+      `<div class="prow"><span class="prow-who">${PEOPLE[r.other] ? avatar(r.other, "md") : avA(r.alias, "md")}<span class="prow-txt"><span class="prow-name">${esc(r.alias)}</span><span class="prow-sub">${r.city ? esc(r.city) + " · " : ""}esperando respuesta</span></span></span><button class="btn ghost small" data-fcancel="${r.other}" data-alias="${esc(r.alias)}">Cancelar</button></div>`).join("")}</div></section>` : ""}`;
 }
 
 function groupOpen(id){ try { return localStorage.getItem("rt-g-" + id) === "1"; } catch(e){ return false; } }
@@ -328,30 +338,37 @@ document.addEventListener("click", async e => {
 function renderGroup(){
   if (!ME){ $("p-group").innerHTML = inviteBanner() + gate("Tus amigos y grupos","Entra para agregar amigos, crear grupos y retarse."); return; }
   if (!PROFILE){ $("p-group").innerHTML = `<div class="empty">Primero crea tu perfil en la pestaña Para mí.</div>`; return; }
-  const forms = `<div class="gforms">
-    <form id="newGroup"><h4>Crear un grupo</h4><input id="g-name" maxlength="60" placeholder="Ej. Residencia 2027" required><button class="btn small" type="submit">Crear grupo</button></form>
-    <form id="joinGroup"><h4>Unirme con un código</h4><input id="g-code" maxlength="6" placeholder="ABC123" style="text-transform:uppercase" required><button class="btn small" type="submit">Unirme</button></form>
-  </div>`;
-  const cards = GROUPS.map(g => {
-    const ids = MEMBERS.filter(m => m.group_id === g.id).map(m => m.user_id);
-    const cs = CHALLS.filter(c => c.group_id === g.id).slice(0, 6);
-    const pend = cs.filter(isMyTurn).length;
-    return `<details class="gcard" data-gid="${g.id}"${groupOpen(g.id)?" open":""}><summary class="gsum"><span class="gsum-txt"><b class="gname">${esc(g.name)}</b><span class="hint">${ids.length} ${ids.length===1?"integrante":"integrantes"}${leagueLeader(g.id)}${pend?` · <span class="due">${pend} ${pend===1?"reto pendiente":"retos pendientes"}</span>`:""}</span></span><span class="chev" aria-hidden="true"></span></summary>
-      <div class="gbody"><div class="ghd"><div><span class="hint">Código para invitar</span> <span class="code">${esc(g.code)}</span></div></div>
-      <p class="sub" style="margin:10px 0">Quien tenga el código puede unirse.</p>
-      <div class="plist">${ids.map(id => personCard(id, g.id)).join("")}</div>
-      ${leaguePanel(g.id)}
-      <h4 class="ghead">Retos en este grupo</h4>${cs.length ? `<div class="chlist">${cs.map(chRow).join("")}</div>` : `<p class="hint" style="margin:0">Todavía no hay retos. Toca Retar en la tarjeta de alguien.</p>`}
-      <div style="margin-top:12px"><button class="btn ghost small" data-leave="${g.id}">Salir del grupo</button></div></div></details>`;
-  }).join("");
   if (PLAY){ $("p-group").innerHTML = renderPlay(); return; }
   if (RESULT){ $("p-group").innerHTML = renderResult(); return; }
   if (PERSON_OPEN && $("pdlg").open) renderPersonDlg();
   const nIn = FREQS.filter(r => r.incoming).length;
-  const stat = (href, n, t, ico, hot) => `<a class="stat${hot ? " hot" : ""}" href="${href}"><span class="stat-ico">${ico}</span><b>${n}</b><span>${t}</span></a>`;
-  const stats = `<div class="stats">${stat("#sec-amigos", FRIENDS.length, FRIENDS.length === 1 ? "Amigo" : "Amigos", I.users)}${stat(nIn ? "#sec-solic" : "#sec-amigos", nIn, nIn === 1 ? "Solicitud pendiente" : "Solicitudes pendientes", I.userplus, nIn > 0)}${stat("#sec-grupos", GROUPS.length, GROUPS.length === 1 ? "Grupo" : "Grupos", I.users)}</div>`;
-  $("p-group").innerHTML = `${inviteBanner()}${pushBanner()}${stats}${friendReqBox()}${pendingBox()}${streakPanel()}${renderFriends()}
-    <h2 id="sec-grupos">Tus grupos</h2><p class="sub">Puedes estar en varios. Cada grupo ve tu perfil y tu avance.</p>${cards || '<div class="empty">Todavía no estás en ningún grupo. Crea uno y pásale el código a tus amigos.</div>'}${GROUPS.length ? '<h2>Otro grupo</h2>' : ''}${forms}`;
+  const seg = `<div class="seg fseg" role="tablist"><button type="button" class="count" role="tab" data-fview="amigos" aria-pressed="${FVIEW === "amigos"}">Amigos${nIn ? ` <span class="seg-n">${nIn}</span>` : ""}</button><button type="button" class="count" role="tab" data-fview="grupos" aria-pressed="${FVIEW === "grupos"}">Grupos</button></div>`;
+  let body;
+  if (FVIEW === "grupos"){
+    const forms = `<div class="gforms">
+      <form id="newGroup"><h4>Crear un grupo</h4><input id="g-name" maxlength="60" placeholder="Ej. Residencia 2027" required><button class="btn small" type="submit">Crear grupo</button></form>
+      <form id="joinGroup"><h4>Unirme con un código</h4><input id="g-code" maxlength="6" placeholder="ABC123" style="text-transform:uppercase" required><button class="btn small" type="submit">Unirme</button></form>
+    </div>`;
+    const cards = GROUPS.map(g => {
+      const ids = MEMBERS.filter(m => m.group_id === g.id).map(m => m.user_id);
+      const cs = CHALLS.filter(c => c.group_id === g.id).slice(0, 6);
+      const pend = cs.filter(isMyTurn).length;
+      const sg = GSEG[g.id] || "liga";
+      const inner = sg === "retos"
+        ? (cs.length ? `<div class="chlist">${cs.map(chRow).join("")}</div>` : `<p class="hint" style="margin:0">Todavía no hay retos. Toca Retar en la tarjeta de alguien.</p>`)
+        : `${leaguePanel(g.id)}<h4 class="ghead">Integrantes</h4><div class="plist">${ids.map(id => personCard(id, g.id)).join("")}</div>`;
+      return `<details class="gcard" id="g-${g.id}" data-gid="${g.id}"${groupOpen(g.id)?" open":""}><summary class="gsum"><span class="g-ico" aria-hidden="true">${I.users}</span><span class="gsum-txt"><b class="gname">${esc(g.name)}</b><span class="hint">${ids.length} ${ids.length===1?"integrante":"integrantes"}${leagueLeader(g.id)}${pend?` · <span class="due">${pend} ${pend===1?"reto pendiente":"retos pendientes"}</span>`:""}</span></span><span class="chev" aria-hidden="true"></span></summary>
+        <div class="gbody"><div class="g-code"><span class="hint">Código para invitar</span><span class="code">${esc(g.code)}</span></div>
+        <p class="sub" style="margin:8px 0 12px">Quien tenga el código puede unirse.</p>
+        <div class="seg gseg"><button type="button" class="count" data-gseg="${g.id}" data-v="liga" aria-pressed="${sg === "liga"}">Liga de la semana</button><button type="button" class="count" data-gseg="${g.id}" data-v="retos" aria-pressed="${sg === "retos"}">Retos${pend ? ` <span class="seg-n">${pend}</span>` : ""}</button></div>
+        ${inner}
+        <div style="margin-top:14px"><button class="btn ghost small" data-leave="${g.id}">Salir del grupo</button></div></div></details>`;
+    }).join("");
+    body = `<h2 id="sec-grupos" class="fv-h">Tus grupos</h2><p class="sub">Puedes estar en varios. Cada grupo ve tu perfil y tu avance.</p>${cards || '<div class="empty">Todavía no estás en ningún grupo. Crea uno y pásale el código a tus amigos.</div>'}${GROUPS.length ? '<h2>Otro grupo</h2>' : ''}${forms}`;
+  } else {
+    body = renderFriends();
+  }
+  $("p-group").innerHTML = `${inviteBanner()}${pushBanner()}${seg}${body}`;
   updateBadges();
 }
 
@@ -370,6 +387,21 @@ function renderAllTabs(){
   if (tab === "study") renderStudy();
   $("nAll").textContent = DATA.length;
   updateBadges();
+}
+// Lleva una pestaña a su inicio. Pide confirmar si hay algo en curso que se perdería.
+function tabHome(t){
+  if (t === "study"){
+    if (PRAC?.mode === "sim" && PRAC.screen === "run" && PRAC.picks.some(x => x != null) && !confirm("¿Salir del simulacro? Se pierde lo que llevas.")) return false;
+    if (LIVE?.st && ["q","reveal"].includes(LIVE.st.status) && !confirm("¿Salir del quiz?")) return false;
+    PRAC = null; SD = null; STUDY_VIEW = null;
+    if (LIVE){ LIVE = null; if (LIVE_POLL) clearInterval(LIVE_POLL); LIVE_POLL = null; }
+  }
+  if (t === "group"){
+    if (PLAY && PLAY.picks.some(x => x != null) && !confirm("¿Salir del desafío? Se pierden las respuestas que marcaste.")) return false;
+    PLAY = null; RESULT = null; RETAR_OPEN = null; FVIEW = "amigos"; FRIEND_ALL = false;
+  }
+  if (t === "all" || t === "mine") document.querySelectorAll(`#p-${t} details.card[open]`).forEach(d => d.open = false);
+  return true;
 }
 function setTab(t){
   tab = t;
@@ -505,14 +537,29 @@ $("pform").addEventListener("submit", async e => {
 });
 
 /* ---------- menú de cuenta ---------- */
+// Tema: sigue al sistema hasta que la persona elige uno en el menú; la elección queda guardada.
+const isDark = () => { const t = document.documentElement.dataset.theme; return t ? t === "dark" : matchMedia("(prefers-color-scheme: dark)").matches; };
+function applyTheme(){
+  const t = document.documentElement.dataset.theme, dark = isDark();
+  document.querySelectorAll('meta[name="theme-color"]').forEach(m => { if (t) m.content = dark ? "#081620" : "#F5F8FA"; });
+  const src = document.querySelector("#cover picture source");
+  if (src) src.media = t ? (dark ? "all" : "not all") : "(prefers-color-scheme: dark)";
+}
+function setTheme(t){
+  document.documentElement.dataset.theme = t;
+  try { localStorage.setItem("rt-theme", t); } catch(e){}
+  applyTheme();
+}
+applyTheme();
 function openMenu(){
   const m = $("menu");
   m.innerHTML = ME
     ? `<button data-act="profile">Editar mi perfil</button>
        <button data-act="push">Avisos en este dispositivo</button>
+       <button data-act="theme">${isDark() ? "☀️ Cambiar a modo claro" : "🌙 Cambiar a modo oscuro"}</button>
        <hr><button data-act="out">Cerrar sesión</button>
        <div class="hint" style="padding:6px 12px">${esc(ME.email||"")}</div>`
-    : `<button data-act="login">Entrar o crear cuenta</button>`;
+    : `<button data-act="login">Entrar o crear cuenta</button><button data-act="theme">${isDark() ? "☀️ Cambiar a modo claro" : "🌙 Cambiar a modo oscuro"}</button>`;
   m.hidden = false;
 }
 document.addEventListener("click", e => {
@@ -526,6 +573,7 @@ $("menu").addEventListener("click", async e => {
   if (a === "profile") openProfile();
   if (a === "login")   setTab("mine");
   if (a === "push")    enablePush();
+  if (a === "theme")   setTheme(isDark() ? "light" : "dark");
   if (a === "out"){ await SB.auth.signOut(); location.reload(); }
 });
 
@@ -535,7 +583,7 @@ document.addEventListener("click", async e => {
   if (rb){ REPORT_OPEN = Number(rb.dataset.report); const y = window.scrollY; renderCurrent(); window.scrollTo(0, y); return; }
   if (e.target.closest("[data-report-cancel]")){ REPORT_OPEN = null; const y = window.scrollY; renderCurrent(); window.scrollTo(0, y); return; }
   const tabBtn = e.target.closest(".tab");
-  if (tabBtn){ setTab(tabBtn.dataset.tab); return; }
+  if (tabBtn){ if (tabHome(tabBtn.dataset.tab)){ setTab(tabBtn.dataset.tab); window.scrollTo(0, 0); } return; }
 
   const cnt = e.target.closest(".count");
   if (cnt){ statusFilter = statusFilter === cnt.dataset.st ? "" : cnt.dataset.st; renderAll(); return; }
@@ -657,6 +705,9 @@ let DAILY = [], HISTORY = [], CHALLS = [], CH_ANS = [];
 let REPORTED = new Set(), REPORT_OPEN = null;
 let RETAR_OPEN = null, BACK_TAB = "study";
 let FRIENDS = [], FREQS = [];
+let FVIEW = "amigos";   // pestaña interna de Amigos: "amigos" | "grupos"
+let GSEG = {};          // vista de cada grupo: "liga" | "retos"
+let FRIEND_ALL = false; // mostrar todos los retos recientes
 let PLAY = null;      // { id, rival, qs, picks }
 let RESULT = null;    // jsonb de challenge_result
 let studyBusy = false, studyLoaded = false;
@@ -815,18 +866,24 @@ function updateBadges(){
   $("nGroup").textContent = (p + r) || "";
 }
 function chRow(c){
-  const rv = aliasOf(rivalOf(c)), my = myChAns(c.id);
-  const who = `<span class="ch-who">${avatar(rivalOf(c), "md")}`;
+  const rv = aliasOf(rivalOf(c)), my = myChAns(c.id), n = c.question_ids.length;
+  const d = Math.floor((Date.now() - new Date(c.created_at)) / 864e5), ago = d <= 0 ? "hoy" : d === 1 ? "hace 1 día" : `hace ${d} días`;
+  // Las filas de retos con resultado se abren tocándolas; las pendientes llevan sus botones.
+  const row = (cls, tag, meta, act, open) => {
+    const inner = `<span class="ch-ico" aria-hidden="true">${I.swords}</span><span class="ch-body"><b>Reto de ${n} preguntas</b><span class="hint">vs. ${esc(rv)}</span></span><span class="ch-side">${tag}<span class="hint">${meta}${meta ? " · " : ""}${ago}</span></span>`;
+    return open ? `<button type="button" class="chrow ${cls}" data-chres="${c.id}" aria-label="Reto de ${n} preguntas contra ${esc(rv)}: ver retroalimentación">${inner}${I.chev}</button>`
+      : `<div class="chrow ${cls}">${inner}${act ? `<span class="ch-act">${act}</span>` : ""}</div>`;
+  };
   const tag = (t, k) => `<span class="ch-tag ${k}">${t}</span>`;
-  if (c.status === "declined") return `<div class="chrow ch-off">${who}<span>${c.challenger===ME.id?`${esc(rv)} rechazó tu desafío`:`Rechazaste el desafío de ${esc(rv)}`}</span></span></div>`;
+  if (c.status === "declined") return row("ch-off", tag("Rechazado", "off"), c.challenger === ME.id ? `${esc(rv)} lo rechazó` : "Lo rechazaste", "");
   if (c.status === "done"){
     const th = CH_ANS.find(r => r.challenge_id === c.id && r.user_id !== ME.id), a = my?.score ?? 0, b = th?.score ?? 0;
     const verdict = a > b ? "Ganaste" : a < b ? "Perdiste" : "Empate";
-    return `<div class="chrow ch-done ${a > b ? "ch-win" : a < b ? "ch-lose" : "ch-tie"}">${who}<span><b>${verdict}</b> contra ${esc(rv)} · <b class="ch-score">${a}–${b}</b></span></span>${tag("Completado", "done")}<button class="btn ghost small" data-chres="${c.id}">Ver retroalimentación</button></div>`;
+    return row(`ch-done ${a > b ? "ch-win" : a < b ? "ch-lose" : "ch-tie"}`, tag("Completado", "done"), `${verdict} ${a}–${b}`, "", true);
   }
-  if (my) return `<div class="chrow ch-wait">${who}<span>Respondiste (${my.score}/${c.question_ids.length}). Esperando a ${esc(rv)}.</span></span>${tag(I.hourglass + "Esperando rival", "wait")}<button class="btn ghost small" data-chres="${c.id}">Ver retroalimentación</button></div>`;
-  return `<div class="chrow due">${who}<span>${c.challenger===ME.id?`Tu desafío a ${esc(rv)}`:`<b>${esc(rv)}</b> te retó`} · ${c.question_ids.length} preguntas</span></span>${tag("Te toca", "due")}
-    <span><button class="btn small" data-chplay="${c.id}">Jugar</button>${c.opponent===ME.id?` <button class="btn ghost small" data-chdecline="${c.id}">Rechazar</button>`:""}</span></div>`;
+  if (my) return row("ch-wait", tag(I.hourglass + "Esperando rival", "wait"), `Tu puntaje: ${my.score}/${n}`, "", true);
+  return row("due", tag("Te toca", "due"), c.challenger === ME.id ? "Tu desafío" : "Te retó",
+    `<button class="btn small" data-chplay="${c.id}">Jugar</button>${c.opponent===ME.id?` <button class="btn ghost small" data-chdecline="${c.id}">Rechazar</button>`:""}`);
 }
 function pendingBox(){
   const p = CHALLS.filter(isMyTurn);
@@ -1004,6 +1061,20 @@ document.addEventListener("click", async e => {
     await SB.rpc("remove_friend", { p_other: uf2.dataset.funfriend });
     await loadAll(); await loadStudy(); renderAllTabs(); return;
   }
+  const fv = e.target.closest("[data-fview]");
+  if (fv){
+    FVIEW = fv.dataset.fview;
+    if (fv.dataset.openG){ try { localStorage.setItem("rt-g-" + fv.dataset.openG, "1"); } catch(err){} }
+    renderGroup();
+    const tgt = fv.dataset.openG ? $("g-" + fv.dataset.openG) : null;
+    if (tgt) tgt.scrollIntoView({ block: "start" }); else window.scrollTo(0, 0);
+    return;
+  }
+  const gt = e.target.closest("[data-goto]");
+  if (gt){ $(gt.dataset.goto)?.scrollIntoView({ block: "start", behavior: "smooth" }); return; }
+  if (e.target.closest("[data-fall]")){ FRIEND_ALL = !FRIEND_ALL; const y = window.scrollY; renderGroup(); window.scrollTo(0, y); return; }
+  const gs = e.target.closest("[data-gseg]");
+  if (gs){ GSEG[gs.dataset.gseg] = gs.dataset.v; const y = window.scrollY; renderGroup(); window.scrollTo(0, y); return; }
   if (e.target.closest("[data-copy-code]")){
     try { await navigator.clipboard.writeText(PROFILE.friend_code); toast("Código copiado."); } catch(err){ toast("Tu código: " + PROFILE.friend_code); }
     return;
