@@ -753,7 +753,7 @@ async function loadStudy(){
   HISTORY = h.data || [];
   CHALLS = c.data || [];
   CH_ANS = a.data || [];
-  const pend = CHALLS.filter(x => x.status === "pending" && !CH_ANS.some(r => r.challenge_id === x.id && r.user_id === ME.id)).length;
+  const pend = CHALLS.filter(isMyTurn).length;
   updateBadges();
   studyLoaded = true;
 }
@@ -889,7 +889,12 @@ function mates(){
 
 const rivalOf = c => c.challenger === ME.id ? c.opponent : c.challenger;
 const myChAns = id => CH_ANS.find(r => r.challenge_id === id && r.user_id === ME.id);
-const isMyTurn = c => c.status === "pending" && !myChAns(c.id);
+// Un reto se cancela a las 24 horas de creado (el servidor lo marca 'expired'; aquí se anticipa por si el cron no ha pasado).
+const CH_TTL = 864e5;
+const chLeft = c => new Date(c.created_at).getTime() + CH_TTL - Date.now();
+const chExpired = c => c.status === "expired" || (c.status === "pending" && chLeft(c) <= 0);
+const leftTxt = c => { const h = Math.floor(chLeft(c) / 36e5); return h >= 1 ? `quedan ${h} h` : `quedan ${Math.max(1, Math.ceil(chLeft(c) / 6e4))} min`; };
+const isMyTurn = c => c.status === "pending" && !chExpired(c) && !myChAns(c.id);
 const pendingCount = () => ME ? CHALLS.filter(isMyTurn).length : 0;
 function updateBadges(){
   const p = pendingCount(), r = FREQS.filter(x => x.incoming).length;
@@ -913,8 +918,9 @@ function chRow(c){
     const verdict = a > b ? "Ganaste" : a < b ? "Perdiste" : "Empate";
     return row(`ch-done ${a > b ? "ch-win" : a < b ? "ch-lose" : "ch-tie"}`, tag("Completado", "done"), `${verdict} ${a}–${b}`, "", true);
   }
-  if (my) return row("ch-wait", tag(I.hourglass + "Esperando rival", "wait"), `Tu puntaje: ${my.score}/${n}`, "", true);
-  return row("due", tag("Te toca", "due"), c.challenger === ME.id ? "Tu desafío" : "Te retó",
+  if (chExpired(c)) return row("ch-off", tag("Vencido", "off"), my ? `${esc(rv)} no respondió en 24 h` : "No respondiste en 24 h", "", !!my);
+  if (my) return row("ch-wait", tag(I.hourglass + "Esperando rival", "wait"), `Tu puntaje: ${my.score}/${n} · ${leftTxt(c)}`, "", true);
+  return row("due", tag("Te toca", "due"), `${c.challenger === ME.id ? "Tu desafío" : "Te retó"} · ${leftTxt(c)}`,
     `<button class="btn small" data-chplay="${c.id}">Jugar</button>${c.opponent===ME.id?` <button class="btn ghost small" data-chdecline="${c.id}">Rechazar</button>`:""}`);
 }
 function pendingBox(){
