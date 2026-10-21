@@ -721,7 +721,7 @@ const SUBAREAS = {
   sistema_salud: [["normatividad","Normatividad y SGSSS"],["etica","Ética médica"],["medicina_legal","Medicina legal y forense"]]
 };
 const SUB_LABEL = Object.fromEntries(Object.values(SUBAREAS).flat());
-const areaLabel = q => esc(AREAS[q.area] || q.area) + (q.subarea && SUB_LABEL[q.subarea] ? ` · ${esc(SUB_LABEL[q.subarea])}` : "");
+const areaChips = q => `<span class="chip on">${esc(AREAS[q.area] || q.area)}</span>` +(q.subarea && SUB_LABEL[q.subarea] ? `<span class="chip on">${esc(SUB_LABEL[q.subarea])}</span>` : "");
 let SUB_COUNTS = {};
 const LETTERS = ["A","B","C","D","E"];
 let DAILY = [], HISTORY = [], CHALLS = [], CH_ANS = [];
@@ -865,7 +865,7 @@ function renderDaily(){
   const cards = DAILY.map(q => {
     const answered = q.my_choice != null;
     return `<article class="qcard" id="q-${q.id}">
-      <div class="qmeta"><span class="qn">${q.slot}</span><span class="chip on">${areaLabel(q)}</span>${answered && q.topic ? `<span class="hint">${esc(q.topic)}</span>` : ""}</div>
+      <div class="qmeta"><span class="qn">${q.slot}</span>${areaChips(q)}${answered && q.topic ? `<span class="hint">${esc(q.topic)}</span>` : ""}</div>
       <p class="stem">${esc(q.stem)}</p>
       ${optList(q, { kind:"daily", pick: q.my_choice, correct: answered ? q.correct : null, locked: answered })}
       ${answered && q.correct != null ? feedback(q.is_correct, q.explanation, q.source, q.id) : answered ? `<p class="hint" style="margin:6px 0 0">Respuesta guardada. La retroalimentación aparece al final del simulacro.</p>` : ""}
@@ -929,14 +929,14 @@ function renderPlay(){
   const all = PLAY.qs.every((q,i) => PLAY.picks[i] != null);
   return `<div class="playhead"><button class="btn ghost small" id="chBack">Volver</button><h2 style="margin:0">Desafío contra ${esc(PLAY.rival)}</h2></div>
     <p class="sub">Elige una respuesta en cada pregunta. Al enviar ves tu retroalimentación; el ganador se define cuando ${esc(PLAY.rival)} también termine.</p>
-    <div class="qlist">${PLAY.qs.map((q,i) => `<article class="qcard"><div class="qmeta"><span class="qn">${i+1}</span><span class="chip on">${esc(AREAS[q.area]||q.area)}</span></div>
+    <div class="qlist">${PLAY.qs.map((q,i) => `<article class="qcard"><div class="qmeta"><span class="qn">${i+1}</span>${areaChips(q)}</div>
       <p class="stem">${esc(q.stem)}</p>${optList({ ...q, id: i }, { kind:"play", pick: PLAY.picks[i] })}</article>`).join("")}</div>
     <div class="submitbar"><span class="hint">${PLAY.picks.filter(x => x!=null).length} de ${PLAY.qs.length}</span><button class="btn" id="chSubmit" ${all?"":"disabled"}>Enviar respuestas</button></div>`;
 }
 
 function renderResult(){
   const r = RESULT, rv = aliasOf(r.rival);
-  const items = () => `<div class="qlist">${r.items.map(it => `<article class="qcard"><div class="qmeta"><span class="qn">${it.idx}</span><span class="chip on">${esc(AREAS[it.area]||it.area)}</span></div>
+  const items = () => `<div class="qlist">${r.items.map(it => `<article class="qcard"><div class="qmeta"><span class="qn">${it.idx}</span>${areaChips(it)}</div>
       <p class="stem">${esc(it.stem)}</p>
       ${optList({ id: "r"+it.idx, options: it.options }, { correct: it.correct, pick: it.mine, mine: it.mine, theirs: r.done ? it.theirs : null, rivalName: rv, locked: true })}
       ${feedback(it.mine === it.correct, it.explanation, it.source, it.qid)}</article>`).join("")}</div>`;
@@ -1258,16 +1258,8 @@ function studyHub(){
 function prHead(title, extra){
   return `<div class="playhead"><button class="btn ghost small" type="button" data-pr-back>Volver</button><h2 style="margin:0;flex:1">${title}</h2>${extra || ""}</div>`;
 }
-function subRows(r){
-  const subs = (SUBAREAS[r.area] || []).filter(([k]) => SUB_COUNTS[k] || (r.subs || []).some(x => x.sub === k));
-  if (!subs.length) return "";
-  return `<details class="subs"><summary>Por subcategoría</summary><div class="sub-list">${subs.map(([k, label]) => {
-    const st = (r.subs || []).find(x => x.sub === k), p = st ? pctOf(st.ok, st.n) : null;
-    return `<div class="sub-row"><span class="sub-name">${esc(label)}</span><span class="bar" aria-hidden="true"><i style="width:${p == null ? 0 : Math.max(p, 3)}%"></i></span><span class="sub-pct">${p == null ? "–" : p + " %"}</span>${SUB_COUNTS[k] ? `<button type="button" class="linkish sub-go" data-pr-sub="${k}" data-area="${r.area}">Practicar</button>` : `<span></span>`}</div>`;
-  }).join("")}</div></details>`;
-}
 function renderAreas(){
-  const rows = Object.keys(AREAS).map(k => AREA_STATS.find(x => x.area === k) || { area: k, answered: 0, correct: 0, topics: [] });
+  const rows = Object.keys(AREAS).filter(k => k !== "cultura" || AREA_STATS.some(x => x.area === k)).map(k => AREA_STATS.find(x => x.area === k) || { area: k, answered: 0, correct: 0, topics: [], subs: [] });
   const w = weakestArea();
   const any = rows.some(r => r.answered);
   const rev = REV.due_now
@@ -1277,19 +1269,44 @@ function renderAreas(){
     <div class="sim-card"><h3 style="margin:0 0 6px">Repaso de errores</h3>${rev}
       <p class="hint" style="margin:8px 0 0">Lo que fallas vuelve a los 3 días; si lo aciertas, a los 7; si lo vuelves a acertar, queda dominado.${REV.mastered ? ` Llevas ${REV.mastered} ${REV.mastered === 1 ? "dominada" : "dominadas"}.` : ""}</p></div>
     <h3 style="margin:18px 0 4px">Por área</h3>
-    <p class="sub">Tus aciertos en las preguntas diarias. Practicar trae 10 preguntas del banco de esa área, primero las que no has visto o fallaste. No cuenta para el ranking ni las rachas, y lo que falles pasa a tu repaso.</p>
+    <p class="sub">Tus aciertos en las preguntas diarias. Toca un área para ver sus subcategorías y practicar la que más necesites.</p>
     ${any ? "" : `<div class="empty">Todavía no hay datos. Responde las preguntas diarias y aquí verás en qué vas bien y en qué no.</div>`}
     <div class="areas">${rows.map(r => {
       const p = pctOf(r.correct, r.answered), weak = w && w.area === r.area;
-      const tps = (r.topics || []).slice(0, 3);
-      return `<div class="area-row${weak ? " weak" : ""}">
-        <div class="area-top"><b>${esc(AREAS[r.area])}</b>${weak ? `<span class="due">Tu área más floja</span>` : ""}<span class="area-pct">${r.answered ? p + " %" : "–"}</span></div>
+      const ws = weakSub(r);
+      return `<button type="button" class="area-row area-btn${weak ? " weak" : ""}" data-pr-open="${r.area}">
+        <div class="area-top"><b>${esc(AREAS[r.area])}</b>${weak ? `<span class="due">Tu área más floja</span>` : ""}<span class="area-pct">${r.answered ? p + " %" : "–"}</span>${I.chev}</div>
         <div class="bar" aria-hidden="true"><i style="width:${r.answered ? Math.max(p, 3) : 0}%"></i></div>
-        <div class="area-meta"><span class="hint">${r.answered ? `${r.correct} de ${r.answered} correctas` : "Sin respuestas todavía"}</span><button type="button" class="btn small" data-pr-area="${r.area}">Practicar</button></div>
-        ${subRows(r)}
-        ${tps.length ? `<div class="area-topics"><span class="hint">Temas que fallaste:</span>${tps.map(t => `<span class="chip">${esc(t.topic)} · ${t.ok}/${t.n}</span>`).join("")}</div>` : ""}
-      </div>`;
+        <div class="area-meta"><span class="hint">${r.answered ? `${r.correct} de ${r.answered} correctas` : "Sin respuestas todavía"}${ws ? ` · más floja: ${esc(SUB_LABEL[ws.sub])}` : ""}</span></div>
+      </button>`;
     }).join("")}</div>`;
+}
+// Subcategoría más floja de un área: la de menor % entre las que tienen respuestas.
+function weakSub(r){
+  const s = (r.subs || []).filter(x => x.n > 0).sort((a, b) => (a.ok / a.n) - (b.ok / b.n) || b.n - a.n)[0];
+  return s && s.ok < s.n ? s : null;
+}
+function renderArea(area){
+  const r = AREA_STATS.find(x => x.area === area) || { area, answered: 0, correct: 0, topics: [], subs: [] };
+  const p = pctOf(r.correct, r.answered), ws = weakSub(r);
+  const tps = (r.topics || []).slice(0, 5);
+  const subs = (SUBAREAS[area] || []).map(([k, label]) => {
+    const st = (r.subs || []).find(x => x.sub === k), n = SUB_COUNTS[k] || 0, sp = st ? pctOf(st.ok, st.n) : null;
+    const weak = ws && ws.sub === k;
+    return `<div class="area-row sub-card${weak ? " weak" : ""}">
+      <div class="area-top"><b>${esc(label)}</b>${weak ? `<span class="due">La más floja</span>` : ""}<span class="area-pct">${sp == null ? "–" : sp + " %"}</span></div>
+      <div class="bar" aria-hidden="true"><i style="width:${sp == null ? 0 : Math.max(sp, 3)}%"></i></div>
+      <div class="area-meta"><span class="hint">${st ? `${st.ok} de ${st.n} correctas` : "Sin respuestas todavía"} · ${n} ${n === 1 ? "pregunta" : "preguntas"} en el banco</span>${n ? `<button type="button" class="btn small" data-pr-sub="${k}">Practicar</button>` : ""}</div>
+    </div>`;
+  }).join("");
+  return `${prHead(esc(AREAS[area]))}
+    <div class="sim-card">
+      <div class="area-top"><b>Toda el área</b><span class="area-pct">${r.answered ? p + " %" : "–"}</span></div>
+      <div class="bar" aria-hidden="true"><i style="width:${r.answered ? Math.max(p, 3) : 0}%"></i></div>
+      <div class="area-meta"><span class="hint">${r.answered ? `${r.correct} de ${r.answered} correctas` : "Sin respuestas todavía"}</span><button type="button" class="btn small" data-pr-area="${area}">Practicar el área</button></div>
+      ${tps.length ? `<div class="area-topics"><span class="hint">Temas que fallaste:</span>${tps.map(t => `<span class="chip">${esc(t.topic)} · ${t.ok}/${t.n}</span>`).join("")}</div>` : ""}
+    </div>
+    ${(SUBAREAS[area] || []).length ? `<h3 style="margin:18px 0 4px">Subcategorías</h3><p class="sub">Practicar trae 10 preguntas del banco de esa subcategoría, primero las que no has visto o fallaste. No cuenta para el ranking ni las rachas.</p><div class="areas">${subs}</div>` : ""}`;
 }
 function simPlan(size){
   const n = Math.min(size, BANK);
@@ -1322,7 +1339,7 @@ function renderRun(){
     : `Preguntas del banco para practicar. No cuentan para el ranking; lo que falles pasa a tu repaso.`;
   const cards = P.qs.map((q, i) => {
     const pick = P.picks[i], show = !sim && pick != null;
-    return `<article class="qcard"><div class="qmeta"><span class="qn">${i + 1}</span><span class="chip on">${areaLabel(q)}</span>${show && q.topic ? `<span class="hint">${esc(q.topic)}</span>` : ""}${P.mode === "review" && q.misses > 1 ? `<span class="hint">fallada ${q.misses} veces</span>` : ""}</div>
+    return `<article class="qcard"><div class="qmeta"><span class="qn">${i + 1}</span>${areaChips(q)}${show && q.topic ? `<span class="hint">${esc(q.topic)}</span>` : ""}${P.mode === "review" && q.misses > 1 ? `<span class="hint">fallada ${q.misses} veces</span>` : ""}</div>
       <p class="stem">${esc(q.stem)}</p>
       ${optList({ ...q, id: i }, { kind: "prac", pick, correct: show ? q.correct : null, locked: show })}
       ${show ? feedback(pick === q.correct, q.explanation, q.source, q.id) : ""}</article>`;
@@ -1340,11 +1357,12 @@ function renderSimResult(){
     <h4 class="ghead">Por área (de la más floja a la mejor)</h4>
     <div class="areas">${areas.map(([k, v]) => `<div class="area-row"><div class="area-top"><b>${esc(AREAS[k] || k)}</b><span class="area-pct">${v.ok}/${v.n}</span></div><div class="bar" aria-hidden="true"><i style="width:${Math.max(pctOf(v.ok, v.n), 3)}%"></i></div></div>`).join("")}</div>
     <p class="sub" style="margin-top:12px">${R.ok < P.qs.length ? `Las ${P.qs.length - R.ok} que fallaste o dejaste en blanco quedaron en tu repaso: vuelven en 3 días.` : "Sin errores. Excelente."}</p>
-    <div class="qlist">${P.qs.map((q, i) => `<article class="qcard"><div class="qmeta"><span class="qn">${i + 1}</span><span class="chip on">${areaLabel(q)}</span>${q.topic ? `<span class="hint">${esc(q.topic)}</span>` : ""}${P.picks[i] == null ? `<span class="due">En blanco</span>` : ""}</div>
+    <div class="qlist">${P.qs.map((q, i) => `<article class="qcard"><div class="qmeta"><span class="qn">${i + 1}</span>${areaChips(q)}${q.topic ? `<span class="hint">${esc(q.topic)}</span>` : ""}${P.picks[i] == null ? `<span class="due">En blanco</span>` : ""}</div>
       <p class="stem">${esc(q.stem)}</p>${optList({ ...q, id: "s" + i }, { pick: P.picks[i], correct: q.correct, locked: true })}${feedback(P.picks[i] === q.correct, q.explanation, q.source, q.id)}</article>`).join("")}</div>`;
 }
 function renderPractice(){
   if (PRAC.screen === "areas") return renderAreas();
+  if (PRAC.screen === "area") return renderArea(PRAC.area);
   if (PRAC.screen === "simsetup") return renderSimSetup();
   if (PRAC.screen === "result") return renderSimResult();
   return renderRun();
@@ -1394,17 +1412,21 @@ document.addEventListener("click", async e => {
   if (!PRAC) return;
   if (t.closest("[data-pr-back]")){
     if (PRAC.mode === "sim" && PRAC.screen === "run" && PRAC.picks.some(x => x != null) && !confirm("¿Salir del simulacro? Se pierde lo que llevas.")) return;
-    const back = PRAC.screen === "run" && (PRAC.mode === "area" || PRAC.mode === "review") ? { screen: "areas" } : null;
+    const back = PRAC.screen === "area" ? { screen: "areas" }
+      : PRAC.screen === "run" && PRAC.mode === "area" && PRAC.from ? { screen: "area", area: PRAC.from }
+      : PRAC.screen === "run" && (PRAC.mode === "area" || PRAC.mode === "review") ? { screen: "areas" } : null;
     PRAC = back; renderStudy(); window.scrollTo(0, 0);
     loadPractice().then(() => { if (tab === "study") renderStudy(); });
     return;
   }
+  const po = t.closest("[data-pr-open]");
+  if (po){ PRAC = { screen: "area", area: po.dataset.prOpen }; renderStudy(); window.scrollTo(0, 0); return; }
   const sb = t.closest("[data-pr-sub]");
   if (sb){
     const { data, error } = await SB.rpc("practice_set", { p_n: 10, p_sub: sb.dataset.prSub });
     if (error){ toast(error.message); return; }
     if (!data?.length){ toast("Todavía no hay preguntas de esa subcategoría en el banco."); return; }
-    PRAC = { screen: "run", mode: "area", title: `Practicar: ${SUB_LABEL[sb.dataset.prSub]}`, qs: data, picks: data.map(() => null) };
+    PRAC = { screen: "run", mode: "area", from: PRAC?.area || null, title: `Practicar: ${SUB_LABEL[sb.dataset.prSub]}`, qs: data, picks: data.map(() => null) };
     renderStudy(); window.scrollTo(0, 0); return;
   }
   const ar = t.closest("[data-pr-area]");
@@ -1412,7 +1434,7 @@ document.addEventListener("click", async e => {
     const { data, error } = await SB.rpc("practice_set", { p_n: 10, p_area: ar.dataset.prArea });
     if (error){ toast(error.message); return; }
     if (!data?.length){ toast("Todavía no hay preguntas de esa área en el banco."); return; }
-    PRAC = { screen: "run", mode: "area", title: `Practicar: ${AREAS[ar.dataset.prArea]}`, qs: data, picks: data.map(() => null) };
+    PRAC = { screen: "run", mode: "area", from: ar.dataset.prArea, title: `Practicar: ${AREAS[ar.dataset.prArea]}`, qs: data, picks: data.map(() => null) };
     renderStudy(); window.scrollTo(0, 0); return;
   }
   const sz = t.closest("[data-pr-size]");
@@ -1614,7 +1636,7 @@ function renderLive(){
   const top = `<div class="live-top"><span class="hint">Pregunta ${st.idx + 1} de ${st.n}</span>${st.status === "q" ? `<span class="live-clock" id="liveClock">${Math.ceil(Math.max(0, L.endsAt - Date.now()) / 1000)}</span>` : ""}</div>
     ${st.status === "q" ? `<div class="live-bar"><i id="liveBar" style="width:${Math.max(0, Math.min(100, 100 * (L.endsAt - Date.now()) / (st.secs * 1000)))}%"></i></div>` : ""}`;
   if (st.status === "q"){
-    return `${head}${top}<article class="qcard"><div class="qmeta"><span class="chip on">${esc(AREAS[q.area] || q.area)}</span></div><p class="stem">${esc(q.stem)}</p>
+    return `${head}${top}<article class="qcard"><div class="qmeta">${areaChips(q)}</div><p class="stem">${esc(q.stem)}</p>
       ${optList({ id: st.idx, options: q.options }, { kind: "live", pick: mine ?? null, locked: mine != null })}</article>
       <p class="hint">${mine != null ? "Respuesta enviada. " : ""}${answered} de ${st.players.length} respondieron.</p>
       ${st.is_host ? `<button class="btn ghost small" type="button" data-live-next>Cerrar la pregunta ya</button>` : ""}`;
@@ -1622,7 +1644,7 @@ function renderLive(){
   // reveal
   const counts = st.counts || [];
   const verdict = mine == null ? `<div class="fb fb-bad"><p><b>No respondiste a tiempo.</b></p></div>` : "";
-  return `${head}${top}<article class="qcard"><div class="qmeta"><span class="chip on">${esc(AREAS[q.area] || q.area)}</span>${st.mine ? `<span class="${st.mine.ok ? "ok-txt" : "due"}">${st.mine.ok ? `+${st.mine.pts} puntos` : "0 puntos"}</span>` : ""}</div><p class="stem">${esc(q.stem)}</p>
+  return `${head}${top}<article class="qcard"><div class="qmeta">${areaChips(q)}${st.mine ? `<span class="${st.mine.ok ? "ok-txt" : "due"}">${st.mine.ok ? `+${st.mine.pts} puntos` : "0 puntos"}</span>` : ""}</div><p class="stem">${esc(q.stem)}</p>
     ${optList({ id: "lv" + st.idx, options: q.options.map((o, i) => `${o}  (${counts[i] || 0})`) }, { pick: mine ?? null, correct: st.correct, locked: true })}
     ${verdict}${feedback(mine === st.correct, st.explanation, st.source, st.qid)}</article>
     <h4 class="ghead">Puntaje</h4>${liveBoard(st.players, 5)}
@@ -1888,7 +1910,7 @@ function renderStudyDate(){
   if (SD.turn){
     const q = SD.q;
     turn = `<div class="sd-turn"><p class="sd-who">Le toca a <b>${esc(SD.turn)}</b></p>${!q ? `<div class="empty">Buscando una pregunta…</div>` : `<article class="qcard">
-      <div class="qmeta"><span class="chip on">${esc(AREAS[q.area] || q.area)}</span>${SD.pick != null && q.topic ? `<span class="hint">${esc(q.topic)}</span>` : ""}</div>
+      <div class="qmeta">${areaChips(q)}${SD.pick != null && q.topic ? `<span class="hint">${esc(q.topic)}</span>` : ""}</div>
       <p class="stem">${esc(q.stem)}</p>
       ${optList(q, { kind: "sd", pick: SD.pick, correct: SD.pick != null ? q.correct : null, locked: SD.pick != null })}
       ${SD.pick != null ? feedback(SD.pick === q.correct, q.explanation, q.source, q.id) : `<p class="hint" style="margin:8px 0 0">Lean la pregunta en voz alta. ${esc(SD.turn)} elige su respuesta y se toca aquí.</p>`}

@@ -911,3 +911,6 @@ button.chrow:hover{border-color:var(--rule-strong)}
 .sub-row .bar{margin:0;height:7px}
 .sub-pct{text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
 .sub-go{font-size:13px;color:var(--drop);font-weight:700;text-decoration:none}
+.area-btn{display:block;width:100%;text-align:left;font:inherit;color:var(--ink);cursor:pointer}
+.area-btn .area-top svg{width:18px;height:18px;color:var(--muted);flex:none}
+.area-btn:hover{border-color:var(--rule-strong)}
