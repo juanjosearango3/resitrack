@@ -732,8 +732,8 @@ function feedback(ok, explanation, source, qid){
   // Nunca se muestra un párrafo que hable del origen de la pregunta (reconstrucciones, grupo, respuesta marcada).
   const ORIGIN = /reconstru|el grupo (marc|discut|dec|dij)|respuesta oficial|marcaba |marcaron |clave del examen|en el examen (pregunt|marc|basta|de (la udea|univalle|20))|el examen (marc|daba|dio)/i;
   const paras = String(explanation || "").split(/\n\s*\n/).map(p => p.trim()).filter(Boolean).filter(p => !ORIGIN.test(p));
-  const body = paras.map((p, i) => `<p>${i === 0 ? `<b>${ok?"Correcta.":"Incorrecta."}</b> ` : ""}${esc(p).replace(/^OJO:/, "<b>OJO:</b>")}</p>`).join("");
-  return `<div class="fb ${ok?"fb-ok":"fb-bad"}">${body}${source?`<div class="hint" style="margin-top:6px">Fuente: ${esc(source)}</div>`:""}</div>${reportBox(qid)}`;
+  const body = paras.map(p => `<p>${esc(p).replace(/^OJO:/, "<b>OJO:</b>")}</p>`).join("");
+  return `<div class="fb ${ok?"fb-ok":"fb-bad"}"><div class="fb-hd"><i aria-hidden="true">${ok?"✓":"✕"}</i>${ok?"Correcta.":"Incorrecta."}</div><div class="fb-body">${body}${source?`<div class="hint src-line">Fuente: ${esc(source)}</div>`:""}</div></div>${reportBox(qid)}`;
 }
 
 function renderDaily(){
@@ -777,14 +777,15 @@ function updateBadges(){
 }
 function chRow(c){
   const rv = aliasOf(rivalOf(c)), my = myChAns(c.id);
-  if (c.status === "declined") return `<div class="chrow"><span>${c.challenger===ME.id?`${esc(rv)} rechazó tu desafío`:`Rechazaste el desafío de ${esc(rv)}`}</span></div>`;
+  const who = `<span class="ch-who">${avatar(rivalOf(c), "md")}`;
+  if (c.status === "declined") return `<div class="chrow ch-off">${who}<span>${c.challenger===ME.id?`${esc(rv)} rechazó tu desafío`:`Rechazaste el desafío de ${esc(rv)}`}</span></span></div>`;
   if (c.status === "done"){
     const th = CH_ANS.find(r => r.challenge_id === c.id && r.user_id !== ME.id), a = my?.score ?? 0, b = th?.score ?? 0;
     const verdict = a > b ? "Ganaste" : a < b ? "Perdiste" : "Empate";
-    return `<div class="chrow"><span><b>${verdict}</b> contra ${esc(rv)} · ${a}–${b}</span><button class="btn ghost small" data-chres="${c.id}">Ver retroalimentación</button></div>`;
+    return `<div class="chrow ch-done ${a > b ? "ch-win" : a < b ? "ch-lose" : "ch-tie"}">${who}<span><b>${verdict}</b> contra ${esc(rv)} · <b class="ch-score">${a}–${b}</b></span></span><button class="btn ghost small" data-chres="${c.id}">Ver retroalimentación</button></div>`;
   }
-  if (my) return `<div class="chrow"><span>Respondiste (${my.score}/${c.question_ids.length}). Esperando a ${esc(rv)}.</span><button class="btn ghost small" data-chres="${c.id}">Ver retroalimentación</button></div>`;
-  return `<div class="chrow due"><span>${c.challenger===ME.id?`Tu desafío a ${esc(rv)}`:`<b>${esc(rv)}</b> te retó`} · ${c.question_ids.length} preguntas</span>
+  if (my) return `<div class="chrow ch-wait">${who}<span>Respondiste (${my.score}/${c.question_ids.length}). Esperando a ${esc(rv)}.</span></span><button class="btn ghost small" data-chres="${c.id}">Ver retroalimentación</button></div>`;
+  return `<div class="chrow due">${who}<span>${c.challenger===ME.id?`Tu desafío a ${esc(rv)}`:`<b>${esc(rv)}</b> te retó`} · ${c.question_ids.length} preguntas</span></span>
     <span><button class="btn small" data-chplay="${c.id}">Jugar</button>${c.opponent===ME.id?` <button class="btn ghost small" data-chdecline="${c.id}">Rechazar</button>`:""}</span></div>`;
 }
 function pendingBox(){
@@ -822,13 +823,13 @@ function renderResult(){
   if (r.done === false){
     // Aún falta el rival: se ve el propio puntaje y la retroalimentación, pero no el ganador ni sus respuestas.
     return `<div class="playhead"><button class="btn ghost small" id="chBack">Volver</button><h2 style="margin:0">Respuestas enviadas</h2></div>
-      <div class="score"><div><span>${r.my_score}</span>de ${r.total}</div></div>
+      <div class="score duel"><div class="duel-side">${avatar(ME.id, "lg")}<span>${r.my_score}</span>de ${r.total}</div><div class="vs">vs</div><div class="duel-side duel-wait">${avatar(r.rival, "lg")}<span aria-hidden="true">🔒</span>Pendiente</div></div>
       <p class="sub" style="text-align:center">El ganador se define cuando ${esc(rv)} termine. Te avisamos.</p>
       ${r.open ? items() : `<div style="text-align:center;margin:10px 0 18px"><button class="btn" type="button" data-chres-open>Ver retroalimentación</button></div>`}`;
   }
   const verdict = r.my_score > r.their_score ? "Ganaste" : r.my_score < r.their_score ? `Ganó ${esc(rv)}` : "Empate";
   return `<div class="playhead"><button class="btn ghost small" id="chBack">Volver</button><h2 style="margin:0">${verdict}</h2></div>
-    <div class="score"><div><span>${r.my_score}</span>Tú</div><div class="vs">–</div><div><span>${r.their_score}</span>${esc(rv)}</div></div>
+    <div class="score duel ${r.my_score > r.their_score ? "duel-won" : ""}"><div class="duel-side${r.my_score > r.their_score ? " win" : ""}">${avatar(ME.id, "lg")}<span>${r.my_score}</span>Tú</div><div class="vs">–</div><div class="duel-side${r.my_score < r.their_score ? " win" : ""}">${avatar(r.rival, "lg")}<span>${r.their_score}</span>${esc(rv)}</div></div>
     ${items()}`;
 }
 function renderCurrent(){ if (tab === "group") renderGroup(); else if (tab === "study") renderStudy(); else renderAllTabs(); }
@@ -1086,6 +1087,13 @@ function weakestArea(){
   const c = AREA_STATS.filter(x => x.answered >= 3 && x.area !== "cultura").sort((x, y) => (x.correct / x.answered) - (y.correct / y.answered));
   return c[0] && c[0].correct < c[0].answered ? c[0] : null;
 }
+const svgI = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+const HUB_ICONS = {
+  daily: svgI('<rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M8 3v4M16 3v4M3.5 10h17M8.5 15l2 2 4-4"/>'),
+  ref: svgI('<path d="M4 19h16"/><path d="M6.5 16v-4M11.5 16V8M16.5 16v-6"/><path d="M14 5h4v4"/>'),
+  sim: svgI('<circle cx="12" cy="13" r="7.5"/><path d="M12 9.5V13l2.5 2M10 2.5h4M18.5 6l1.5-1.5"/>'),
+  sd: svgI('<circle cx="9" cy="8.5" r="3"/><circle cx="17" cy="9.5" r="2.5"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5M15 14.2c2.5-.4 4.6 1 5.2 4.3"/>')
+};
 function studyHub(){
   const dow = bogotaDow(), sim = isSimDay(), n = DAILY.length;
   const done = DAILY.filter(q => q.my_choice != null).length, ok = DAILY.filter(q => q.is_correct).length;
@@ -1097,12 +1105,12 @@ function studyHub(){
   else dline = DAILY.some(q => q.correct == null) ? "Entregado" : `Terminaste: ${ok} de ${n}`;
   const w = weakestArea();
   const rline = REV.due_now ? `${REV.due_now} para repasar hoy` : w ? `Más floja: ${AREAS[w.area]}` : REV.upcoming ? `Próximo repaso: ${fmtS(REV.next_due)}` : "Tus aciertos por área";
-  const card = (attr, title, line, hot) => `<button type="button" class="hub-card${hot ? " hot" : ""}" ${attr}><b>${title}</b><span>${esc(line)}</span></button>`;
+  const card = (attr, k, title, line, hot) => `<button type="button" class="hub-card hub-${k}${hot ? " hot" : ""}" ${attr}><span class="hub-ico" aria-hidden="true">${HUB_ICONS[k]}</span><span class="hub-txt"><b>${title}</b><span>${esc(line)}</span></span></button>`;
   return `<div class="hub">
-    ${card("data-study-daily", sim ? "Simulacro del sábado" : "Preguntas diarias", dline, dhot)}
-    ${card('data-pr="refuerzo"', "Reforzar debilidades", rline, REV.due_now > 0)}
-    ${card('data-pr="sim"', "Simulacro", "Mezcla de estilos, con cronómetro", false)}
-    ${card("data-sd-menu", "Study Date", "Ruleta o quiz en vivo con tus amigos", false)}
+    ${card("data-study-daily", "daily", sim ? "Simulacro del sábado" : "Preguntas diarias", dline, dhot)}
+    ${card('data-pr="refuerzo"', "ref", "Reforzar debilidades", rline, REV.due_now > 0)}
+    ${card('data-pr="sim"', "sim", "Simulacro", "Mezcla de estilos, con cronómetro", false)}
+    ${card("data-sd-menu", "sd", "Study Date", "Ruleta o quiz en vivo con tus amigos", false)}
   </div>`;
 }
 function prHead(title, extra){
@@ -1295,8 +1303,8 @@ function strengthsBox(){
   return `<div class="sw-box">
     <div class="sw-hd"><h3 style="margin:0">Tu resumen de estudio</h3><span class="hint">${tot[0]} de ${tot[1]} correctas · ${pctOf(tot[0], tot[1])} %</span></div>
     <div class="sw-grid">
-      <div><span class="hint">Fortalezas</span><div>${strong.map(chip).join("") || `<span class="hint">Aún sin datos suficientes</span>`}</div></div>
-      <div><span class="hint">Por reforzar</span><div>${weak.map(chip).join("") || `<span class="hint">${rows.length ? "Nada por debajo del 60 %" : "Aún sin datos suficientes"}</span>`}</div></div>
+      <div class="sw-strong"><span class="hint">Fortalezas</span><div>${strong.map(chip).join("") || `<span class="hint">Aún sin datos suficientes</span>`}</div></div>
+      <div class="sw-weak"><span class="hint">Por reforzar</span><div>${weak.map(chip).join("") || `<span class="hint">${rows.length ? "Nada por debajo del 60 %" : "Aún sin datos suficientes"}</span>`}</div></div>
     </div>
     <p class="hint" style="margin:8px 0 0">${REV.due_now ? `Tienes ${REV.due_now} ${REV.due_now === 1 ? "pregunta" : "preguntas"} de repaso para hoy. ` : ""}${last ? `Último simulacro: ${pctOf(last.correct, last.n)} %. ` : ""}Las áreas cuentan desde 3 respuestas.</p>
     <button type="button" class="btn small" data-go-refuerzo>Reforzar en Estudiar</button>
@@ -1585,7 +1593,7 @@ document.addEventListener("submit", async e => {
 
 /* ---------- Study Date: ruleta para estudiar en persona ---------- */
 let SD = null; // { names, scores:{name:{ok,n}}, asked:[], area, rot, spinning, turn, q, pick }
-const SD_COLORS = ["#0b8a6c","#0d2a4a","#2f6f9f","#1f5f52","#3f5d7a","#14485f","#127a63","#24527a","#456b5f","#2b4a6b"];
+const SD_COLORS = ["#0B7A69","#2563C9","#5848C2","#0F6E7A","#1E7F5C","#3A55B8","#6C4FB8","#0E5E8C","#14806E","#4060C8"];
 function sdLoadNames(){ try { return JSON.parse(localStorage.getItem("rt-sd-names") || "[]").filter(x => typeof x === "string").slice(0, 12); } catch(e){ return []; } }
 function sdSaveNames(){ try { localStorage.setItem("rt-sd-names", JSON.stringify(SD.names)); } catch(e){} }
 function sdEntry(){
