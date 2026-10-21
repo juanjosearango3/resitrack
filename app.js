@@ -710,8 +710,19 @@ async function enablePush(){
 /* ---------- estudiar: preguntas diarias y desafíos ---------- */
 const AREAS = {
   basicas: "Ciencias básicas", clinicas: "Clínicas", quirurgicas: "Quirúrgicas",
-  salud_publica: "Salud pública", sistema_salud: "Sistema de salud", cultura: "Cultura general"
+  salud_publica: "Salud pública y epidemiología", sistema_salud: "Sistema de salud", cultura: "Cultura general"
 };
+// Subcategorías (deben coincidir con la tabla public.subareas).
+const SUBAREAS = {
+  basicas: [["fisiologia","Fisiología"],["anatomia","Anatomía"],["fisiopatologia","Fisiopatología"],["farmacologia","Farmacología"],["toxicologia","Toxicología"],["microbiologia","Microbiología"],["bioquimica","Bioquímica"],["genetica","Genética"],["inmunologia","Inmunología"],["embriologia","Embriología"]],
+  clinicas: [["medicina_interna","Medicina interna"],["pediatria","Pediatría"],["urgencias","Urgencias"],["medicina_familiar","Medicina familiar"],["neurologia","Neurología"],["psiquiatria","Psiquiatría"],["dermatologia","Dermatología"]],
+  quirurgicas: [["cirugia_general","Cirugía general"],["ginecobstetricia","Ginecología y obstetricia"],["ortopedia","Ortopedia"],["trauma","Trauma"],["cirugia_plastica","Cirugía plástica"],["cirugia_pediatrica","Cirugía pediátrica"],["otorrino","Otorrinolaringología"],["oftalmologia","Oftalmología"],["urologia","Urología"],["anestesiologia","Anestesiología"],["cirugia_vascular","Cirugía vascular"],["neurocirugia","Neurocirugía"]],
+  salud_publica: [["epidemiologia","Epidemiología"],["bioestadistica","Bioestadística"],["mbe","Medicina basada en la evidencia"],["prevencion","Prevención y tamización"],["salud_comunitaria","Salud familiar y comunitaria"]],
+  sistema_salud: [["normatividad","Normatividad y SGSSS"],["etica","Ética médica"],["medicina_legal","Medicina legal y forense"]]
+};
+const SUB_LABEL = Object.fromEntries(Object.values(SUBAREAS).flat());
+const areaLabel = q => esc(AREAS[q.area] || q.area) + (q.subarea && SUB_LABEL[q.subarea] ? ` · ${esc(SUB_LABEL[q.subarea])}` : "");
+let SUB_COUNTS = {};
 const LETTERS = ["A","B","C","D","E"];
 let DAILY = [], HISTORY = [], CHALLS = [], CH_ANS = [];
 let REPORTED = new Set(), REPORT_OPEN = null;
@@ -854,7 +865,7 @@ function renderDaily(){
   const cards = DAILY.map(q => {
     const answered = q.my_choice != null;
     return `<article class="qcard" id="q-${q.id}">
-      <div class="qmeta"><span class="qn">${q.slot}</span><span class="chip on">${esc(AREAS[q.area]||q.area)}</span>${answered && q.topic ? `<span class="hint">${esc(q.topic)}</span>` : ""}</div>
+      <div class="qmeta"><span class="qn">${q.slot}</span><span class="chip on">${areaLabel(q)}</span>${answered && q.topic ? `<span class="hint">${esc(q.topic)}</span>` : ""}</div>
       <p class="stem">${esc(q.stem)}</p>
       ${optList(q, { kind:"daily", pick: q.my_choice, correct: answered ? q.correct : null, locked: answered })}
       ${answered && q.correct != null ? feedback(q.is_correct, q.explanation, q.source, q.id) : answered ? `<p class="hint" style="margin:6px 0 0">Respuesta guardada. La retroalimentación aparece al final del simulacro.</p>` : ""}
@@ -1204,13 +1215,14 @@ const SIM_SIZES = [25, 50, 100];
 const SIM_MIN_PER_Q = 1.8;
 const pctOf = (ok, n) => n ? Math.round(100 * ok / n) : 0;
 async function loadPractice(){
-  const [r, a, b, h] = await Promise.all([
-    SB.rpc("review_summary"), SB.rpc("my_area_stats"), SB.rpc("bank_size"),
+  const [r, a, b, sc, h] = await Promise.all([
+    SB.rpc("review_summary"), SB.rpc("my_area_stats"), SB.rpc("bank_size"), SB.rpc("subarea_counts"),
     SB.from("sim_attempts").select("uni,n,correct,secs,created_at").order("created_at", { ascending: false }).limit(6)
   ]);
   REV = r.data?.[0] || REV;
   AREA_STATS = a.data || [];
   BANK = b.data || 0;
+  SUB_COUNTS = Object.fromEntries((sc.data || []).map(x => [x.subarea, x.n]));
   SIM_HIST = h.data || [];
 }
 // Área más floja: la de menor % entre las que tienen al menos 3 respuestas (sin contar cultura general).
@@ -1246,6 +1258,14 @@ function studyHub(){
 function prHead(title, extra){
   return `<div class="playhead"><button class="btn ghost small" type="button" data-pr-back>Volver</button><h2 style="margin:0;flex:1">${title}</h2>${extra || ""}</div>`;
 }
+function subRows(r){
+  const subs = (SUBAREAS[r.area] || []).filter(([k]) => SUB_COUNTS[k] || (r.subs || []).some(x => x.sub === k));
+  if (!subs.length) return "";
+  return `<details class="subs"><summary>Por subcategoría</summary><div class="sub-list">${subs.map(([k, label]) => {
+    const st = (r.subs || []).find(x => x.sub === k), p = st ? pctOf(st.ok, st.n) : null;
+    return `<div class="sub-row"><span class="sub-name">${esc(label)}</span><span class="bar" aria-hidden="true"><i style="width:${p == null ? 0 : Math.max(p, 3)}%"></i></span><span class="sub-pct">${p == null ? "–" : p + " %"}</span>${SUB_COUNTS[k] ? `<button type="button" class="linkish sub-go" data-pr-sub="${k}" data-area="${r.area}">Practicar</button>` : `<span></span>`}</div>`;
+  }).join("")}</div></details>`;
+}
 function renderAreas(){
   const rows = Object.keys(AREAS).map(k => AREA_STATS.find(x => x.area === k) || { area: k, answered: 0, correct: 0, topics: [] });
   const w = weakestArea();
@@ -1266,6 +1286,7 @@ function renderAreas(){
         <div class="area-top"><b>${esc(AREAS[r.area])}</b>${weak ? `<span class="due">Tu área más floja</span>` : ""}<span class="area-pct">${r.answered ? p + " %" : "–"}</span></div>
         <div class="bar" aria-hidden="true"><i style="width:${r.answered ? Math.max(p, 3) : 0}%"></i></div>
         <div class="area-meta"><span class="hint">${r.answered ? `${r.correct} de ${r.answered} correctas` : "Sin respuestas todavía"}</span><button type="button" class="btn small" data-pr-area="${r.area}">Practicar</button></div>
+        ${subRows(r)}
         ${tps.length ? `<div class="area-topics"><span class="hint">Temas que fallaste:</span>${tps.map(t => `<span class="chip">${esc(t.topic)} · ${t.ok}/${t.n}</span>`).join("")}</div>` : ""}
       </div>`;
     }).join("")}</div>`;
@@ -1301,7 +1322,7 @@ function renderRun(){
     : `Preguntas del banco para practicar. No cuentan para el ranking; lo que falles pasa a tu repaso.`;
   const cards = P.qs.map((q, i) => {
     const pick = P.picks[i], show = !sim && pick != null;
-    return `<article class="qcard"><div class="qmeta"><span class="qn">${i + 1}</span><span class="chip on">${esc(AREAS[q.area] || q.area)}</span>${show && q.topic ? `<span class="hint">${esc(q.topic)}</span>` : ""}${P.mode === "review" && q.misses > 1 ? `<span class="hint">fallada ${q.misses} veces</span>` : ""}</div>
+    return `<article class="qcard"><div class="qmeta"><span class="qn">${i + 1}</span><span class="chip on">${areaLabel(q)}</span>${show && q.topic ? `<span class="hint">${esc(q.topic)}</span>` : ""}${P.mode === "review" && q.misses > 1 ? `<span class="hint">fallada ${q.misses} veces</span>` : ""}</div>
       <p class="stem">${esc(q.stem)}</p>
       ${optList({ ...q, id: i }, { kind: "prac", pick, correct: show ? q.correct : null, locked: show })}
       ${show ? feedback(pick === q.correct, q.explanation, q.source, q.id) : ""}</article>`;
@@ -1319,7 +1340,7 @@ function renderSimResult(){
     <h4 class="ghead">Por área (de la más floja a la mejor)</h4>
     <div class="areas">${areas.map(([k, v]) => `<div class="area-row"><div class="area-top"><b>${esc(AREAS[k] || k)}</b><span class="area-pct">${v.ok}/${v.n}</span></div><div class="bar" aria-hidden="true"><i style="width:${Math.max(pctOf(v.ok, v.n), 3)}%"></i></div></div>`).join("")}</div>
     <p class="sub" style="margin-top:12px">${R.ok < P.qs.length ? `Las ${P.qs.length - R.ok} que fallaste o dejaste en blanco quedaron en tu repaso: vuelven en 3 días.` : "Sin errores. Excelente."}</p>
-    <div class="qlist">${P.qs.map((q, i) => `<article class="qcard"><div class="qmeta"><span class="qn">${i + 1}</span><span class="chip on">${esc(AREAS[q.area] || q.area)}</span>${q.topic ? `<span class="hint">${esc(q.topic)}</span>` : ""}${P.picks[i] == null ? `<span class="due">En blanco</span>` : ""}</div>
+    <div class="qlist">${P.qs.map((q, i) => `<article class="qcard"><div class="qmeta"><span class="qn">${i + 1}</span><span class="chip on">${areaLabel(q)}</span>${q.topic ? `<span class="hint">${esc(q.topic)}</span>` : ""}${P.picks[i] == null ? `<span class="due">En blanco</span>` : ""}</div>
       <p class="stem">${esc(q.stem)}</p>${optList({ ...q, id: "s" + i }, { pick: P.picks[i], correct: q.correct, locked: true })}${feedback(P.picks[i] === q.correct, q.explanation, q.source, q.id)}</article>`).join("")}</div>`;
 }
 function renderPractice(){
@@ -1377,6 +1398,14 @@ document.addEventListener("click", async e => {
     PRAC = back; renderStudy(); window.scrollTo(0, 0);
     loadPractice().then(() => { if (tab === "study") renderStudy(); });
     return;
+  }
+  const sb = t.closest("[data-pr-sub]");
+  if (sb){
+    const { data, error } = await SB.rpc("practice_set", { p_n: 10, p_sub: sb.dataset.prSub });
+    if (error){ toast(error.message); return; }
+    if (!data?.length){ toast("Todavía no hay preguntas de esa subcategoría en el banco."); return; }
+    PRAC = { screen: "run", mode: "area", title: `Practicar: ${SUB_LABEL[sb.dataset.prSub]}`, qs: data, picks: data.map(() => null) };
+    renderStudy(); window.scrollTo(0, 0); return;
   }
   const ar = t.closest("[data-pr-area]");
   if (ar){

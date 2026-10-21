@@ -903,3 +903,11 @@ button.chrow:hover{border-color:var(--rule-strong)}
 .ob-skip-sp{width:40px}
 .ob-wait{margin-top:auto}
 .ob-need.tip{color:var(--muted);font-weight:400;font-size:13.5px;line-height:1.45}
+/* Subcategorías en Reforzar */
+.subs{margin-top:10px;border-top:1px solid var(--rule);padding-top:8px}
+.subs summary{cursor:pointer;font-family:var(--f-display);font-weight:700;font-size:14px;color:var(--drop)}
+.sub-list{display:grid;gap:8px;margin-top:10px}
+.sub-row{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) 42px auto;align-items:center;gap:8px;font-size:14px}
+.sub-row .bar{margin:0;height:7px}
+.sub-pct{text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
+.sub-go{font-size:13px;color:var(--drop);font-weight:700;text-decoration:none}
