@@ -1687,6 +1687,8 @@ async function setupPushStep(){
   }
   set("Así te enteras cuando un amigo te rete, cuando termine un duelo y cuando cambie una convocatoria que sigues.", "Activar avisos", false, false);
 }
+const _setupPushStep = setupPushStep;
+setupPushStep = async function(){ await _setupPushStep(); if (typeof obRefreshNext === "function" && OB_CUR === "avisos") obRefreshNext(); };
 $("pushStepBtn").addEventListener("click", async () => {
   if ("Notification" in window && Notification.permission === "denied"){ setupPushStep(); return; }
   if (ME){ await enablePush(); setupPushStep(); return; }
@@ -1717,14 +1719,35 @@ function renderObAuth(){
     if (box.querySelector("#authForm")) return; // no borrar lo que la persona ya escribió
     box.innerHTML = gate("Tu cuenta", "Crea tu cuenta con tu correo y una contraseña de al menos 8 caracteres.");
     signUpMode = false; $("a-switch").click(); // abre en modo "Crear cuenta"
-    next.hidden = true;
+    next.hidden = false;
   } else if (!PROFILE){
     box.innerHTML = `<div class="ob-card"><span class="ob-ic">${I.userplus}</span><div class="ob-cb"><b>Cuenta creada</b><span>${esc(ME.email || "")}. Ahora arma tu perfil para seguir.</span><button class="btn small install-now" id="createBtn" type="button">Crear mi perfil</button></div></div>`;
-    next.hidden = true;
+    next.hidden = false;
   } else {
     box.innerHTML = `<div class="ob-card"><span class="ob-ic">${I.users}</span><div class="ob-cb"><b>Cuenta y perfil listos</b><span>${esc(PROFILE.alias)} · ${esc(ME.email || "")}</span></div></div>`;
     next.hidden = false;
   }
+  obRefreshNext();
+}
+// "Siguiente" solo se habilita cuando el paso está hecho; mientras tanto se explica qué falta.
+function obNeed(k){
+  const push = "Notification" in window && "serviceWorker" in navigator && "PushManager" in window;
+  if (k === "avisos" && push && Notification.permission !== "granted") return "Activa los avisos para continuar.";
+  if (k === "cuenta" && !ME) return "Crea tu cuenta para continuar.";
+  if (k === "cuenta" && !PROFILE) return "Crea tu perfil para continuar.";
+  if (k === "fin"){
+    const missing = [...document.querySelectorAll("#guide [data-chk]")].filter(li => !li.classList.contains("chk-on")).map(li => li.textContent.toLowerCase());
+    if (missing.length) return `Falta: ${missing.join(", ")}. Vuelve atrás para completarlo.`;
+  }
+  return "";
+}
+function obRefreshNext(){
+  const cur = document.querySelector(`#guide [data-ob="${OB_CUR}"]`); if (!cur) return;
+  const btn = cur.querySelector("[data-ob-next]"), hint = cur.querySelector(".ob-need");
+  if (!btn) return;
+  const need = obNeed(OB_CUR);
+  btn.disabled = !!need;
+  if (hint){ hint.textContent = need; hint.hidden = !need; }
 }
 function showStep(k){
   OB_CUR = k;
@@ -1747,8 +1770,9 @@ function showStep(k){
     // Las marcas reflejan el estado real de este celular y de la cuenta.
     const done = { app: isStandalone() || !isMobile(), avisos: "Notification" in window && Notification.permission === "granted", cuenta: !!ME, perfil: !!PROFILE };
     document.querySelectorAll("#guide [data-chk]").forEach(li => li.classList.toggle("chk-on", !!done[li.dataset.chk]));
-    $("obChkHint").hidden = Object.values(done).every(Boolean);
+    $("obChkHint").hidden = true;
   }
+  obRefreshNext();
   window.scrollTo(0, 0);
 }
 function obStep(dir){

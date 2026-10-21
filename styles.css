@@ -897,3 +897,8 @@ button.chrow:hover{border-color:var(--rule-strong)}
 #obAuth .gate{margin:0;max-width:none;box-shadow:var(--shadow)}
 #obAuth .gate h1{font-size:20px}
 #guide .ob-mark{margin-top:0}
+.ob-need{margin:auto 0 0;text-align:center;font-size:14px;color:var(--warn);font-weight:700}
+.ob-need + .ob-next{margin-top:8px}
+.ob-next[disabled]{opacity:.4}
+.ob-skip-sp{width:40px}
+.ob-wait{margin-top:auto}
