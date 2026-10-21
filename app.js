@@ -23,6 +23,33 @@ const OF = u => u.oferta || u.specs;
 const CI = u => u.cities || [u.city];
 const BY = Object.fromEntries(DATA.map(u => [u.id, u]));
 const $ = id => document.getElementById(id);
+const svgI = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const I = {
+  pin: svgI('<path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/>'),
+  bank: svgI('<path d="M3.5 9 12 4l8.5 5"/><path d="M5.5 10v7M10 10v7M14 10v7M18.5 10v7M3.5 20h17"/>'),
+  cap: svgI('<path d="m2.5 9 9.5-4.5L21.5 9 12 13.5z"/><path d="M6.5 11v4.5c1.5 1.5 3.4 2.2 5.5 2.2s4-.7 5.5-2.2V11"/>'),
+  cal: svgI('<rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M8 3v4M16 3v4M3.5 10h17"/>'),
+  doc: svgI('<path d="M14 3.5H7.5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V8z"/><path d="M14 3.5V8h4.5M9 13h6M9 16.5h4"/>'),
+  bell: svgI('<path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 1.5h-15z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/>'),
+  chart: svgI('<path d="M5 20V12M10 20V6M15 20v-9M20 20V9"/>'),
+  chev: svgI('<path d="m9 6 6 6-6 6"/>'),
+  flag: svgI('<path d="M5 21V4.5M5 4.5h11l-2 4 2 4H5"/>'),
+  fire: svgI('<path d="M12 21c-3.9 0-6.5-2.6-6.5-6 0-3.5 2.6-5.2 3.4-8.4.2-.8 1.2-1 1.6-.3 1 1.7 1.3 3.2 1.2 4.6 1-.4 1.8-1.4 2.1-2.6.2-.7 1.1-.9 1.5-.2 1.2 1.9 3.2 3.9 3.2 6.9 0 3.4-2.6 6-6.5 6z"/>'),
+  target: svgI('<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/>'),
+  steth: svgI('<path d="M6 3.5v5a4 4 0 0 0 8 0v-5"/><path d="M10 12.5v2a5 5 0 0 0 10 0v-2"/><circle cx="20" cy="10.5" r="2"/>'),
+  lock: svgI('<rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/>'),
+  info: svgI('<circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.8v.2"/>'),
+  hourglass: svgI('<path d="M7 3.5h10M7 20.5h10M8 3.5c0 4.5 8 4.5 8 8.5s-8 4-8 8.5M16 3.5c0 4.5-8 4.5-8 8.5"/>'),
+  copy: svgI('<rect x="8.5" y="8.5" width="11.5" height="11.5" rx="2.5"/><path d="M15.5 8.5V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7.5a2 2 0 0 0 2 2h2.5"/>'),
+  share: svgI('<circle cx="18" cy="5.5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="18.5" r="2.5"/><path d="m8.2 10.8 7.6-4.1M8.2 13.2l7.6 4.1"/>'),
+  userplus: svgI('<circle cx="10" cy="8" r="3.5"/><path d="M3.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5M19 8v6M16 11h6"/>'),
+  users: svgI('<circle cx="9" cy="8.5" r="3"/><circle cx="17" cy="9.5" r="2.5"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5M15 14.2c2.5-.4 4.6 1 5.2 4.3"/>'),
+  trophy: svgI('<path d="M8 4.5h8v5a4 4 0 0 1-8 0z"/><path d="M8 6.5H4.5c0 3 1.5 4.5 3.7 4.8M16 6.5h3.5c0 3-1.5 4.5-3.7 4.8M12 13.5v3.5M8.5 20.5h7M9.5 17h5v3.5h-5z"/>'),
+  swords: svgI('<path d="M14.5 4.5h5v5L9 20l-3-3zM9.5 4.5h-5v5L15 20l3-3"/>'),
+  stopwatch: svgI('<circle cx="12" cy="13.5" r="7.5"/><path d="M12 9.5V13.5l2.5 2M10 2.5h4M18.5 6l1.5-1.5"/>'),
+  spin: svgI('<path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v4.5h-4.5"/>'),
+  live: svgI('<circle cx="12" cy="12" r="2.5"/><path d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M5 5a10 10 0 0 0 0 14M19 5a10 10 0 0 1 0 14"/>'),
+};
 const rel = d => d>1 ? "en "+d+" días" : d===1 ? "mañana" : d===0 ? "hoy" : "en curso";
 
 function status(u){
@@ -110,10 +137,12 @@ function card(u, opts = {}){
     ? `<div class="d">${D(ne[0]).getDate()}</div><div class="m">${MES[D(ne[0]).getMonth()]}</div>`
     : `<div class="q">?</div><div class="m">sin fecha</div>`;
   const nextHtml = ne
-    ? `<div class="nextline">${esc(ne[1])} <mark>${rel(days(ne[0]))}</mark>${ne[3]?" (aprox.)":""}</div>`
-    : (u.next ? `<div class="nextline">${esc(u.next)}</div>` : "");
+    ? `<div class="nextline">${I.cal}<span>${esc(ne[1])} <mark>${rel(days(ne[0]))}</mark>${ne[3]?" (aprox.)":""}</span></div>`
+    : (u.next ? `<div class="nextline">${I.cal}<span>${esc(u.next)}</span></div>` : "");
   const gap = sp && !conv.has(sp) ? `<div class="gap">Ofrece ${esc(sp)}, pero no la abrió en esta convocatoria.</div>` : "";
-  const chips = OF(u).map(s => `<span class="chip${conv.has(s)?" on":""}${s===sp?" hit":""}">${esc(s)}${u.cupos&&u.cupos[s]?" ("+u.cupos[s]+")":""}</span>`).join("");
+  const specs = [...OF(u)].sort((a, b) => (b === sp) - (a === sp) || conv.has(b) - conv.has(a));
+  const chips = specs.map(s => `<span class="chip${conv.has(s)?" on":""}${s===sp?" hit":""}">${esc(s)}${u.cupos&&u.cupos[s]?" ("+u.cupos[s]+")":""}</span>`).join("")
+    + (specs.length > 5 ? `<span class="chip chip-more" aria-hidden="true">+${specs.length - 5}</span>` : "");
   const fol = FOLLOWS.filter(f => f.uni_id === u.id && f.user_id !== ME?.id).map(f => f.user_id);
   const social = fol.length
     ? `<div class="social"><span class="stack">${fol.slice(0,5).map(i => avatar(i,"sm")).join("")}</span><span>${fol.length===1 ? esc(aliasOf(fol[0]))+" la sigue" : fol.length+" de tus grupos la siguen"}</span></div>`
@@ -135,8 +164,10 @@ function card(u, opts = {}){
   return `<details class="card" id="c-${u.id}${opts.k||""}"${opts.open?" open":""}><summary>
     <div class="stub" aria-hidden="true">${stub}</div>
     <div class="main"><div class="row1"><h3>${esc(u.name)}</h3><span class="pill ${st.c}">${st.t}</span></div>
-      <div class="facts"><span>${esc(CI(u).join(" y "))}</span><span>${u.type}</span><span>${esc(u.cycle)}</span><span>Inscripción ${esc(u.cost)}</span></div>
-      ${nextHtml}${gap}<div class="chips">${chips}</div>${social}</div></summary>
+      <div class="facts"><span>${I.pin}${esc(CI(u).join(" y "))}</span><span>${I.bank}${u.type}</span><span>${I.cap}${esc(u.cycle)}</span></div>
+      <div class="facts"><span>${I.doc}Inscripción ${esc(u.cost)}</span></div>
+      ${nextHtml}${gap}<div class="chips">${chips}</div>${social}
+      <span class="more" aria-hidden="true"><span class="more-o">Ver detalles</span><span class="more-c">Ocultar detalles</span>${I.chev}</span></div></summary>
     ${followBar}
     ${(() => { const p = portalOf(u); return p ? `<div class="portal"><a class="btn small" href="${esc(p.url)}" target="_blank" rel="noopener">${p.pdf ? "Ver convocatoria oficial (PDF)" : /^https?:\/\/[^/]+\/?$/.test(p.url) ? "Ir a la página de la universidad" : "Ir al portal de la convocatoria"}</a></div>` : ""; })()}
     <div class="body">
@@ -175,7 +206,7 @@ function renderAll(){
   const c = {open:0, proc:0, tbd:0, off:0};
   base.forEach(u => c[status(u).k]++);
   $("counts").innerHTML = [["open","abiertas"],["proc","en proceso"],["tbd","por confirmar"],["off","cerradas"]]
-    .map(([k,t]) => `<button class="count" data-st="${k}" aria-pressed="${statusFilter===k}"><b>${c[k]}</b>${t}</button>`).join("");
+    .map(([k,t]) => `<button class="count st-${k}" data-st="${k}" aria-pressed="${statusFilter===k}"><b>${c[k]}</b>${t}</button>`).join("");
   $("others").innerHTML = OTHERS.map(o => `<li><b>${esc(o[0])}</b> · ${esc(o[1])} · ${esc(o[2])}</li>`).join("");
   $("nAll").textContent = DATA.length;
 }
@@ -185,11 +216,11 @@ function pushBanner(){
   const iOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
   const standalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
   if (iOS && !standalone)
-    return `<div class="banner"><span>Para recibir avisos en iPhone, instala la app: en Safari toca Compartir y elige <b>Agregar a pantalla de inicio</b>. Luego abre ResiTrack desde ahí.</span></div>`;
+    return `<div class="banner"><span class="ico-tile">${I.bell}</span><span>Para recibir avisos en iPhone, instala la app: en Safari toca Compartir y elige <b>Agregar a pantalla de inicio</b>. Luego abre ResiTrack desde ahí.</span></div>`;
   if (Notification.permission === "granted") return "";
   if (Notification.permission === "denied")
-    return `<div class="banner">Los avisos están bloqueados en este navegador. Actívalos en los ajustes del sitio si quieres recibirlos.</div>`;
-  return `<div class="banner">Activa los avisos para enterarte cuando te reten, cuando termine un desafío y cuando cambie una convocatoria que te interesa.<button class="btn small" id="pushBtn">Activar avisos</button></div>`;
+    return `<div class="banner"><span class="ico-tile">${I.bell}</span><span>Los avisos están bloqueados en este navegador. Actívalos en los ajustes del sitio si quieres recibirlos.</span></div>`;
+  return `<div class="banner"><span class="ico-tile">${I.bell}</span>Activa los avisos para enterarte cuando te reten, cuando termine un desafío y cuando cambie una convocatoria que te interesa.<button class="btn small" id="pushBtn">Activar avisos</button></div>`;
 }
 
 function feedHtml(){
@@ -224,7 +255,7 @@ function personCard(id, gid){
   const key = (gid || "f") + ":" + id;
   const open = RETAR_OPEN === key;
   const act = id === ME.id ? `<span class="hint">Tú</span>` : `<button class="btn small retar-btn" data-retar="${key}">Retar</button>`;
-  return `<div class="prow"><button type="button" class="prow-who" data-person="${id}" data-g="${gid||""}">${avatar(id, "md")}<span class="prow-name">${esc(p.alias)}</span></button>${act}
+  return `<div class="prow"><button type="button" class="prow-who" data-person="${id}" data-g="${gid||""}">${avatar(id, "md")}<span class="prow-name">${esc(p.alias)}</span>${id !== ME.id && STREAKS[id]?.together ? `<span class="prow-fire">🔥 ${STREAKS[id].together} ${STREAKS[id].together === 1 ? "día" : "días"}</span>` : ""}</button>${act}
     ${open ? `<div class="retar"><span class="hint">¿Cuántas preguntas?</span>${[3,5,10].map(n => `<button class="btn small" data-retar-go="${id}" data-g="${gid||""}" data-n="${n}">${n}</button>`).join("")}<button class="btn ghost small" data-retar-x>Cancelar</button></div>` : ""}</div>`;
 }
 function personDetail(id, gid){
@@ -260,14 +291,14 @@ function renderFriends(){
 }
 function friendReqBox(){
   const incoming = FREQS.filter(r => r.incoming);
-  return incoming.length ? `<div class="duebox"><h3>Solicitudes de amistad</h3><div class="chlist">${incoming.map(r =>
+  return incoming.length ? `<div class="duebox" id="sec-solic"><h3>Solicitudes de amistad</h3><div class="chlist">${incoming.map(r =>
     `<div class="chrow"><span><b>${esc(r.alias)}</b>${r.city?` · ${esc(r.city)}`:""} quiere ser tu amigo</span><span><button class="btn small" data-faccept="${r.other}">Aceptar</button> <button class="btn ghost small" data-freject="${r.other}">Rechazar</button></span></div>`).join("")}</div></div>` : "";
 }
 function renderFriendsBody(code, outgoing){
   const cards = FRIENDS.map(id => personCard(id, null)).join("");
   const cs = CHALLS.filter(c => !c.group_id).slice(0, 6);
-  return `<h2>Tus amigos</h2><p class="sub">Para quienes no están en tus grupos. Tus amigos ven tu perfil y tu avance, y pueden retarte.</p>
-    <div class="fcode"><div><span class="hint">Tu código de amigo</span> <span class="code">${esc(code)}</span></div><button class="btn small" id="shareCode">Compartir invitación</button></div>
+  return `<h2 id="sec-amigos">Tus amigos</h2><p class="sub">Para quienes no están en tus grupos. Tus amigos ven tu perfil y tu avance, y pueden retarte.</p>
+    <div class="fcode"><div class="fcode-main"><span class="hint">Tu código de amigo</span><div class="fcode-row"><span class="code">${esc(code)}</span><button type="button" class="icon-btn" data-copy-code aria-label="Copiar código">${I.copy}</button></div><button class="btn" id="shareCode">${I.share}Compartir invitación</button></div><span class="fcode-art" aria-hidden="true">${I.userplus}</span></div>
     <form id="friendForm" class="fadd"><input id="f-code" maxlength="6" placeholder="Código de tu amigo" style="text-transform:uppercase" required><button class="btn small" type="submit">Agregar</button></form>
     ${outgoing.length ? `<h4 class="ghead">Solicitudes enviadas</h4><div class="chlist">${outgoing.map(r =>
       `<div class="chrow"><span><b>${esc(r.alias)}</b>${r.city?` · ${esc(r.city)}`:""} · esperando respuesta</span><span><button class="btn ghost small" data-fcancel="${r.other}" data-alias="${esc(r.alias)}">Cancelar</button></span></div>`).join("")}</div>` : ""}
@@ -316,8 +347,11 @@ function renderGroup(){
   if (PLAY){ $("p-group").innerHTML = renderPlay(); return; }
   if (RESULT){ $("p-group").innerHTML = renderResult(); return; }
   if (PERSON_OPEN && $("pdlg").open) renderPersonDlg();
-  $("p-group").innerHTML = `${inviteBanner()}${pushBanner()}${friendReqBox()}${pendingBox()}${streakPanel()}${renderFriends()}
-    <h2>Tus grupos</h2><p class="sub">Puedes estar en varios. Cada grupo ve tu perfil y tu avance.</p>${cards || '<div class="empty">Todavía no estás en ningún grupo. Crea uno y pásale el código a tus amigos.</div>'}${GROUPS.length ? '<h2>Otro grupo</h2>' : ''}${forms}`;
+  const nIn = FREQS.filter(r => r.incoming).length;
+  const stat = (href, n, t, ico, hot) => `<a class="stat${hot ? " hot" : ""}" href="${href}"><span class="stat-ico">${ico}</span><b>${n}</b><span>${t}</span></a>`;
+  const stats = `<div class="stats">${stat("#sec-amigos", FRIENDS.length, FRIENDS.length === 1 ? "Amigo" : "Amigos", I.users)}${stat(nIn ? "#sec-solic" : "#sec-amigos", nIn, nIn === 1 ? "Solicitud pendiente" : "Solicitudes pendientes", I.userplus, nIn > 0)}${stat("#sec-grupos", GROUPS.length, GROUPS.length === 1 ? "Grupo" : "Grupos", I.users)}</div>`;
+  $("p-group").innerHTML = `${inviteBanner()}${pushBanner()}${stats}${friendReqBox()}${pendingBox()}${streakPanel()}${renderFriends()}
+    <h2 id="sec-grupos">Tus grupos</h2><p class="sub">Puedes estar en varios. Cada grupo ve tu perfil y tu avance.</p>${cards || '<div class="empty">Todavía no estás en ningún grupo. Crea uno y pásale el código a tus amigos.</div>'}${GROUPS.length ? '<h2>Otro grupo</h2>' : ''}${forms}`;
   updateBadges();
 }
 
@@ -661,11 +695,12 @@ function rankPanel(){
   const medal = p => p === 1 ? "🥇" : p === 2 ? "🥈" : p === 3 ? "🥉" : p;
   const pct = r => r.answered ? Math.round(100 * r.correct / r.answered) + " %" : "–";
   const shown = RANK.open ? rows : rows.slice(0, 5);
-  const list = shown.map(r => `<li class="${r.is_me ? "me-row" : ""}"><span class="rpos">${medal(r.pos)}</span><span class="rname">${esc(r.alias)}${r.is_me ? " (tú)" : ""}</span><span class="rscore"><b>${r.correct}</b> <span class="hint">${pct(r)}</span></span></li>`).join("");
+  const av = r => PEOPLE[r.user_id] ? avatar(r.user_id, "sm") : `<span class="av sm" style="background:hsl(${hue(r.alias)} 45% 82%);color:#1d2a33">${esc(initials(r.alias))}</span>`;
+  const list = shown.map(r => `<li class="${r.is_me ? "me-row" : ""}"><span class="rpos">${medal(r.pos)}</span><span class="rname">${av(r)}${esc(r.alias)}${r.is_me ? " (tú)" : ""}</span><span class="rscore"><b>${r.correct}</b> <span class="hint">${pct(r)}</span></span></li>`).join("");
   const meExtra = me && !shown.includes(me) ? `<li class="me-row sep"><span class="rpos">${me.pos}</span><span class="rname">${esc(me.alias)} (tú)</span><span class="rscore"><b>${me.correct}</b> <span class="hint">${pct(me)}</span></span></li>` : "";
   const chip = (k, v, label) => `<button class="count" data-rank-${k}="${v}" aria-pressed="${RANK[k] === v}">${label}</button>`;
   return `<div class="rank-box">
-    <div class="rank-hd"><h3>Ranking</h3></div>
+    <div class="rank-hd"><span class="ico-tile gold">${I.trophy}</span><h3>Ranking</h3></div>
     <div class="counts" style="margin:8px 0 4px">${chip("period","week","Esta semana")}${chip("period","month","Este mes")}${chip("period","all","Siempre")}</div>
     <div class="counts" style="margin:0 0 8px">${chip("scope","all","Todos")}${chip("scope","mine","Mis amigos y grupos")}</div>
     ${rows.some(r => r.answered > 0) ? `<ol class="rank">${list}${meExtra}</ol>
@@ -683,6 +718,10 @@ function streakHint(me){
   if (bogotaDow() === 0 && !DAILY.length) return "Hoy es domingo de descanso: tu racha está a salvo.";
   const what = isSimDay() ? "el simulacro de hoy" : `las ${DAILY.length || 10} de hoy`;
   return me.solo ? `Termina ${what} para no perderla.` : `Termina ${what} para empezar tu racha.`;
+}
+function streakCard(){
+  const me = STREAKS[ME.id]; if (!me) return "";
+  return `<div class="streak-card"><span class="streak-flame" aria-hidden="true">🔥</span><div class="streak-txt"><b>Tu racha</b><span class="hint">${streakHint(me)}</span></div><div class="streak-val"><b>${me.solo}</b><span>${me.solo === 1 ? "día seguido" : "días seguidos"}</span></div></div>`;
 }
 function streakPanel(){
   const me = STREAKS[ME.id]; if (!me) return "";
@@ -719,7 +758,7 @@ const REPORT_KINDS = [
 function reportBox(qid){
   if (!qid || !ME) return "";
   if (REPORTED.has(Number(qid))) return `<p class="hint report-done">Reportaste esta pregunta. Gracias, la revisamos.</p>`;
-  if (REPORT_OPEN !== Number(qid)) return `<button class="linkish report-link" type="button" data-report="${qid}">Reportar un error</button>`;
+  if (REPORT_OPEN !== Number(qid)) return `<button class="linkish report-link" type="button" data-report="${qid}">${I.flag}Reportar un error</button>`;
   return `<form class="report" data-report-form="${qid}">
     <b>¿Qué está mal?</b>
     <div class="report-kinds">${REPORT_KINDS.map(([k,t], i) => `<label><input type="radio" name="rk-${qid}" value="${k}"${i===0?" checked":""}> ${t}</label>`).join("")}</div>
@@ -733,7 +772,7 @@ function feedback(ok, explanation, source, qid){
   const ORIGIN = /reconstru|el grupo (marc|discut|dec|dij)|respuesta oficial|marcaba |marcaron |clave del examen|en el examen (pregunt|marc|basta|de (la udea|univalle|20))|el examen (marc|daba|dio)/i;
   const paras = String(explanation || "").split(/\n\s*\n/).map(p => p.trim()).filter(Boolean).filter(p => !ORIGIN.test(p));
   const body = paras.map(p => `<p>${esc(p).replace(/^OJO:/, "<b>OJO:</b>")}</p>`).join("");
-  return `<div class="fb ${ok?"fb-ok":"fb-bad"}"><div class="fb-hd"><i aria-hidden="true">${ok?"✓":"✕"}</i>${ok?"Correcta.":"Incorrecta."}</div><div class="fb-body">${body}${source?`<div class="hint src-line">Fuente: ${esc(source)}</div>`:""}</div></div>${reportBox(qid)}`;
+  return `<div class="fb ${ok?"fb-ok":"fb-bad"}"><i class="fb-ico" aria-hidden="true">${ok?"✓":"✕"}</i><div class="fb-main"><div class="fb-hd">${ok?"Correcta.":"Incorrecta."}</div><div class="fb-body">${body}</div></div></div>${source?`<div class="fb-src"><span class="ico-tile">${I.doc}</span><div><b>Fuente</b><span>${esc(source)}</span></div></div>`:""}${reportBox(qid)}`;
 }
 
 function renderDaily(){
@@ -778,14 +817,15 @@ function updateBadges(){
 function chRow(c){
   const rv = aliasOf(rivalOf(c)), my = myChAns(c.id);
   const who = `<span class="ch-who">${avatar(rivalOf(c), "md")}`;
+  const tag = (t, k) => `<span class="ch-tag ${k}">${t}</span>`;
   if (c.status === "declined") return `<div class="chrow ch-off">${who}<span>${c.challenger===ME.id?`${esc(rv)} rechazó tu desafío`:`Rechazaste el desafío de ${esc(rv)}`}</span></span></div>`;
   if (c.status === "done"){
     const th = CH_ANS.find(r => r.challenge_id === c.id && r.user_id !== ME.id), a = my?.score ?? 0, b = th?.score ?? 0;
     const verdict = a > b ? "Ganaste" : a < b ? "Perdiste" : "Empate";
-    return `<div class="chrow ch-done ${a > b ? "ch-win" : a < b ? "ch-lose" : "ch-tie"}">${who}<span><b>${verdict}</b> contra ${esc(rv)} · <b class="ch-score">${a}–${b}</b></span></span><button class="btn ghost small" data-chres="${c.id}">Ver retroalimentación</button></div>`;
+    return `<div class="chrow ch-done ${a > b ? "ch-win" : a < b ? "ch-lose" : "ch-tie"}">${who}<span><b>${verdict}</b> contra ${esc(rv)} · <b class="ch-score">${a}–${b}</b></span></span>${tag("Completado", "done")}<button class="btn ghost small" data-chres="${c.id}">Ver retroalimentación</button></div>`;
   }
-  if (my) return `<div class="chrow ch-wait">${who}<span>Respondiste (${my.score}/${c.question_ids.length}). Esperando a ${esc(rv)}.</span></span><button class="btn ghost small" data-chres="${c.id}">Ver retroalimentación</button></div>`;
-  return `<div class="chrow due">${who}<span>${c.challenger===ME.id?`Tu desafío a ${esc(rv)}`:`<b>${esc(rv)}</b> te retó`} · ${c.question_ids.length} preguntas</span></span>
+  if (my) return `<div class="chrow ch-wait">${who}<span>Respondiste (${my.score}/${c.question_ids.length}). Esperando a ${esc(rv)}.</span></span>${tag(I.hourglass + "Esperando rival", "wait")}<button class="btn ghost small" data-chres="${c.id}">Ver retroalimentación</button></div>`;
+  return `<div class="chrow due">${who}<span>${c.challenger===ME.id?`Tu desafío a ${esc(rv)}`:`<b>${esc(rv)}</b> te retó`} · ${c.question_ids.length} preguntas</span></span>${tag("Te toca", "due")}
     <span><button class="btn small" data-chplay="${c.id}">Jugar</button>${c.opponent===ME.id?` <button class="btn ghost small" data-chdecline="${c.id}">Rechazar</button>`:""}</span></div>`;
 }
 function pendingBox(){
@@ -820,17 +860,20 @@ function renderResult(){
       <p class="stem">${esc(it.stem)}</p>
       ${optList({ id: "r"+it.idx, options: it.options }, { correct: it.correct, pick: it.mine, mine: it.mine, theirs: r.done ? it.theirs : null, rivalName: rv, locked: true })}
       ${feedback(it.mine === it.correct, it.explanation, it.source, it.qid)}</article>`).join("")}</div>`;
+  const dots = `<div class="duel-dots" aria-label="Tus respuestas">${r.items.map(it => `<span class="${it.mine === it.correct ? "d-ok" : "d-bad"}"><small>${it.idx}</small><i aria-hidden="true">${it.mine === it.correct ? "✓" : "✕"}</i></span>`).join("")}</div>`;
   if (r.done === false){
     // Aún falta el rival: se ve el propio puntaje y la retroalimentación, pero no el ganador ni sus respuestas.
     return `<div class="playhead"><button class="btn ghost small" id="chBack">Volver</button><h2 style="margin:0">Respuestas enviadas</h2></div>
-      <div class="score duel"><div class="duel-side">${avatar(ME.id, "lg")}<span>${r.my_score}</span>de ${r.total}</div><div class="vs">vs</div><div class="duel-side duel-wait">${avatar(r.rival, "lg")}<span aria-hidden="true">🔒</span>Pendiente</div></div>
-      <p class="sub" style="text-align:center">El ganador se define cuando ${esc(rv)} termine. Te avisamos.</p>
-      ${r.open ? items() : `<div style="text-align:center;margin:10px 0 18px"><button class="btn" type="button" data-chres-open>Ver retroalimentación</button></div>`}`;
+      <div class="duel-tags"><span class="ch-tag async">Reto asíncrono</span><span class="ch-tag wait">${I.hourglass}Pendiente rival</span></div>
+      <div class="score duel"><div class="duel-side">${avatar(ME.id, "lg")}<span>${r.my_score}</span>de ${r.total}<em class="duel-pill done">Ya respondiste</em></div><div class="vs">vs</div><div class="duel-side duel-wait">${avatar(r.rival, "lg")}<span aria-hidden="true">🔒</span>${esc(rv)}<em class="duel-pill">Pendiente</em></div></div>
+      <div class="info-card"><span class="ico-tile">${I.info}</span><div><b>Estás esperando a ${esc(rv)}</b><p>El ganador se define cuando ${esc(rv)} termine. Te avisamos.</p></div></div>
+      ${r.open ? dots + items() + `<div class="info-card lock"><span class="ico-tile">${I.lock}</span><div><b>Resultado de ${esc(rv)} pendiente</b><p>Su puntaje y el ganador aparecen cuando termine el reto.</p></div></div>` : `<div style="text-align:center;margin:10px 0 18px"><button class="btn" type="button" data-chres-open>Ver retroalimentación</button></div>`}`;
   }
   const verdict = r.my_score > r.their_score ? "Ganaste" : r.my_score < r.their_score ? `Ganó ${esc(rv)}` : "Empate";
   return `<div class="playhead"><button class="btn ghost small" id="chBack">Volver</button><h2 style="margin:0">${verdict}</h2></div>
+    ${r.my_score > r.their_score ? `<div class="win-banner">${I.trophy}<b>¡Ganaste!</b></div>` : ""}
     <div class="score duel ${r.my_score > r.their_score ? "duel-won" : ""}"><div class="duel-side${r.my_score > r.their_score ? " win" : ""}">${avatar(ME.id, "lg")}<span>${r.my_score}</span>Tú</div><div class="vs">–</div><div class="duel-side${r.my_score < r.their_score ? " win" : ""}">${avatar(r.rival, "lg")}<span>${r.their_score}</span>${esc(rv)}</div></div>
-    ${items()}`;
+    ${dots}${items()}`;
 }
 function renderCurrent(){ if (tab === "group") renderGroup(); else if (tab === "study") renderStudy(); else renderAllTabs(); }
 // Día de la semana en Bogotá: 0 = domingo … 6 = sábado.
@@ -849,7 +892,7 @@ function renderStudy(){
   if (SD){ el.innerHTML = renderStudyDate(); return; }
   if (LIVE){ el.innerHTML = renderLive(); return; }
   if (STUDY_VIEW === "sd"){ el.innerHTML = sdMenu(); return; }
-  if (STUDY_VIEW !== "daily"){ el.innerHTML = `${rankPanel()}${studyHub()}`; return; }
+  if (STUDY_VIEW !== "daily"){ el.innerHTML = `${streakCard()}${rankPanel()}${studyHub()}`; return; }
   const back = `<div class="playhead"><button class="btn ghost small" type="button" data-study-hub>Volver</button></div>`;
   const dow = bogotaDow();
   if (dow === 0 && !DAILY.length){
@@ -865,7 +908,8 @@ function renderStudy(){
       ${studyLoaded && !DAILY.length ? `<div class="empty">El simulacro de hoy todavía no está listo. Se arma a medianoche.</div>` : renderDaily()}`;
     return;
   }
-  el.innerHTML = `${back}<h2>Preguntas diarias: ${DIAS[dow]}</h2><p class="sub">Ocho de medicina (básicas, clínicas, quirúrgicas, salud pública y sistema de salud) y dos de cultura general. Cuenta tu primera respuesta.</p>
+  const sn = STREAKS[ME.id]?.solo || 0;
+  el.innerHTML = `${back}<div class="dq-hd"><span class="ico-tile">${I.target}</span><div class="dq-t"><h2>Preguntas diarias: ${DIAS[dow]}</h2><p class="sub">Ocho de medicina (básicas, clínicas, quirúrgicas, salud pública y sistema de salud) y dos de cultura general. Cuenta tu primera respuesta.</p></div><div class="streak-pill"><b>🔥 ${sn} ${sn === 1 ? "día" : "días"}</b><span>Racha actual</span></div></div>
     ${renderDaily()}`;
 }
 
@@ -959,6 +1003,10 @@ document.addEventListener("click", async e => {
     if (!confirm(`¿Quitar a ${aliasOf(uf2.dataset.funfriend)} de tus amigos?`)) return;
     await SB.rpc("remove_friend", { p_other: uf2.dataset.funfriend });
     await loadAll(); await loadStudy(); renderAllTabs(); return;
+  }
+  if (e.target.closest("[data-copy-code]")){
+    try { await navigator.clipboard.writeText(PROFILE.friend_code); toast("Código copiado."); } catch(err){ toast("Tu código: " + PROFILE.friend_code); }
+    return;
   }
   if (e.target.closest("#shareCode")){
     const url = location.origin + "/?amigo=" + encodeURIComponent(PROFILE.friend_code);
@@ -1087,7 +1135,6 @@ function weakestArea(){
   const c = AREA_STATS.filter(x => x.answered >= 3 && x.area !== "cultura").sort((x, y) => (x.correct / x.answered) - (y.correct / y.answered));
   return c[0] && c[0].correct < c[0].answered ? c[0] : null;
 }
-const svgI = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
 const HUB_ICONS = {
   daily: svgI('<rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M8 3v4M16 3v4M3.5 10h17M8.5 15l2 2 4-4"/>'),
   ref: svgI('<path d="M4 19h16"/><path d="M6.5 16v-4M11.5 16V8M16.5 16v-6"/><path d="M14 5h4v4"/>'),
@@ -1150,8 +1197,8 @@ function renderSimSetup(){
   const plan = simPlan(pick);
   return `${prHead("Simulacro")}
     <p class="sub">Con cronómetro y sin retroalimentación hasta terminar, como el examen real. Mezcla preguntas de exámenes pasados de la UdeA y Univalle (verificadas con la evidencia actual) y del banco de ResiTrack, para que llegues listo a cualquier estilo. No cuenta para el ranking ni las rachas.</p>
-    <div class="counts" style="margin:6px 0 10px"><span class="hint">Preguntas:</span>${SIM_SIZES.map(k => `<button type="button" class="count" data-pr-size="${k}" aria-pressed="${pick === k}">${k}</button>`).join("")}</div>
-    <div class="sim-card">
+    <div class="seg" role="group" aria-label="Número de preguntas">${SIM_SIZES.map(k => `<button type="button" class="count" data-pr-size="${k}" aria-pressed="${pick === k}">${k}</button>`).join("")}</div>
+    <div class="sim-card sim-hero"><span class="sim-art" aria-hidden="true">${I.stopwatch}</span>
       ${plan.n < pick ? `<p class="hint" style="margin:0 0 8px">Hoy hay ${plan.n} preguntas disponibles, así que este simulacro trae ${plan.n}. El banco crece cada noche.</p>` : ""}
       <div class="sim-go"><span><b>${plan.n}</b> preguntas · <b>${plan.mins}</b> min</span><button type="button" class="btn" data-pr-start ${plan.n < 5 ? "disabled" : ""}>Empezar simulacro</button></div>
       <p class="hint" style="margin:8px 0 0">Ritmo de examen: unos ${String(SIM_MIN_PER_Q).replace(".", ",")} minutos por pregunta. Lo que falles pasa a tu repaso.</p>
@@ -1298,14 +1345,17 @@ function strengthsBox(){
   const by = [...rows].sort((a, b) => (b.correct / b.answered) - (a.correct / a.answered));
   const strong = by.filter(x => x.correct / x.answered >= 0.7).slice(0, 2);
   const weak = [...by].reverse().filter(x => x.correct / x.answered < 0.6).slice(0, 2);
-  const chip = x => `<span class="sw-chip">${esc(AREAS[x.area] || x.area)} <b>${pctOf(x.correct, x.answered)} %</b></span>`;
   const last = SIM_HIST[0];
+  const sset = new Set(strong.map(x => x.area)), wset = new Set(weak.map(x => x.area));
+  const bars = Object.keys(AREAS).map(k => AREA_STATS.find(x => x.area === k)).filter(x => x && x.answered).map(x => {
+    const p = pctOf(x.correct, x.answered);
+    const tag = sset.has(x.area) ? `<span class="sw-tag ok">Fortaleza</span>` : wset.has(x.area) ? `<span class="sw-tag weak">Por reforzar</span>` : "";
+    return `<div class="sw-row a-${x.area}"><span class="sw-name">${esc(AREAS[x.area] || x.area)}${tag}</span><span class="bar" aria-hidden="true"><i style="width:${Math.max(p, 3)}%"></i></span><b class="sw-pct">${p}%</b></div>`;
+  }).join("");
   return `<div class="sw-box">
-    <div class="sw-hd"><h3 style="margin:0">Tu resumen de estudio</h3><span class="hint">${tot[0]} de ${tot[1]} correctas · ${pctOf(tot[0], tot[1])} %</span></div>
-    <div class="sw-grid">
-      <div class="sw-strong"><span class="hint">Fortalezas</span><div>${strong.map(chip).join("") || `<span class="hint">Aún sin datos suficientes</span>`}</div></div>
-      <div class="sw-weak"><span class="hint">Por reforzar</span><div>${weak.map(chip).join("") || `<span class="hint">${rows.length ? "Nada por debajo del 60 %" : "Aún sin datos suficientes"}</span>`}</div></div>
-    </div>
+    <div class="sw-hd"><span class="ico-tile">${I.chart}</span><h3 style="margin:0;flex:1">Mis fortalezas y debilidades</h3></div>
+    <p class="hint" style="margin:6px 0 0">${tot[0]} de ${tot[1]} correctas · ${pctOf(tot[0], tot[1])} %</p>
+    <div class="sw-bars">${bars}</div>
     <p class="hint" style="margin:8px 0 0">${REV.due_now ? `Tienes ${REV.due_now} ${REV.due_now === 1 ? "pregunta" : "preguntas"} de repaso para hoy. ` : ""}${last ? `Último simulacro: ${pctOf(last.correct, last.n)} %. ` : ""}Las áreas cuentan desde 3 respuestas.</p>
     <button type="button" class="btn small" data-go-refuerzo>Reforzar en Estudiar</button>
   </div>`;
@@ -1333,11 +1383,14 @@ function countdownBox(){
   const sel = cur => `<select data-target-uni aria-label="Examen al que apuntas"><option value="">${cur ? "Quitar cuenta regresiva" : "Elige un examen…"}</option>${ordered.map(u => `<option value="${u.id}"${u.id === cur ? " selected" : ""}>${esc(u.name.split(" · ")[0])} · ${fmtS(examDate(u))}</option>`).join("")}</select>`;
   const u = PROFILE.target_uni ? BY[PROFILE.target_uni] : null, ex = u ? examDate(u) : null;
   if (!u || !ex){
-    return `<div class="cd-box"><div><h3>¿A qué examen apuntas?</h3><p class="hint">Elígelo y te mostramos cuántos días faltan y qué hacer cada semana.${u && !ex ? ` La fecha del examen de ${esc(u.name.split(" · ")[0])} ya pasó o aún no está publicada.` : ""}</p></div>${sel(u?.id)}</div>`;
+    return `<div class="cd-box"><div class="cd-hd"><span class="ico-tile">${I.cal}</span><h3>¿A qué examen apuntas?</h3></div><div><p class="hint">Elígelo y te mostramos cuántos días faltan y qué hacer cada semana.${u && !ex ? ` La fecha del examen de ${esc(u.name.split(" · ")[0])} ya pasó o aún no está publicada.` : ""}</p></div>${sel(u?.id)}</div>`;
   }
   const d = days(ex), wk = weekdaysUntil(ex), sats = Math.floor(wk / 5);
+  const evt = u.tl.find(x => x[0] === ex)?.[1];
   return `<div class="cd-box on">
-    <div class="cd-main"><span class="cd-num">${d}</span><div><b>${d === 1 ? "día" : "días"} para el examen de ${esc(u.name.split(" · ")[0])}</b><div class="hint">${fmt(ex)}${u.tl.find(x => x[0] === ex)?.[1] ? " · " + esc(u.tl.find(x => x[0] === ex)[1]) : ""}</div></div></div>
+    <div class="cd-hd"><span class="ico-tile">${I.cal}</span><h3>Mi próximo examen</h3></div>
+    <div class="cd-main"><span class="cd-num">${d}</span><div><b>${d === 1 ? "día" : "días"} para el examen de ${esc(u.name.split(" · ")[0])}</b></div></div>
+    <div class="cd-meta"><span>${I.cal}${fmt(ex)}</span>${evt ? `<span>${I.doc}${esc(evt)}</span>` : ""}</div>
     <p class="cd-plan">Hasta ese día salen unas <b>${wk * 10}</b> preguntas diarias nuevas${sats ? ` y ${sats} ${sats === 1 ? "simulacro" : "simulacros"} de sábado` : ""}. Cada semana: termina las diarias, haz tu repaso${REV.due_now ? ` (hoy tienes ${REV.due_now})` : ""} y un simulacro en Estudiar.</p>
     <div class="cd-change"><span class="hint">Cambiar:</span>${sel(u.id)}</div>
   </div>`;
@@ -1367,7 +1420,7 @@ function leaguePanel(gid){
   const dow = bogotaDow(), left = dow >= 1 && dow <= 5 ? 5 - dow : 0;
   const medal = p => p === 1 ? "🥇" : p === 2 ? "🥈" : p === 3 ? "🥉" : p;
   return `<div class="league"><div class="league-hd"><h4 class="ghead" style="margin:0">Liga de la semana</h4><span class="hint">${left ? `cierra en ${left} ${left === 1 ? "día" : "días"}` : dow === 5 ? "hoy cierra" : "se reinicia el lunes"}</span></div>
-    <ol class="rank">${L.map(r => `<li class="${r.user_id === ME.id ? "me-row" : ""}"><span class="rpos">${r.correct ? medal(r.pos) : "–"}</span><span class="rname">${esc(r.alias)}${r.user_id === ME.id ? " (tú)" : ""}${r.wins ? ` <span class="wins" title="Semanas ganadas">🏆×${r.wins}</span>` : ""}</span><span class="rscore"><b>${r.correct}</b> <span class="hint">de ${r.answered}</span></span></li>`).join("")}</ol>
+    <ol class="rank">${L.map(r => `<li class="${r.user_id === ME.id ? "me-row" : ""}"><span class="rpos">${r.correct ? medal(r.pos) : "–"}</span><span class="rname">${avatar(r.user_id, "sm")}${esc(r.alias)}${r.user_id === ME.id ? " (tú)" : ""}${r.wins ? ` <span class="wins" title="Semanas ganadas">🏆×${r.wins}</span>` : ""}</span><span class="rscore"><b>${r.correct}</b> <span class="hint">de ${r.answered}</span></span></li>`).join("")}</ol>
     <p class="hint" style="margin:6px 0 0">Cuentan los aciertos de las preguntas diarias de lunes a viernes. Quien termine la semana de primero gana un 🏆.</p></div>`;
 }
 
@@ -1376,11 +1429,11 @@ let LIVE_POLL = null;
 function sdMenu(){
   return `<div class="playhead"><button class="btn ghost small" type="button" data-study-hub>Volver</button><h2 style="margin:0;flex:1">Study Date</h2></div>
     <p class="sub">Dos formas de estudiar con tus amigos. Ninguna cuenta para el ranking ni las rachas.</p>
-    <div class="sd-entry"><div><h3>Ruleta</h3><p class="hint">Para cuando están juntos con un solo celular: ponen sus nombres, giran la ruleta y a quien le salga responde una pregunta del banco. ResiTrack lleva el marcador.</p></div><button type="button" class="btn" data-sd-open>Abrir la ruleta</button></div>
+    <div class="sd-entry"><span class="ico-tile sd-i1">${I.spin}</span><div><h3>Ruleta</h3><p class="hint">Para cuando están juntos con un solo celular: ponen sus nombres, giran la ruleta y a quien le salga responde una pregunta del banco. ResiTrack lleva el marcador.</p></div><button type="button" class="btn" data-sd-open>Abrir la ruleta</button></div>
     ${liveEntry()}`;
 }
 function liveEntry(){
-  return `<div class="sd-entry live-entry"><div><h3>Quiz en vivo</h3><p class="hint">Cada quien desde su celular, juntos o a distancia: todos responden la misma pregunta al tiempo y gana quien acierte más rápido. Quien lo crea comparte un código de 5 letras.</p></div>
+  return `<div class="sd-entry live-entry"><div class="live-hd"><span class="ico-tile sd-i2">${I.live}</span><h3>Quiz en vivo</h3></div><div><p class="hint">Cada quien desde su celular, juntos o a distancia: todos responden la misma pregunta al tiempo y gana quien acierte más rápido. Quien lo crea comparte un código de 5 letras.</p></div>
     <form class="live-new" data-live-new>
       <label>Tema<select name="area"><option value="">Todas</option>${Object.entries(AREAS).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select></label>
       <label>Preguntas<select name="n"><option>5</option><option selected>10</option><option>15</option></select></label>
@@ -1435,7 +1488,7 @@ function renderLive(){
   if (!st) return head + `<div class="empty">Conectando…</div>`;
   if (st.status === "lobby"){
     return `${head}<div class="live-lobby"><p class="sub" style="margin:0">Pídanle a todos que entren a <b>Estudiar → Study Date → Quiz en vivo</b> y escriban este código:</p>
-      <div class="live-code">${esc(L.code)}</div>
+      <div class="live-code" aria-label="Código ${esc(L.code)}">${[...L.code].map(ch => `<span aria-hidden="true">${esc(ch)}</span>`).join("")}</div>
       <button class="btn ghost small" type="button" data-live-share>Compartir código</button>
       <h4 class="ghead">${st.players.length} ${st.players.length === 1 ? "jugador" : "jugadores"}</h4>
       <div class="live-players">${st.players.map(p => `<span class="smate">${avatar(p.id, "sm")}<span>${esc(p.alias)}</span></span>`).join("")}</div>
@@ -1611,7 +1664,7 @@ function sdWheel(){
     return `${path}<text x="${tx.toFixed(2)}" y="${ty.toFixed(2)}" transform="rotate(${mid - 90 + (mid > 180 ? 180 : 0)} ${tx.toFixed(2)} ${ty.toFixed(2)})" text-anchor="middle" dominant-baseline="middle">${esc(label)}</text>`;
   }).join("");
   return `<div class="sd-wheel-wrap"><span class="sd-pointer" aria-hidden="true"></span>
-    <svg class="sd-wheel" viewBox="0 0 300 300" role="img" aria-label="Ruleta con ${n} nombres"><g id="sdRot" style="transform:rotate(${SD.rot}deg)">${slices}<circle cx="${C}" cy="${C}" r="${R}" fill="none" stroke="var(--sheet)" stroke-width="3"/></g><circle cx="${C}" cy="${C}" r="18" fill="var(--sheet)" stroke="var(--rule)" stroke-width="2"/></svg></div>`;
+    <svg class="sd-wheel" viewBox="0 0 300 300" role="img" aria-label="Ruleta con ${n} nombres"><g id="sdRot" style="transform:rotate(${SD.rot}deg)">${slices}<circle cx="${C}" cy="${C}" r="${R}" fill="none" stroke="var(--sheet)" stroke-width="3"/></g></svg><button type="button" class="sd-hub" data-sd-spin aria-label="Girar la ruleta" ${sdActive().length < 1 || SD.spinning ? "disabled" : ""}>${I.spin}<span>Girar</span></button></div>`;
 }
 function renderStudyDate(){
   const known = [...new Set(Object.keys(PEOPLE).filter(id => id !== ME.id && shareable(id)).map(aliasOf))].filter(a => !SD.names.includes(a)).slice(0, 10);
