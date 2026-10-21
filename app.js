@@ -302,16 +302,22 @@ function renderFriendsBody(code, outgoing){
   const invite = `<div class="fcode"><div class="fcode-main"><span class="fcode-lbl">Tu código de invitación</span><div class="fcode-row"><span class="code">${esc(code)}</span><button type="button" class="icon-btn" data-copy-code aria-label="Copiar código">${I.copy}</button></div><button class="btn" id="shareCode">${I.share}Compartir invitación</button><p class="fcode-note">Invita a tus colegas y construye tu red de estudio en ResiTrack.</p></div><span class="fcode-art" aria-hidden="true">${I.userplus}</span></div>
     <form id="friendForm" class="fadd"><input id="f-code" maxlength="6" placeholder="Código de tu amigo" style="text-transform:uppercase" required><button class="btn small" type="submit">Agregar</button></form>`;
   const stat = (act, n, t, ico, hot) => `<button type="button" class="stat${hot ? " hot" : ""}" ${act}><span class="stat-ico">${ico}</span><b>${n}</b><span>${t}</span></button>`;
-  const stats = `<div class="stats">${stat('data-goto="sec-amigos"', FRIENDS.length, FRIENDS.length === 1 ? "Amigo" : "Amigos", I.users)}${stat(`data-goto="${nIn ? "sec-solic" : "sec-amigos"}"`, nIn, nIn === 1 ? "Solicitud pendiente" : "Solicitudes pendientes", I.doc, nIn > 0)}${stat('data-fview="grupos"', GROUPS.length, GROUPS.length === 1 ? "Grupo de estudio" : "Grupos de estudio", I.users)}</div>`;
+  const stats = `<div class="stats">${stat('data-goto="sec-amigos"', FRIENDS.length, FRIENDS.length === 1 ? "Amigo" : "Amigos", I.users)}${stat('data-fview="solicitudes"', nIn + outgoing.length, nIn + outgoing.length === 1 ? "Solicitud pendiente" : "Solicitudes pendientes", I.doc, nIn > 0)}${stat('data-fview="grupos"', GROUPS.length, GROUPS.length === 1 ? "Grupo de estudio" : "Grupos de estudio", I.users)}</div>`;
   // Liga: la del primer grupo con al menos dos personas.
   const g = GROUPS.find(x => (LEAGUE[x.id] || []).length >= 2), L = g ? LEAGUE[g.id] : [], meL = L.find(r => r.user_id === ME.id);
   const league = g && meL ? `<button type="button" class="league-card" data-fview="grupos" data-open-g="${g.id}"><span class="lg-ico">${I.trophy}</span><span class="lg-txt"><span class="lg-t">Liga semanal <span class="hint">· ${esc(g.name)}</span></span><b>${meL.correct ? `Puesto #${meL.pos}` : "Sin aciertos aún"} <span class="hint">de ${L.length}</span></b><span class="hint">${meL.correct} ${meL.correct === 1 ? "acierto" : "aciertos"} esta semana</span></span><span class="lg-side"><span class="lg-more">Ver tabla ${I.chev}</span><span class="stack">${L.slice(0, 3).map(r => avatar(r.user_id, "sm")).join("")}</span></span></button>` : "";
   const all = [...CHALLS].sort((a, b) => isMyTurn(b) - isMyTurn(a));
-  const shown = FRIEND_ALL ? all : all.slice(0, 4);
-  const retos = all.length ? `<section class="sec"><div class="sec-hd"><h3 class="sec-h">Retos recientes</h3>${all.length > 4 ? `<button type="button" class="sec-more" data-fall>${FRIEND_ALL ? "Ver menos" : "Ver todos"} ${I.chev}</button>` : ""}</div><div class="chlist">${shown.map(chRow).join("")}</div></section>` : "";
-  return `${invite}${stats}${league}${retos}${friendReqBox()}
+  const shown = FRIEND_ALL ? all : all.slice(0, 2);
+  const retos = all.length ? `<section class="sec"><div class="sec-hd"><h3 class="sec-h">Retos recientes</h3>${all.length > 2 ? `<button type="button" class="sec-more" data-fall>${FRIEND_ALL ? "Ver menos" : "Ver todos"} ${I.chev}</button>` : ""}</div><div class="chlist">${shown.map(chRow).join("")}</div></section>` : "";
+  return `${invite}${stats}${league}${retos}
     <section class="sec" id="sec-amigos"><h3 class="sec-h">Tus amigos (${FRIENDS.length})</h3>
-    ${cards ? `<div class="plist">${cards}</div><p class="hint" style="margin:8px 2px 0">🔥 Racha de batallas: sube cada día que terminan un desafío entre ustedes. ⌛ significa que hoy todavía no han tenido batalla.</p>` : `<div class="empty">Aún no tienes amigos agregados. Comparte tu invitación o pide el código de alguien.</div>`}</section>
+    ${cards ? `<div class="plist">${cards}</div><p class="hint" style="margin:8px 2px 0">🔥 Racha de batallas: sube cada día que terminan un desafío entre ustedes. ⌛ significa que hoy todavía no han tenido batalla.</p>` : `<div class="empty">Aún no tienes amigos agregados. Comparte tu invitación o pide el código de alguien.</div>`}</section>`;
+}
+// Página aparte con las solicitudes de amistad recibidas y enviadas.
+function requestsPage(){
+  const outgoing = FREQS.filter(r => !r.incoming);
+  return `<div class="playhead"><button class="btn ghost small" type="button" data-fview="amigos">Volver</button><h2 style="margin:0;flex:1">Solicitudes</h2></div>
+    ${friendReqBox() || `<section class="sec"><h3 class="sec-h">Solicitudes recibidas</h3><div class="empty">No tienes solicitudes por responder.</div></section>`}
     ${outgoing.length ? `<section class="sec"><h3 class="sec-h">Solicitudes enviadas</h3><div class="plist">${outgoing.map(r =>
       `<div class="prow"><span class="prow-who">${PEOPLE[r.other] ? avatar(r.other, "md") : avA(r.alias, "md")}<span class="prow-txt"><span class="prow-name">${esc(r.alias)}</span><span class="prow-sub">${r.city ? esc(r.city) + " · " : ""}esperando respuesta</span></span></span><button class="btn ghost small" data-fcancel="${r.other}" data-alias="${esc(r.alias)}">Cancelar</button></div>`).join("")}</div></section>` : ""}`;
 }
@@ -344,6 +350,11 @@ function renderGroup(){
   const nIn = FREQS.filter(r => r.incoming).length;
   const seg = `<div class="seg fseg" role="tablist"><button type="button" class="count" role="tab" data-fview="amigos" aria-pressed="${FVIEW === "amigos"}">Amigos${nIn ? ` <span class="seg-n">${nIn}</span>` : ""}</button><button type="button" class="count" role="tab" data-fview="grupos" aria-pressed="${FVIEW === "grupos"}">Grupos</button></div>`;
   let body;
+  if (FVIEW === "solicitudes"){
+    $("p-group").innerHTML = requestsPage();
+    updateBadges();
+    return;
+  }
   if (FVIEW === "grupos"){
     const forms = `<div class="gforms">
       <form id="newGroup"><h4>Crear un grupo</h4><input id="g-name" maxlength="60" placeholder="Ej. Residencia 2027" required><button class="btn small" type="submit">Crear grupo</button></form>
@@ -848,7 +859,7 @@ function renderDaily(){
       ${answered && q.correct != null ? feedback(q.is_correct, q.explanation, q.source, q.id) : answered ? `<p class="hint" style="margin:6px 0 0">Respuesta guardada. La retroalimentación aparece al final del simulacro.</p>` : ""}
     </article>`;
   }).join("");
-  return head + `<div class="qlist">${cards}</div><div class="totop"><button type="button" class="btn ghost" data-totop>Volver arriba</button></div>`;
+  return head + `<div class="qlist">${cards}</div>`;
 }
 
 function mates(){
@@ -1308,8 +1319,7 @@ function renderSimResult(){
     <div class="areas">${areas.map(([k, v]) => `<div class="area-row"><div class="area-top"><b>${esc(AREAS[k] || k)}</b><span class="area-pct">${v.ok}/${v.n}</span></div><div class="bar" aria-hidden="true"><i style="width:${Math.max(pctOf(v.ok, v.n), 3)}%"></i></div></div>`).join("")}</div>
     <p class="sub" style="margin-top:12px">${R.ok < P.qs.length ? `Las ${P.qs.length - R.ok} que fallaste o dejaste en blanco quedaron en tu repaso: vuelven en 3 días.` : "Sin errores. Excelente."}</p>
     <div class="qlist">${P.qs.map((q, i) => `<article class="qcard"><div class="qmeta"><span class="qn">${i + 1}</span><span class="chip on">${esc(AREAS[q.area] || q.area)}</span>${q.topic ? `<span class="hint">${esc(q.topic)}</span>` : ""}${P.picks[i] == null ? `<span class="due">En blanco</span>` : ""}</div>
-      <p class="stem">${esc(q.stem)}</p>${optList({ ...q, id: "s" + i }, { pick: P.picks[i], correct: q.correct, locked: true })}${feedback(P.picks[i] === q.correct, q.explanation, q.source, q.id)}</article>`).join("")}</div>
-    <div class="totop"><button type="button" class="btn ghost" data-totop>Volver arriba</button></div>`;
+      <p class="stem">${esc(q.stem)}</p>${optList({ ...q, id: "s" + i }, { pick: P.picks[i], correct: q.correct, locked: true })}${feedback(P.picks[i] === q.correct, q.explanation, q.source, q.id)}</article>`).join("")}</div>`;
 }
 function renderPractice(){
   if (PRAC.screen === "areas") return renderAreas();
