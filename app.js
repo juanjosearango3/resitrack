@@ -851,9 +851,9 @@ function feedback(ok, explanation, source, qid){
     : `<p>${esc(l).replace(/^OJO:/, "<b>OJO:</b>")}</p>`;
   // "Las otras opciones:" va aparte, bajo una línea, con cada opción como etiqueta: «texto»: por qué no.
   const other = l => { const m = l.match(/^«([^»]+)»:\s*(.*)$/);
-    return m ? `<p><span class="fb-opt">${esc(m[1])}</span> ${esc(m[2])}</p>` : `<p>${esc(l)}</p>`; };
+    return m ? `<p><b class="fb-opt">${esc(m[1])}</b> ${esc(m[2])}</p>` : `<p>${esc(l)}</p>`; };
   const body = paras.map(p => { const ls = p.split(/\n/).map(l => l.trim()).filter(Boolean);
-    if (/^Las otras opciones:?$/.test(ls[0])) return `<div class="fb-others"><p class="fb-others-hd">Las otras opciones</p>${ls.slice(1).map(other).join("")}</div>`;
+    if (/^Las otras opciones:?$/.test(ls[0])) return `<div class="fb-others"><p class="fb-others-hd"><b>Las otras opciones</b></p>${ls.slice(1).map(other).join("")}</div>`;
     return ls.length > 1 ? `<div class="fb-steps">${ls.map(line).join("")}</div>` : `<p>${esc(p).replace(/^OJO:/, "<b>OJO:</b>")}</p>`; }).join("");
   return `<div class="fb ${ok?"fb-ok":"fb-bad"}"><i class="fb-ico" aria-hidden="true">${ok?"✓":"✕"}</i><div class="fb-main"><div class="fb-hd">${ok?"Correcta.":"Incorrecta."}</div><div class="fb-body">${body}</div></div></div>${source?`<div class="fb-src"><span class="ico-tile">${I.doc}</span><div><b>Fuente</b><span>${esc(source)}</span></div></div>`:""}${reportBox(qid)}`;
 }

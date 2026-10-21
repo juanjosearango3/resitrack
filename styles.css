@@ -670,7 +670,7 @@ img.av{border-radius:50%;aspect-ratio:1/1;object-fit:cover}
 .fb-steps .fb-step:first-child{margin-top:0}
 .fb-others{margin:0 0 1em;padding-top:12px;border-top:1px solid color-mix(in srgb,var(--ink) 18%,transparent)}
 .fb-others p{margin:8px 0 0}
-.fb-others .fb-others-hd{margin:0;font-family:var(--f-display);font-weight:800;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.fb-others .fb-others-hd{margin:0;font-family:var(--f-display);font-weight:800;font-size:15px;color:var(--ink)}
 .fb-opt{display:inline-block;margin-right:4px;padding:1px 9px;border:1px solid color-mix(in srgb,var(--ink) 30%,transparent);border-radius:8px;font-weight:800;font-variant-numeric:tabular-nums}
 .fb-calc{margin:4px 0 0!important;padding:6px 10px;border-radius:10px;background:color-mix(in srgb,var(--ink) 8%,transparent);font-weight:700;font-variant-numeric:tabular-nums}
 .fb-src{display:flex;align-items:center;gap:12px;margin-top:10px;padding:12px 14px;background:var(--sheet);border:1px solid var(--rule);border-radius:14px}
