@@ -664,6 +664,11 @@ img.av{border-radius:50%;aspect-ratio:1/1;object-fit:cover}
 .fb .fb-hd{padding:2px 0 6px;background:none!important;font-size:18px}
 .fb-ok .fb-hd{color:var(--ok)} .fb-bad .fb-hd{color:var(--bad)}
 .fb-body{padding:0;color:var(--ink)}
+.fb-steps{margin:0 0 1em}
+.fb-steps p{margin:0}
+.fb-steps .fb-step{margin-top:10px}
+.fb-steps .fb-step:first-child{margin-top:0}
+.fb-calc{margin:4px 0 0!important;padding:6px 10px;border-radius:10px;background:color-mix(in srgb,var(--ink) 8%,transparent);font-weight:700;font-variant-numeric:tabular-nums}
 .fb-src{display:flex;align-items:center;gap:12px;margin-top:10px;padding:12px 14px;background:var(--sheet);border:1px solid var(--rule);border-radius:14px}
 .qcard .fb-src{background:var(--paper)}
 .fb-src > div{display:grid;gap:2px;min-width:0;font-size:14px;color:var(--muted)}

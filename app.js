@@ -845,7 +845,12 @@ function feedback(ok, explanation, source, qid){
   // Nunca se muestra un párrafo que hable del origen de la pregunta (reconstrucciones, grupo, respuesta marcada).
   const ORIGIN = /reconstru|el grupo (marc|discut|dec|dij)|respuesta oficial|marcaba |marcaron |clave del examen|en el examen (pregunt|marc|basta|de (la udea|univalle|20))|el examen (marc|daba|dio)/i;
   const paras = String(explanation || "").split(/\n\s*\n/).map(p => p.trim()).filter(Boolean).filter(p => !ORIGIN.test(p));
-  const body = paras.map(p => `<p>${esc(p).replace(/^OJO:/, "<b>OJO:</b>")}</p>`).join("");
+  // Dentro de un párrafo, cada renglón va aparte: "Paso N." queda en negrita y las cuentas (renglones con " = ") se resaltan.
+  const line = l => /^Paso \d+\./.test(l) ? `<p class="fb-step">${esc(l).replace(/^(Paso \d+\.)/, "<b>$1</b>")}</p>`
+    : / = /.test(l) && l.length < 140 ? `<p class="fb-calc">${esc(l)}</p>`
+    : `<p>${esc(l).replace(/^OJO:/, "<b>OJO:</b>")}</p>`;
+  const body = paras.map(p => { const ls = p.split(/\n/).map(l => l.trim()).filter(Boolean);
+    return ls.length > 1 ? `<div class="fb-steps">${ls.map(line).join("")}</div>` : `<p>${esc(p).replace(/^OJO:/, "<b>OJO:</b>")}</p>`; }).join("");
   return `<div class="fb ${ok?"fb-ok":"fb-bad"}"><i class="fb-ico" aria-hidden="true">${ok?"✓":"✕"}</i><div class="fb-main"><div class="fb-hd">${ok?"Correcta.":"Incorrecta."}</div><div class="fb-body">${body}</div></div></div>${source?`<div class="fb-src"><span class="ico-tile">${I.doc}</span><div><b>Fuente</b><span>${esc(source)}</span></div></div>`:""}${reportBox(qid)}`;
 }
 
