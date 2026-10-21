@@ -1732,11 +1732,11 @@ function renderObAuth(){
 // "Siguiente" solo se habilita cuando el paso está hecho; mientras tanto se explica qué falta.
 function obNeed(k){
   const push = "Notification" in window && "serviceWorker" in navigator && "PushManager" in window;
-  if (k === "avisos" && push && Notification.permission !== "granted") return "Activa los avisos para continuar.";
   if (k === "cuenta" && !ME) return "Crea tu cuenta para continuar.";
   if (k === "cuenta" && !PROFILE) return "Crea tu perfil para continuar.";
   if (k === "fin"){
-    const missing = [...document.querySelectorAll("#guide [data-chk]")].filter(li => !li.classList.contains("chk-on")).map(li => li.textContent.toLowerCase());
+    // Los avisos son opcionales: no bloquean.
+    const missing = [...document.querySelectorAll("#guide [data-chk]")].filter(li => li.dataset.chk !== "avisos" && !li.classList.contains("chk-on")).map(li => li.textContent.toLowerCase());
     if (missing.length) return `Falta: ${missing.join(", ")}. Vuelve atrás para completarlo.`;
   }
   return "";
@@ -1747,7 +1747,13 @@ function obRefreshNext(){
   if (!btn) return;
   const need = obNeed(OB_CUR);
   btn.disabled = !!need;
-  if (hint){ hint.textContent = need; hint.hidden = !need; }
+  // Avisos: no se exigen, pero se recomienda activarlos.
+  const push = "Notification" in window && "serviceWorker" in navigator && "PushManager" in window;
+  const tip = !need && push && Notification.permission !== "granted"
+    ? (OB_CUR === "avisos" ? "Puedes seguir sin activarlos, pero te recomendamos hacerlo: sin avisos no te enteras cuando te reten, cuando tu racha esté en riesgo ni cuando cambie una convocatoria que sigues."
+      : OB_CUR === "fin" ? "Los avisos están apagados. Puedes activarlos después desde tu perfil, en «Avisos en este dispositivo»." : "")
+    : "";
+  if (hint){ hint.textContent = need || tip; hint.hidden = !(need || tip); hint.classList.toggle("tip", !need && !!tip); }
 }
 function showStep(k){
   OB_CUR = k;

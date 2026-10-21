@@ -902,3 +902,4 @@ button.chrow:hover{border-color:var(--rule-strong)}
 .ob-next[disabled]{opacity:.4}
 .ob-skip-sp{width:40px}
 .ob-wait{margin-top:auto}
+.ob-need.tip{color:var(--muted);font-weight:400;font-size:13.5px;line-height:1.45}
