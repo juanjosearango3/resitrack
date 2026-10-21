@@ -78,7 +78,7 @@ let GROUPS = [];          // mis grupos
 let MEMBERS = [];         // filas de group_members visibles
 let FOLLOWS = [];         // mis follows + los de mi grupo
 let FEED = [];            // cambios recientes
-let tab = "mine";
+let tab = "all";
 let statusFilter = "";
 // Práctica (repaso, áreas, simulacro), liga de grupo y quiz en vivo
 let PRAC = null;          // { screen, mode, title, qs, picks, uni, startedAt, endsAt, result }
@@ -236,6 +236,7 @@ function feedHtml(){
 }
 
 function renderMine(){
+  if (!ME && !$("guide").hidden){ $("p-mine").innerHTML = ""; return; }
   if (!ME){ $("p-mine").innerHTML = gate("Entra a ResiTrack","Crea tu cuenta para seguir convocatorias, marcar tu avance y acompañarte con tus grupos."); return; }
   if (!PROFILE){
     $("p-mine").innerHTML = `<div class="gate"><h1>Falta tu perfil</h1><p class="lead">Dinos cómo te llamas y qué especialidades te interesan.</p><button class="btn" id="createBtn">Crear mi perfil</button></div>`;
@@ -391,6 +392,7 @@ function renderTop(){
     : `<span style="padding-left:8px">Entrar</span>`;
 }
 function renderAllTabs(){
+  if (!$("guide").hidden && OB_CUR === "cuenta") renderObAuth();
   renderTop();
   if (tab === "all") renderAll();
   if (tab === "mine") renderMine();
@@ -1701,30 +1703,69 @@ $("installNow").addEventListener("click", async () => {
   try { await INSTALL_EVT.userChoice; } catch(e){}
   INSTALL_EVT = null; setupInstall();
 });
-// Entrada en pasos: inicio → paso 1 (instalar y avisos) → paso 2 (cómo empezar) → paso 3 (pestañas) → final.
-const OB_STEPS = { p1: 0, p2: 1, p3: 2 };
+// Entrada en pasos: instalar → seguir en la app (solo desde el navegador del celular) → avisos → cuenta → verificación → cómo empezar → pestañas.
+const OB_ORDER = ["p1", "app", "avisos", "cuenta", "fin", "p2", "p3"];
+const isStandalone = () => window.matchMedia("(display-mode: standalone)").matches || !!window.navigator.standalone;
+const isMobile = () => /android|iphone|ipad|ipod/i.test(navigator.userAgent) || (/macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+const obFlow = () => OB_ORDER.filter(k => k !== "app" || (isMobile() && !isStandalone()));
+let OB_CUR = "inicio";
+function renderObAuth(){
+  const box = $("obAuth"); if (!box) return;
+  const next = $("obAuthNext");
+  if (!ME){
+    $("p-mine").innerHTML = ""; // evita ids repetidos con el formulario de Para mí
+    if (box.querySelector("#authForm")) return; // no borrar lo que la persona ya escribió
+    box.innerHTML = gate("Tu cuenta", "Crea tu cuenta con tu correo y una contraseña de al menos 8 caracteres.");
+    signUpMode = false; $("a-switch").click(); // abre en modo "Crear cuenta"
+    next.hidden = true;
+  } else if (!PROFILE){
+    box.innerHTML = `<div class="ob-card"><span class="ob-ic">${I.userplus}</span><div class="ob-cb"><b>Cuenta creada</b><span>${esc(ME.email || "")}. Ahora arma tu perfil para seguir.</span><button class="btn small install-now" id="createBtn" type="button">Crear mi perfil</button></div></div>`;
+    next.hidden = true;
+  } else {
+    box.innerHTML = `<div class="ob-card"><span class="ob-ic">${I.users}</span><div class="ob-cb"><b>Cuenta y perfil listos</b><span>${esc(PROFILE.alias)} · ${esc(ME.email || "")}</span></div></div>`;
+    next.hidden = false;
+  }
+}
 function showStep(k){
+  OB_CUR = k;
   document.querySelectorAll("#guide [data-ob]").forEach(s => s.hidden = s.dataset.ob !== k);
-  const cur = document.querySelector(`#guide [data-ob="${k}"]`);
-  cur?.querySelectorAll(".ob-dots i").forEach((d, i) => { d.classList.toggle("on", i <= OB_STEPS[k]); d.classList.toggle("cur", i === OB_STEPS[k]); });
-  if (k === "p1"){ setupInstall(); setupPushStep(); }
+  const flow = obFlow(), i = flow.indexOf(k), cur = document.querySelector(`#guide [data-ob="${k}"]`);
+  if (cur && i >= 0){
+    cur.querySelector(".ob-dots").innerHTML = flow.map((_, j) => `<i class="${j <= i ? "on" : ""}${j === i ? " cur" : ""}"></i>`).join("");
+    cur.querySelector(".ob-step").textContent = `Paso ${i + 1} de ${flow.length}`;
+  }
+  if (k === "p1") setupInstall();
+  if (k === "app"){
+    const iOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    $("obAppTxt").textContent = iOS
+      ? "Cierra Safari y abre ResiTrack desde el ícono nuevo en tu pantalla de inicio. Ahí continúas con los avisos y tu cuenta."
+      : "Abre ResiTrack desde el ícono nuevo en tu pantalla de inicio. Ahí continúas con los avisos y tu cuenta.";
+  }
+  if (k === "avisos") setupPushStep();
+  if (k === "cuenta") renderObAuth();
   if (k === "fin"){
-    // Las marcas reflejan el estado real de este dispositivo y de la cuenta.
-    const standalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
-    const push = "Notification" in window && Notification.permission === "granted";
-    const done = { app: !!standalone && push, cuenta: !!PROFILE, tabs: true, listo: !!PROFILE };
+    // Las marcas reflejan el estado real de este celular y de la cuenta.
+    const done = { app: isStandalone() || !isMobile(), avisos: "Notification" in window && Notification.permission === "granted", cuenta: !!ME, perfil: !!PROFILE };
     document.querySelectorAll("#guide [data-chk]").forEach(li => li.classList.toggle("chk-on", !!done[li.dataset.chk]));
+    $("obChkHint").hidden = Object.values(done).every(Boolean);
   }
   window.scrollTo(0, 0);
 }
+function obStep(dir){
+  const flow = obFlow(), i = flow.indexOf(OB_CUR);
+  const k = flow[i + dir];
+  if (k) showStep(k); else if (dir < 0) showStep("inicio"); else finishGuide();
+}
 function showGuide(){ showStep("inicio"); show("guide"); }
-function finishGuide(){ try { localStorage.setItem("rt-guia", "1"); } catch(e){} showApp(); }
+function finishGuide(){ try { localStorage.setItem("rt-guia", "1"); } catch(e){} showApp(); renderAllTabs(); }
 function goLogin(){ try { localStorage.setItem("rt-guia", "1"); } catch(e){} setTab("mine"); showApp(); }
 $("startBtn").addEventListener("click", showGuide);
 $("guideDone").addEventListener("click", finishGuide);
 $("guideSkip").addEventListener("click", finishGuide);
 document.addEventListener("click", e => {
   const go = e.target.closest("[data-ob-go]"); if (go){ showStep(go.dataset.obGo); return; }
+  if (e.target.closest("[data-ob-next]")){ obStep(1); return; }
+  if (e.target.closest("[data-ob-prev]")){ obStep(-1); return; }
   const bk = e.target.closest("[data-ob-back]"); if (bk){ bk.dataset.obBack === "cover" ? showCover() : showStep(bk.dataset.obBack); return; }
   if (e.target.closest("[data-ob-skip]")){ finishGuide(); return; }
   if (e.target.closest("[data-ob-login]")) goLogin();

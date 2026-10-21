@@ -50,12 +50,12 @@
     <button type="button" class="ob-choice" data-ob-login><span class="ob-ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.6-3.6 3.4-5.5 7-5.5s6.4 1.9 7 5.5"/></svg></span><span class="ob-ct"><b>Ya tengo cuenta</b><span>Inicia sesión y continúa con tu avance.</span></span><svg class="ob-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m9 6 6 6-6 6"/></svg></button>
   </div>
 
-  <!-- 3. Paso 1 -->
+  <!-- Instalar -->
   <div class="ob" data-ob="p1" hidden>
-    <div class="ob-bar"><button class="ob-back" type="button" data-ob-back="inicio" aria-label="Volver"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg></button><span class="ob-dots" aria-hidden="true"><i></i><i></i><i></i></span><button class="ob-skip" id="guideSkip" type="button">Omitir</button></div>
-    <p class="ob-step">Paso 1 de 3</p>
-    <h2 class="ob-h">Instala la app y activa avisos</h2>
-    <p class="ob-lead">Recibe en tu celular los avisos de convocatorias, retos, rachas y cambios importantes. No ocupa espacio y se instala en segundos.</p>
+    <div class="ob-bar"><button class="ob-back" type="button" data-ob-prev aria-label="Volver"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg></button><span class="ob-dots" aria-hidden="true"></span><button class="ob-skip" id="guideSkip" type="button">Omitir</button></div>
+    <p class="ob-step"></p>
+    <h2 class="ob-h">Instala la app</h2>
+    <p class="ob-lead">En el celular, ResiTrack se usa instalada: así te llegan los avisos de convocatorias, retos y rachas, y la abres con un toque. Se instala en segundos.</p>
     <div class="ob-card" id="install">
       <span class="ob-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg></span>
       <div class="ob-cb"><b>Se instala en tu celular</b><span>Desde el navegador. Toma 10 segundos.</span>
@@ -85,59 +85,91 @@
       </div>
     </div>
     <div class="ob-card">
-      <span class="ob-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 1.5h-15z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/></svg></span>
-      <div class="ob-cb"><b>Activa los avisos</b><span>Te notificamos sobre nuevas convocatorias y retos.</span>
-        <div class="push-step" id="pushStep"><p id="pushStepTxt"></p><button class="btn small install-now" id="pushStepBtn" type="button">Activar avisos</button></div>
-      </div>
-    </div>
-    <div class="ob-card">
       <span class="ob-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M4.6 4.6l2.1 2.1M17.3 17.3l2.1 2.1M2.5 12h3M18.5 12h3M4.6 19.4l2.1-2.1M17.3 6.7l2.1-2.1"/></svg></span>
       <div class="ob-cb"><b>No ocupa espacio</b><span>Funciona como cualquier app y es muy ligera.</span></div>
     </div>
-    <button class="btn ob-next" type="button" data-ob-go="p2">Siguiente<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+    <button class="btn ob-next" type="button" data-ob-next>Siguiente<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
   </div>
 
-  <!-- 4. Paso 2 -->
+  <!-- Seguir en la app instalada (solo si se abrió desde el navegador) -->
+  <div class="ob" data-ob="app" hidden>
+    <div class="ob-bar"><button class="ob-back" type="button" data-ob-prev aria-label="Volver"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg></button><span class="ob-dots" aria-hidden="true"></span><button class="ob-skip" type="button" data-ob-skip>Omitir</button></div>
+    <p class="ob-step"></p>
+    <div class="ob-hero-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M11 18.5h2"/><path d="m9.5 10 2.5 2.5L15 8"/></svg></div>
+    <h2 class="ob-h ob-center">Sigue en la app</h2>
+    <p class="ob-lead ob-center" id="obAppTxt">Cierra el navegador y abre ResiTrack desde el ícono nuevo en tu pantalla de inicio. Ahí continúas con los avisos y tu cuenta.</p>
+    <div class="ob-card ob-info"><span class="ob-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 1.5h-15z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/></svg></span><div class="ob-cb"><b>¿Por qué en la app?</b><span>En el celular, los avisos solo funcionan con la app instalada.</span></div></div>
+    <button class="btn ghost ob-next" type="button" data-ob-next id="obAppNext">Seguir aquí en el navegador</button>
+  </div>
+
+  <!-- Avisos -->
+  <div class="ob" data-ob="avisos" hidden>
+    <div class="ob-bar"><button class="ob-back" type="button" data-ob-prev aria-label="Volver"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg></button><span class="ob-dots" aria-hidden="true"></span><button class="ob-skip" type="button" data-ob-skip>Omitir</button></div>
+    <p class="ob-step"></p>
+    <h2 class="ob-h">Activa los avisos</h2>
+    <p class="ob-lead">Te avisamos cuando un amigo te rete, cuando termine un duelo, cuando tu racha esté en riesgo y cuando cambie una convocatoria que sigues.</p>
+    <div class="ob-card">
+      <span class="ob-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 1.5h-15z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/></svg></span>
+      <div class="ob-cb"><b>Avisos en este celular</b>
+        <div class="push-step" id="pushStep"><p id="pushStepTxt"></p><button class="btn install-now" id="pushStepBtn" type="button">Activar avisos</button></div>
+      </div>
+    </div>
+    <button class="btn ob-next" type="button" data-ob-next>Siguiente<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+  </div>
+
+  <!-- Crear cuenta -->
+  <div class="ob" data-ob="cuenta" hidden>
+    <div class="ob-bar"><button class="ob-back" type="button" data-ob-prev aria-label="Volver"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg></button><span class="ob-dots" aria-hidden="true"></span><button class="ob-skip" type="button" data-ob-skip>Omitir</button></div>
+    <p class="ob-step"></p>
+    <h2 class="ob-h">Crea tu cuenta</h2>
+    <p class="ob-lead">Con tu correo y una contraseña. Después armas tu perfil: cómo te llaman, tu ciudad y las especialidades que te interesan.</p>
+    <div id="obAuth"></div>
+    <button class="btn ob-next" type="button" data-ob-next id="obAuthNext">Siguiente<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+  </div>
+
+  <!-- Verificación -->
+  <div class="ob ob-final" data-ob="fin" hidden>
+    <div class="ob-bar"><button class="ob-back" type="button" data-ob-prev aria-label="Volver"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg></button><span class="ob-dots" aria-hidden="true"></span><button class="ob-skip" type="button" data-ob-skip>Omitir</button></div>
+    <p class="ob-step"></p>
+    <div class="ob-mark" aria-hidden="true"><picture><source srcset="logo-dark.png" media="(prefers-color-scheme: dark)"><img src="logo.png" alt="" width="848" height="579"></picture></div>
+    <h2 class="ob-h ob-center">¡Todo listo!</h2>
+    <p class="ob-lead ob-center">Revisa que quedó todo configurado en este celular.</p>
+    <ul class="ob-checks">
+      <li data-chk="app">App instalada</li>
+      <li data-chk="avisos">Avisos activados</li>
+      <li data-chk="cuenta">Cuenta creada</li>
+      <li data-chk="perfil">Perfil listo</li>
+    </ul>
+    <p class="hint ob-center" id="obChkHint" hidden>Si falta algo, vuelve atrás para completarlo. También puedes hacerlo después desde tu perfil.</p>
+    <div class="ob-card ob-info"><span class="ob-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4.5 6v5.5c0 4.6 3.1 8.2 7.5 9.5 4.4-1.3 7.5-4.9 7.5-9.5V6z"/><path d="m8.8 12 2.2 2.2 4.2-4.4"/></svg></span><div class="ob-cb"><b>Información oficial</b><span>Antes de pagar una inscripción, confirma siempre las fechas en el enlace oficial de la universidad.</span></div></div>
+    <button class="btn ob-next" type="button" data-ob-next>Siguiente<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+  </div>
+
+  <!-- Cómo empezar -->
   <div class="ob" data-ob="p2" hidden>
-    <div class="ob-bar"><button class="ob-back" type="button" data-ob-back="p1" aria-label="Volver"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg></button><span class="ob-dots" aria-hidden="true"><i></i><i></i><i></i></span><button class="ob-skip" type="button" data-ob-skip>Omitir</button></div>
-    <p class="ob-step">Paso 2 de 3</p>
+    <div class="ob-bar"><button class="ob-back" type="button" data-ob-prev aria-label="Volver"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg></button><span class="ob-dots" aria-hidden="true"></span><button class="ob-skip" type="button" data-ob-skip>Omitir</button></div>
+    <p class="ob-step"></p>
     <h2 class="ob-h">Cómo empezar</h2>
-    <p class="ob-lead">En pocos pasos estarás listo para aprovechar ResiTrack.</p>
+    <p class="ob-lead">Con tu cuenta lista, esto es lo que sigue para aprovechar ResiTrack.</p>
     <ol class="ob-list">
-      <li class="ob-card"><span class="ob-n">1</span><span class="ob-ic2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.6-3.6 3.4-5.5 7-5.5s6.4 1.9 7 5.5"/></svg></span><div class="ob-cb"><b>Crea tu cuenta</b><span>Con tu correo y una contraseña.</span></div></li>
-      <li class="ob-card"><span class="ob-n">2</span><span class="ob-ic2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M7.5 9h5M7.5 12.5h9M7.5 16h6"/></svg></span><div class="ob-cb"><b>Arma tu perfil</b><span>Cómo te llaman, tu ciudad y las especialidades que te interesan.</span></div></li>
-      <li class="ob-card"><span class="ob-n">3</span><span class="ob-ic2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg></span><div class="ob-cb"><b>Sigue convocatorias</b><span>Marca tu avance: me interesa, inscrito, presenté examen, entrevista, admitido.</span></div></li>
-      <li class="ob-card"><span class="ob-n">4</span><span class="ob-ic2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.5" r="3"/><circle cx="17" cy="9.5" r="2.5"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5M15 14.2c2.5-.4 4.6 1 5.2 4.3"/></svg></span><div class="ob-cb"><b>Agrega amigos y únete a grupos</b><span>Con tu código personal o el de un grupo.</span></div></li>
-      <li class="ob-card"><span class="ob-n">5</span><span class="ob-ic2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20V12M10 20V6M15 20v-9M20 20V9"/></svg></span><div class="ob-cb"><b>Estudia de lunes a viernes</b><span>Responde 10 preguntas diarias y reta a tu grupo. El sábado hay simulacro y el domingo descanso.</span></div></li>
+      <li class="ob-card"><span class="ob-n">1</span><span class="ob-ic2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M7.5 9h5M7.5 12.5h9M7.5 16h6"/></svg></span><div class="ob-cb"><b>Arma tu perfil</b><span>Cómo te llaman, tu ciudad y las especialidades que te interesan.</span></div></li>
+      <li class="ob-card"><span class="ob-n">2</span><span class="ob-ic2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg></span><div class="ob-cb"><b>Sigue convocatorias</b><span>Marca tu avance: me interesa, inscrito, presenté examen, entrevista, admitido.</span></div></li>
+      <li class="ob-card"><span class="ob-n">3</span><span class="ob-ic2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.5" r="3"/><circle cx="17" cy="9.5" r="2.5"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5M15 14.2c2.5-.4 4.6 1 5.2 4.3"/></svg></span><div class="ob-cb"><b>Agrega amigos y únete a grupos</b><span>Con tu código personal o el de un grupo.</span></div></li>
+      <li class="ob-card"><span class="ob-n">4</span><span class="ob-ic2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20V12M10 20V6M15 20v-9M20 20V9"/></svg></span><div class="ob-cb"><b>Estudia de lunes a viernes</b><span>Responde 10 preguntas diarias y reta a tu grupo. El sábado hay simulacro y el domingo descanso.</span></div></li>
     </ol>
-    <button class="btn ob-next" type="button" data-ob-go="p3">Siguiente<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+    <button class="btn ob-next" type="button" data-ob-next>Siguiente<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
   </div>
 
-  <!-- 5. Paso 3 -->
+  <!-- Pestañas -->
   <div class="ob" data-ob="p3" hidden>
-    <div class="ob-bar"><button class="ob-back" type="button" data-ob-back="p2" aria-label="Volver"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg></button><span class="ob-dots" aria-hidden="true"><i></i><i></i><i></i></span><button class="ob-skip" type="button" data-ob-skip>Omitir</button></div>
-    <p class="ob-step">Paso 3 de 3</p>
+    <div class="ob-bar"><button class="ob-back" type="button" data-ob-prev aria-label="Volver"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg></button><span class="ob-dots" aria-hidden="true"></span><button class="ob-skip" type="button" data-ob-skip>Omitir</button></div>
+    <p class="ob-step"></p>
     <h2 class="ob-h">Qué encontrarás en cada pestaña</h2>
     <p class="ob-lead">Todo lo que necesitas para tu camino a la residencia, en un solo lugar.</p>
-    <div class="ob-card ob-tab"><span class="ob-tile t-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 10.5 12 3.5l8.5 7"/><path d="M5.5 9v11h5v-6h3v6h5V9"/></svg></span><div class="ob-cb"><b>Para mí</b><span>Tu inicio: resumen de tu avance, fortalezas por reforzar y las convocatorias que sigues.</span></div></div>
     <div class="ob-card ob-tab"><span class="ob-tile t-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg></span><div class="ob-cb"><b>Explorar</b><span>Todas las universidades. Filtra por especialidad y ciudad: abiertas, en proceso, por confirmar o cerradas.</span></div></div>
+    <div class="ob-card ob-tab"><span class="ob-tile t-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 10.5 12 3.5l8.5 7"/><path d="M5.5 9v11h5v-6h3v6h5V9"/></svg></span><div class="ob-cb"><b>Para mí</b><span>Tu inicio: resumen de tu avance, fortalezas por reforzar y las convocatorias que sigues.</span></div></div>
     <div class="ob-card ob-tab"><span class="ob-tile t-violet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5C17 4.5 14 5 12 6.5z"/><path d="M12 6.5v13"/></svg></span><div class="ob-cb"><b>Estudiar</b><span>Preguntas diarias de lunes a viernes, simulacros, repaso de errores y tu ranking de aciertos.</span></div></div>
     <div class="ob-card ob-tab"><span class="ob-tile t-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.5" r="3"/><circle cx="17" cy="9.5" r="2.5"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5M15 14.2c2.5-.4 4.6 1 5.2 4.3"/></svg></span><div class="ob-cb"><b>Amigos</b><span>Tus rachas 🔥, desafíos, amigos y grupos. Cada grupo tiene su liga de la semana 🏆.</span></div></div>
-    <button class="btn ob-next" type="button" data-ob-go="fin">Siguiente<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
-  </div>
-
-  <!-- 6. Final -->
-  <div class="ob ob-final" data-ob="fin" hidden>
-    <div class="ob-mark" aria-hidden="true"><picture><source srcset="logo-dark.png" media="(prefers-color-scheme: dark)"><img src="logo.png" alt="" width="848" height="579"></picture></div>
-    <h2 class="ob-h ob-center">¡Listo para empezar!</h2>
-    <p class="ob-lead ob-center">Ya conoces lo esencial de ResiTrack. Ahora es momento de unirte y comenzar tu camino.</p>
-    <ul class="ob-checks">
-      <li data-chk="app">App instalada y avisos activos</li>
-      <li data-chk="cuenta">Cuenta y perfil listos</li>
-      <li data-chk="tabs">Conoces las pestañas principales</li>
-      <li data-chk="listo">Listo para estudiar y unirte a tu grupo</li>
-    </ul>
-    <div class="ob-card ob-info"><span class="ob-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4.5 6v5.5c0 4.6 3.1 8.2 7.5 9.5 4.4-1.3 7.5-4.9 7.5-9.5V6z"/><path d="m8.8 12 2.2 2.2 4.2-4.4"/></svg></span><div class="ob-cb"><b>Información oficial</b><span>Antes de pagar una inscripción, confirma siempre las fechas en el enlace oficial de la universidad.</span></div></div>
     <button class="btn ob-next" id="guideDone" type="button">Continuar a ResiTrack<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
   </div>
 </section>
@@ -150,8 +182,9 @@
   </div>
 
   <nav class="tabs" role="tablist">
-    <button class="tab" role="tab" id="t-mine" aria-selected="true" data-tab="mine"><svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 10.5 12 3.5l8.5 7"/><path d="M5.5 9v11h5v-6h3v6h5V9"/></svg><span class="tab-l">Para mí</span></button>
-    <button class="tab" role="tab" id="t-all" aria-selected="false" data-tab="all"><svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></svg><span class="tab-l">Explorar<span class="n" id="nAll"></span></span></button>
+    
+    <button class="tab" role="tab" id="t-all" aria-selected="true" data-tab="all"><svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></svg><span class="tab-l">Explorar<span class="n" id="nAll"></span></span></button>
+    <button class="tab" role="tab" id="t-mine" aria-selected="false" data-tab="mine"><svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 10.5 12 3.5l8.5 7"/><path d="M5.5 9v11h5v-6h3v6h5V9"/></svg><span class="tab-l">Para mí</span></button>
     <button class="tab" role="tab" id="t-study" aria-selected="false" data-tab="study"><svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5C17 4.5 14 5 12 6.5z"/><path d="M12 6.5v13"/></svg><span class="tab-l">Estudiar<span class="n" id="nStudy"></span></span></button>
     <button class="tab" role="tab" id="t-group" aria-selected="false" data-tab="group"><svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8.5" r="3"/><circle cx="17" cy="9.5" r="2.5"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5M15 14.2c2.5-.4 4.6 1 5.2 4.3"/></svg><span class="tab-l">Amigos<span class="n" id="nGroup"></span></span></button>
   </nav>

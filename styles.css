@@ -892,3 +892,8 @@ button.chrow:hover{border-color:var(--rule-strong)}
 .ob-fi svg{width:21px;height:21px}
 .ob-cb .push-step .btn{margin-top:10px}
 .ob-cb .push-step.is-on .btn[disabled]{opacity:1;background:var(--drop-soft);border-color:transparent;color:var(--drop)}
+.ob-hero-ic{width:110px;height:110px;margin:24px auto 8px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--drop);background:color-mix(in srgb,var(--rt-primary) 14%,transparent);border:1px solid color-mix(in srgb,var(--rt-primary) 35%,transparent)}
+.ob-hero-ic svg{width:56px;height:56px}
+#obAuth .gate{margin:0;max-width:none;box-shadow:var(--shadow)}
+#obAuth .gate h1{font-size:20px}
+#guide .ob-mark{margin-top:0}
