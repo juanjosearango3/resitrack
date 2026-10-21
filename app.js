@@ -553,8 +553,7 @@ const isDark = () => { const t = document.documentElement.dataset.theme; return 
 function applyTheme(){
   const t = document.documentElement.dataset.theme, dark = isDark();
   document.querySelectorAll('meta[name="theme-color"]').forEach(m => { if (t) m.content = dark ? "#081620" : "#F5F8FA"; });
-  const src = document.querySelector("#cover picture source");
-  if (src) src.media = t ? (dark ? "all" : "not all") : "(prefers-color-scheme: dark)";
+  document.querySelectorAll("#cover picture source, #guide picture source").forEach(src => { src.media = t ? (dark ? "all" : "not all") : "(prefers-color-scheme: dark)"; });
 }
 function setTheme(t){
   document.documentElement.dataset.theme = t;
@@ -1693,11 +1692,34 @@ $("installNow").addEventListener("click", async () => {
   try { await INSTALL_EVT.userChoice; } catch(e){}
   INSTALL_EVT = null; setupInstall();
 });
-function showGuide(){ $("guideSkip").hidden = !isReturning(); setupInstall(); setupPushStep(); show("guide"); }
+// Entrada en pasos: inicio → paso 1 (instalar y avisos) → paso 2 (cómo empezar) → paso 3 (pestañas) → final.
+const OB_STEPS = { p1: 0, p2: 1, p3: 2 };
+function showStep(k){
+  document.querySelectorAll("#guide [data-ob]").forEach(s => s.hidden = s.dataset.ob !== k);
+  const cur = document.querySelector(`#guide [data-ob="${k}"]`);
+  cur?.querySelectorAll(".ob-dots i").forEach((d, i) => { d.classList.toggle("on", i <= OB_STEPS[k]); d.classList.toggle("cur", i === OB_STEPS[k]); });
+  if (k === "p1"){ setupInstall(); setupPushStep(); }
+  if (k === "fin"){
+    // Las marcas reflejan el estado real de este dispositivo y de la cuenta.
+    const standalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
+    const push = "Notification" in window && Notification.permission === "granted";
+    const done = { app: !!standalone && push, cuenta: !!PROFILE, tabs: true, listo: !!PROFILE };
+    document.querySelectorAll("#guide [data-chk]").forEach(li => li.classList.toggle("chk-on", !!done[li.dataset.chk]));
+  }
+  window.scrollTo(0, 0);
+}
+function showGuide(){ showStep("inicio"); show("guide"); }
 function finishGuide(){ try { localStorage.setItem("rt-guia", "1"); } catch(e){} showApp(); }
+function goLogin(){ try { localStorage.setItem("rt-guia", "1"); } catch(e){} setTab("mine"); showApp(); }
 $("startBtn").addEventListener("click", showGuide);
 $("guideDone").addEventListener("click", finishGuide);
 $("guideSkip").addEventListener("click", finishGuide);
+document.addEventListener("click", e => {
+  const go = e.target.closest("[data-ob-go]"); if (go){ showStep(go.dataset.obGo); return; }
+  const bk = e.target.closest("[data-ob-back]"); if (bk){ bk.dataset.obBack === "cover" ? showCover() : showStep(bk.dataset.obBack); return; }
+  if (e.target.closest("[data-ob-skip]")){ finishGuide(); return; }
+  if (e.target.closest("[data-ob-login]")) goLogin();
+});
 $("brandBtn").addEventListener("click", showCover);
 // Si se entra desde un aviso (?tab=...) o una invitación (?amigo=...), se salta la portada.
 { const qp = new URLSearchParams(location.search);

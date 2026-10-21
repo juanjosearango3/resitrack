@@ -26,68 +26,114 @@
       <img src="logo.png" alt="ResiTrack. Tu camino a la residencia" width="848" height="579">
     </picture></h1>
     <p class="cover-lead">Las convocatorias de residencia médica en Colombia, tu avance y tu grupo, en un solo lugar.</p>
-    <button class="btn cover-start" id="startBtn" type="button">Iniciar</button>
+    <div class="cover-actions">
+      <button class="btn ob-cta" id="startBtn" type="button">Iniciar<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+      <button class="btn ghost ob-cta2" type="button" data-ob-login>Ya tengo cuenta</button>
+    </div>
   </div>
-
 </section>
 
 <section class="guide" id="guide" hidden aria-label="Cómo funciona ResiTrack">
-  <div class="guide-bar"><span class="guide-title">Cómo funciona</span><button class="btn ghost small" id="guideSkip" type="button" hidden>Omitir</button></div>
-  <div class="cover-more">
-    <div class="install" id="install">
-      <h2>Primero: instala la app en tu celular</h2>
-      <p>En el celular, ResiTrack se usa instalada, no desde el navegador. Así te llegan los avisos de retos, rachas y cambios en tus convocatorias, y la abres con un toque como cualquier app. Toma 10 segundos y no ocupa espacio.</p>
-      <p class="install-done" id="installDone" hidden>Ya la tienes instalada. Puedes seguir.</p>
-      <button class="btn install-now" id="installNow" type="button" hidden>Instalar ResiTrack</button>
-      <div class="install-os" id="installIos">
-        <h3>iPhone</h3>
-        <ol class="steps">
-          <li><span>Abre esta página en <b>Safari</b>. Si la abriste desde un enlace de WhatsApp o Instagram, toca los tres puntos y elige Abrir en Safari.</span></li>
-          <li><span>Toca el botón <b>Compartir</b>: el cuadrado con la flecha hacia arriba, abajo en la pantalla (o arriba, junto a la dirección).</span></li>
-          <li><span>Baja y elige <b>Agregar a pantalla de inicio</b>, luego toca <b>Agregar</b>.</span></li>
-          <li><span>Cierra Safari y abre ResiTrack desde el ícono nuevo en tu pantalla de inicio.</span></li>
-        </ol>
-      </div>
-      <div class="install-os" id="installAndroid">
-        <h3>Android</h3>
-        <ol class="steps">
-          <li><span>Abre esta página en <b>Chrome</b>.</span></li>
-          <li><span>Toca el menú <b>⋮</b> arriba a la derecha.</span></li>
-          <li><span>Elige <b>Instalar app</b> (o <b>Agregar a pantalla principal</b>) y confirma.</span></li>
-          <li><span>Abre ResiTrack desde el ícono nuevo.</span></li>
-        </ol>
-      </div>
-      <p class="hint" id="installDesk" hidden>Estás en un computador: aquí puedes usarla desde el navegador. Cuando entres desde el celular, instálala con estos pasos.</p>
-      <div class="push-step" id="pushStep" hidden>
-        <h3>Después: activa los avisos</h3>
-        <p id="pushStepTxt">Así te enteras cuando un amigo te rete, cuando termine un duelo y cuando cambie una convocatoria que sigues.</p>
-        <button class="btn install-now" id="pushStepBtn" type="button">Activar avisos</button>
+
+  <!-- 2. Inicio -->
+  <div class="ob" data-ob="inicio">
+    <div class="ob-bar"><button class="ob-back" type="button" data-ob-back="cover" aria-label="Volver"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg></button></div>
+    <h2 class="ob-welcome">¡Bienvenido a <span>ResiTrack!</span></h2>
+    <p class="ob-lead ob-center">Únete a miles de estudiantes de medicina que se preparan juntos para la residencia.</p>
+    <div class="ob-hero-art" aria-hidden="true"></div>
+    <button type="button" class="ob-choice hot" data-ob-go="p1"><span class="ob-ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="8" r="3.5"/><path d="M3.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5M19 8v6M16 11h6"/></svg></span><span class="ob-ct"><b>Primera vez</b><span>Crea tu cuenta y empieza tu camino a la residencia.</span></span><svg class="ob-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m9 6 6 6-6 6"/></svg></button>
+    <button type="button" class="ob-choice" data-ob-login><span class="ob-ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.6-3.6 3.4-5.5 7-5.5s6.4 1.9 7 5.5"/></svg></span><span class="ob-ct"><b>Ya tengo cuenta</b><span>Inicia sesión y continúa con tu avance.</span></span><svg class="ob-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m9 6 6 6-6 6"/></svg></button>
+  </div>
+
+  <!-- 3. Paso 1 -->
+  <div class="ob" data-ob="p1" hidden>
+    <div class="ob-bar"><button class="ob-back" type="button" data-ob-back="inicio" aria-label="Volver"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg></button><span class="ob-dots" aria-hidden="true"><i></i><i></i><i></i></span><button class="ob-skip" id="guideSkip" type="button">Omitir</button></div>
+    <p class="ob-step">Paso 1 de 3</p>
+    <h2 class="ob-h">Instala la app y activa avisos</h2>
+    <p class="ob-lead">Recibe en tu celular los avisos de convocatorias, retos, rachas y cambios importantes. No ocupa espacio y se instala en segundos.</p>
+    <div class="ob-card" id="install">
+      <span class="ob-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg></span>
+      <div class="ob-cb"><b>Se instala en tu celular</b><span>Desde el navegador. Toma 10 segundos.</span>
+        <p class="install-done" id="installDone" hidden>Ya la tienes instalada.</p>
+        <button class="btn small install-now" id="installNow" type="button" hidden>Instalar ResiTrack</button>
+        <details class="ob-how"><summary>Ver cómo instalarla</summary>
+          <div class="install-os" id="installIos">
+            <h3>iPhone</h3>
+            <ol class="steps">
+              <li><span>Abre esta página en <b>Safari</b>. Si la abriste desde un enlace de WhatsApp o Instagram, toca los tres puntos y elige Abrir en Safari.</span></li>
+              <li><span>Toca el botón <b>Compartir</b>: el cuadrado con la flecha hacia arriba, abajo en la pantalla (o arriba, junto a la dirección).</span></li>
+              <li><span>Baja y elige <b>Agregar a pantalla de inicio</b>, luego toca <b>Agregar</b>.</span></li>
+              <li><span>Cierra Safari y abre ResiTrack desde el ícono nuevo en tu pantalla de inicio.</span></li>
+            </ol>
+          </div>
+          <div class="install-os" id="installAndroid">
+            <h3>Android</h3>
+            <ol class="steps">
+              <li><span>Abre esta página en <b>Chrome</b>.</span></li>
+              <li><span>Toca el menú <b>⋮</b> arriba a la derecha.</span></li>
+              <li><span>Elige <b>Instalar app</b> (o <b>Agregar a pantalla principal</b>) y confirma.</span></li>
+              <li><span>Abre ResiTrack desde el ícono nuevo.</span></li>
+            </ol>
+          </div>
+          <p class="hint" id="installDesk" hidden>Estás en un computador: aquí puedes usarla desde el navegador. Cuando entres desde el celular, instálala con estos pasos.</p>
+        </details>
       </div>
     </div>
+    <div class="ob-card">
+      <span class="ob-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 1.5h-15z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/></svg></span>
+      <div class="ob-cb"><b>Activa los avisos</b><span>Te notificamos sobre nuevas convocatorias y retos.</span>
+        <div class="push-step" id="pushStep" hidden><p id="pushStepTxt"></p><button class="btn small install-now" id="pushStepBtn" type="button">Activar avisos</button></div>
+      </div>
+    </div>
+    <div class="ob-card">
+      <span class="ob-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M4.6 4.6l2.1 2.1M17.3 17.3l2.1 2.1M2.5 12h3M18.5 12h3M4.6 19.4l2.1-2.1M17.3 6.7l2.1-2.1"/></svg></span>
+      <div class="ob-cb"><b>No ocupa espacio</b><span>Funciona como cualquier app y es muy ligera.</span></div>
+    </div>
+    <button class="btn ob-next" type="button" data-ob-go="p2">Siguiente<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+  </div>
 
-    <h2>Qué es</h2>
-    <p>ResiTrack rastrea las convocatorias de especializaciones médico-quirúrgicas de las universidades de Colombia: fechas de inscripción, examen, entrevistas y admitidos; requisitos; cómo califica cada una; y tips para su examen. Los datos salen de los documentos oficiales de cada universidad y se revisan los lunes y jueves.</p>
-
-    <h2>Cómo empezar</h2>
-    <ol class="steps">
-      <li><span><b>Crea tu cuenta</b> con tu correo y una contraseña. El radar se puede ver sin cuenta; para lo demás la necesitas.</span></li>
-      <li><span><b>Arma tu perfil:</b> cómo te llaman, tu ciudad y las especialidades que te interesan. Con eso la app te muestra primero lo que te sirve.</span></li>
-      <li><span><b>Sigue convocatorias</b> y marca tu avance en los óvalos: me interesa, inscrito, presenté examen, entrevista, admitido.</span></li>
-      <li><span><b>Agrega amigos y únete a grupos</b> en la pestaña Amigos. A un amigo lo agregas con su código personal o compartiendo tu invitación; a un grupo entras con el código de 6 letras del grupo, o creas el tuyo. Puedes estar en varios.</span></li>
-      <li><span><b>Estudia de lunes a viernes</b> las 10 preguntas del día y reta a alguien de tu grupo. El sábado hay simulacro con las preguntas de la semana y el domingo es día de descanso. Cada día que terminas las preguntas suma a tu racha 🔥; si un día no las terminas, vuelve a cero (el domingo no cuenta). Con cada amigo llevas además una racha de batallas, que sube cada día que terminan un desafío entre ustedes. A las 8 p. m. te avisamos si alguna está en riesgo.</span></li>
-      <li><span><b>Activa los avisos</b> para enterarte de cambios en tus convocatorias y de los retos. En el celular, los avisos solo funcionan con la app instalada (mira los pasos de arriba).</span></li>
+  <!-- 4. Paso 2 -->
+  <div class="ob" data-ob="p2" hidden>
+    <div class="ob-bar"><button class="ob-back" type="button" data-ob-back="p1" aria-label="Volver"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg></button><span class="ob-dots" aria-hidden="true"><i></i><i></i><i></i></span><button class="ob-skip" type="button" data-ob-skip>Omitir</button></div>
+    <p class="ob-step">Paso 2 de 3</p>
+    <h2 class="ob-h">Cómo empezar</h2>
+    <p class="ob-lead">En pocos pasos estarás listo para aprovechar ResiTrack.</p>
+    <ol class="ob-list">
+      <li class="ob-card"><span class="ob-n">1</span><span class="ob-ic2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.6-3.6 3.4-5.5 7-5.5s6.4 1.9 7 5.5"/></svg></span><div class="ob-cb"><b>Crea tu cuenta</b><span>Con tu correo y una contraseña.</span></div></li>
+      <li class="ob-card"><span class="ob-n">2</span><span class="ob-ic2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M7.5 9h5M7.5 12.5h9M7.5 16h6"/></svg></span><div class="ob-cb"><b>Arma tu perfil</b><span>Cómo te llaman, tu ciudad y las especialidades que te interesan.</span></div></li>
+      <li class="ob-card"><span class="ob-n">3</span><span class="ob-ic2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg></span><div class="ob-cb"><b>Sigue convocatorias</b><span>Marca tu avance: me interesa, inscrito, presenté examen, entrevista, admitido.</span></div></li>
+      <li class="ob-card"><span class="ob-n">4</span><span class="ob-ic2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.5" r="3"/><circle cx="17" cy="9.5" r="2.5"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5M15 14.2c2.5-.4 4.6 1 5.2 4.3"/></svg></span><div class="ob-cb"><b>Agrega amigos y únete a grupos</b><span>Con tu código personal o el de un grupo.</span></div></li>
+      <li class="ob-card"><span class="ob-n">5</span><span class="ob-ic2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20V12M10 20V6M15 20v-9M20 20V9"/></svg></span><div class="ob-cb"><b>Estudia de lunes a viernes</b><span>Responde 10 preguntas diarias y reta a tu grupo. El sábado hay simulacro y el domingo descanso.</span></div></li>
     </ol>
+    <button class="btn ob-next" type="button" data-ob-go="p3">Siguiente<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+  </div>
 
-    <h2>Las pestañas</h2>
-    <dl class="tabs-help">
-      <dt>Para mí</dt><dd>Tu inicio: la cuenta regresiva al examen al que apuntas, un resumen de tus fortalezas y lo que debes reforzar, las convocatorias que sigues con tu avance, sus novedades y las que coinciden con tus especialidades.</dd>
-      <dt>Explorar</dt><dd>Todas las universidades. Busca por especialidad (por ejemplo, "plástica") o filtra por ciudad y estado: abiertas, en proceso, por confirmar o cerradas. Cada tarjeta trae cronograma, requisitos, cómo se califica, tips y la fuente oficial.</dd>
-      <dt>Estudiar</dt><dd>Arriba, el ranking de aciertos (de la semana, del mes o histórico; de todos o solo de tus amigos y grupos). Debajo, cuatro opciones: <b>Preguntas diarias</b>: de lunes a viernes, 10 nuevas cada día (8 casos clínicos de nivel examen y 2 de cultura general), con el porqué y la fuente al responder; cuenta tu primera respuesta. El sábado es el simulacro con las preguntas de la semana y el domingo, descanso. <b>Reforzar debilidades</b>: tu repaso de errores (lo que fallas vuelve a los 3 días y, si lo aciertas, a los 7, hasta dominarlo) y tus aciertos por área, con práctica de cada una. <b>Simulacro</b>: de 25, 50 o 100 preguntas con cronómetro, que mezcla el estilo de la UdeA, de Univalle y del banco, con resultado por áreas. <b>Study Date</b>, con dos modos: la <b>ruleta</b>, para cuando están juntos con un solo celular (a quien le salga responde), y el <b>quiz en vivo</b>, donde cada quien juega desde su celular con un código y gana quien acierte más rápido. Reforzar, simulacros y Study Date no cuentan para el ranking ni las rachas.</dd>
-      <dt>Amigos</dt><dd>Tus rachas 🔥 (⌛ significa que hoy todavía no has tenido batalla con esa persona), los desafíos pendientes, tus amigos y tus grupos: solicitudes de amistad, tu código para que te agreguen, en qué va cada persona y el botón para retarla. Gana el desafío quien acierte más. Tu retroalimentación la ves apenas envías tus respuestas; el ganador se declara cuando los dos terminan. Cada grupo tiene además su <b>liga de la semana</b>: gana un 🏆 quien más acierte las diarias de lunes a viernes. Tu perfil y tu avance solo los ven tus amigos y la gente de tus grupos.</dd>
-    </dl>
+  <!-- 5. Paso 3 -->
+  <div class="ob" data-ob="p3" hidden>
+    <div class="ob-bar"><button class="ob-back" type="button" data-ob-back="p2" aria-label="Volver"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg></button><span class="ob-dots" aria-hidden="true"><i></i><i></i><i></i></span><button class="ob-skip" type="button" data-ob-skip>Omitir</button></div>
+    <p class="ob-step">Paso 3 de 3</p>
+    <h2 class="ob-h">Qué encontrarás en cada pestaña</h2>
+    <p class="ob-lead">Todo lo que necesitas para tu camino a la residencia, en un solo lugar.</p>
+    <div class="ob-card ob-tab"><span class="ob-tile t-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 10.5 12 3.5l8.5 7"/><path d="M5.5 9v11h5v-6h3v6h5V9"/></svg></span><div class="ob-cb"><b>Para mí</b><span>Tu inicio: resumen de tu avance, fortalezas por reforzar y las convocatorias que sigues.</span></div></div>
+    <div class="ob-card ob-tab"><span class="ob-tile t-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg></span><div class="ob-cb"><b>Explorar</b><span>Todas las universidades. Filtra por especialidad y ciudad: abiertas, en proceso, por confirmar o cerradas.</span></div></div>
+    <div class="ob-card ob-tab"><span class="ob-tile t-violet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5C17 4.5 14 5 12 6.5z"/><path d="M12 6.5v13"/></svg></span><div class="ob-cb"><b>Estudiar</b><span>Preguntas diarias de lunes a viernes, simulacros, repaso de errores y tu ranking de aciertos.</span></div></div>
+    <div class="ob-card ob-tab"><span class="ob-tile t-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.5" r="3"/><circle cx="17" cy="9.5" r="2.5"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5M15 14.2c2.5-.4 4.6 1 5.2 4.3"/></svg></span><div class="ob-cb"><b>Amigos</b><span>Tus rachas 🔥, desafíos, amigos y grupos. Cada grupo tiene su liga de la semana 🏆.</span></div></div>
+    <button class="btn ob-next" type="button" data-ob-go="fin">Siguiente<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+  </div>
 
-    <p class="cover-note">Antes de pagar una inscripción, confirma siempre las fechas en el enlace oficial de la universidad.</p>
-    <button class="btn guide-go" id="guideDone" type="button">Continuar a ResiTrack</button>
+  <!-- 6. Final -->
+  <div class="ob ob-final" data-ob="fin" hidden>
+    <div class="ob-mark" aria-hidden="true"><picture><source srcset="logo-dark.png" media="(prefers-color-scheme: dark)"><img src="logo.png" alt="" width="848" height="579"></picture></div>
+    <h2 class="ob-h ob-center">¡Listo para empezar!</h2>
+    <p class="ob-lead ob-center">Ya conoces lo esencial de ResiTrack. Ahora es momento de unirte y comenzar tu camino.</p>
+    <ul class="ob-checks">
+      <li data-chk="app">App instalada y avisos activos</li>
+      <li data-chk="cuenta">Cuenta y perfil listos</li>
+      <li data-chk="tabs">Conoces las pestañas principales</li>
+      <li data-chk="listo">Listo para estudiar y unirte a tu grupo</li>
+    </ul>
+    <div class="ob-card ob-info"><span class="ob-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4.5 6v5.5c0 4.6 3.1 8.2 7.5 9.5 4.4-1.3 7.5-4.9 7.5-9.5V6z"/><path d="m8.8 12 2.2 2.2 4.2-4.4"/></svg></span><div class="ob-cb"><b>Información oficial</b><span>Antes de pagar una inscripción, confirma siempre las fechas en el enlace oficial de la universidad.</span></div></div>
+    <button class="btn ob-next" id="guideDone" type="button">Continuar a ResiTrack<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
   </div>
 </section>
 
