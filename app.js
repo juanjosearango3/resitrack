@@ -790,7 +790,7 @@ const atRisk = id => { const t = STREAKS[id]; return t && t.together > 0 && !t.b
 function streakHint(me){
   if (me.done_today) return "Hoy ya sumaste. Vuelve mañana.";
   if (bogotaDow() === 0 && !DAILY.length) return "Hoy es domingo de descanso: tu racha está a salvo.";
-  const what = isSimDay() ? "el simulacro de hoy" : `las ${DAILY.length || 10} de hoy`;
+  const what = isSimDay() ? "el simulacro de hoy" : `las ${DAILY.length || 15} de hoy`;
   return me.solo ? `Termina ${what} para no perderla.` : `Termina ${what} para empezar tu racha.`;
 }
 function streakCard(){
@@ -977,8 +977,8 @@ function bogotaDow(){
   const w = new Date().toLocaleDateString("en-US", { weekday: "short", timeZone: "America/Bogota" });
   return ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].indexOf(w);
 }
-// Sábado de simulacro: el set de ese día trae más de 10 preguntas (o aún no está listo).
-const isSimDay = () => bogotaDow() === 6 && (!studyLoaded || !DAILY.length || DAILY.length > 10);
+// Sábado de simulacro: el set de ese día trae más de 15 preguntas (o aún no está listo).
+const isSimDay = () => bogotaDow() === 6 && (!studyLoaded || !DAILY.length || DAILY.length > 15);
 function renderStudy(){
   const el = $("p-study");
   if (!ME){ el.innerHTML = gate("Estudia con ResiTrack","Entra para responder las preguntas del día y retar a tus amigos."); return; }
@@ -1004,7 +1004,7 @@ function renderStudy(){
     return;
   }
   const sn = STREAKS[ME.id]?.solo || 0;
-  el.innerHTML = `${back}<div class="dq-hd"><span class="ico-tile">${I.target}</span><div class="dq-t"><h2>Preguntas diarias: ${DIAS[dow]}</h2><p class="sub">Ocho de medicina (básicas, clínicas, quirúrgicas, salud pública y sistema de salud) y dos de cultura general. Cuenta tu primera respuesta.</p></div><div class="streak-pill"><b>🔥 ${sn} ${sn === 1 ? "día" : "días"}</b><span>Racha actual</span></div></div>
+  el.innerHTML = `${back}<div class="dq-hd"><span class="ico-tile">${I.target}</span><div class="dq-t"><h2>Preguntas diarias: ${DIAS[dow]}</h2><p class="sub">Diez de básicas, clínicas y quirúrgicas, tres de salud pública y sistema de salud y dos de cultura general. Cuenta tu primera respuesta.</p></div><div class="streak-pill"><b>🔥 ${sn} ${sn === 1 ? "día" : "días"}</b><span>Racha actual</span></div></div>
     ${renderDaily()}`;
 }
 
@@ -1539,7 +1539,7 @@ function countdownBox(){
     <div class="cd-hd"><span class="ico-tile">${I.cal}</span><h3>Mi próximo examen</h3></div>
     <div class="cd-main"><span class="cd-num">${d}</span><div><b>${d === 1 ? "día" : "días"} para el examen de ${esc(u.name.split(" · ")[0])}</b></div></div>
     <div class="cd-meta"><span>${I.cal}${fmt(ex)}</span>${evt ? `<span>${I.doc}${esc(evt)}</span>` : ""}</div>
-    <p class="cd-plan">Hasta ese día salen unas <b>${wk * 10}</b> preguntas diarias nuevas${sats ? ` y ${sats} ${sats === 1 ? "simulacro" : "simulacros"} de sábado` : ""}. Cada semana: termina las diarias, haz tu repaso${REV.due_now ? ` (hoy tienes ${REV.due_now})` : ""} y un simulacro en Estudiar.</p>
+    <p class="cd-plan">Hasta ese día salen unas <b>${wk * 15}</b> preguntas diarias nuevas${sats ? ` y ${sats} ${sats === 1 ? "simulacro" : "simulacros"} de sábado` : ""}. Cada semana: termina las diarias, haz tu repaso${REV.due_now ? ` (hoy tienes ${REV.due_now})` : ""} y un simulacro en Estudiar.</p>
     <div class="cd-change"><span class="hint">Cambiar:</span>${sel(u.id)}</div>
   </div>`;
 }
