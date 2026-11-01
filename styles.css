@@ -923,3 +923,4 @@ button.chrow:hover{border-color:var(--rule-strong)}
 .area-btn{display:block;width:100%;text-align:left;font:inherit;color:var(--ink);cursor:pointer}
 .area-btn .area-top svg{width:18px;height:18px;color:var(--muted);flex:none}
 .area-btn:hover{border-color:var(--rule-strong)}
+.past-row.hot{border-color:color-mix(in srgb,var(--rt-primary) 60%,var(--rule));box-shadow:inset 4px 0 0 var(--rt-primary),var(--shadow)}

@@ -84,7 +84,7 @@ let statusFilter = "";
 let PRAC = null;          // { screen, mode, title, qs, picks, uni, startedAt, endsAt, result }
 let REV = { due_now: 0, upcoming: 0, mastered: 0, next_due: null };
 let AREA_STATS = [], BANK = 0, SIM_HIST = [], LEAGUE = {};
-let STUDY_VIEW = null;    // null = menú de Estudiar; "daily" = preguntas del día
+let STUDY_VIEW = null;    // null = menú de Estudiar; "daily" = preguntas del día; "past" = revisar un día anterior
 let LIVE = null;          // { room, code, st, endsAt, busy }
 
 const myFollow = id => FOLLOWS.find(f => f.uni_id === id && f.user_id === ME?.id);
@@ -406,7 +406,7 @@ function tabHome(t){
   if (t === "study"){
     if (PRAC?.mode === "sim" && PRAC.screen === "run" && PRAC.picks.some(x => x != null) && !confirm("¿Salir del simulacro? Se pierde lo que llevas.")) return false;
     if (LIVE?.st && ["q","reveal"].includes(LIVE.st.status) && !confirm("¿Salir del quiz?")) return false;
-    PRAC = null; SD = null; STUDY_VIEW = null;
+    PRAC = null; SD = null; STUDY_VIEW = null; PAST = null;
     if (LIVE){ LIVE = null; if (LIVE_POLL) clearInterval(LIVE_POLL); LIVE_POLL = null; }
   }
   if (t === "group"){
@@ -883,6 +883,64 @@ function renderDaily(){
   return head + `<div class="qlist">${cards}</div>`;
 }
 
+// Días anteriores: lista sacada de HISTORY y, al abrir uno, sus preguntas con get_day (la correcta solo de las que respondiste).
+let PAST = null;        // { day, qs } del día que se está revisando
+let PAST_ALL = false;   // mostrar los 60 días y no solo los últimos 7
+const todayBog = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" });
+const pastSim = h => h.total > 15;
+const dayName = s => `${DIAS[D(s).getDay()]} ${fmtS(s)}`;
+function pastLine(h){
+  if (!h.answered) return "Sin responder";
+  // El historial no da los aciertos de un simulacro sin terminar; se ven al abrirlo.
+  if (pastSim(h) && h.answered < h.total && !h.correct) return `${h.answered} de ${h.total} respondidas`;
+  return `${h.correct} de ${h.total} correctas${h.answered < h.total ? ` · ${h.total - h.answered} sin responder` : ""}`;
+}
+function pastDays(){
+  const today = todayBog(), all = HISTORY.filter(h => h.day < today);
+  if (!all.length) return "";
+  const yest = all[0], sunSim = bogotaDow() === 0 && pastSim(yest);
+  const rows = (PAST_ALL ? all : all.slice(0, 7)).map(h => {
+    const pct = h.answered && !(pastSim(h) && h.answered < h.total && !h.correct) ? pctOf(h.correct, h.total) : null;
+    const hot = sunSim && h === yest;
+    return `<button type="button" class="area-row area-btn past-row${hot ? " hot" : ""}" data-past="${h.day}">
+      <div class="area-top"><b>${pastSim(h) ? "Simulacro · " : ""}${dayName(h.day)}</b>${hot ? `<span class="due">Ayer</span>` : ""}<span class="area-pct">${pct == null ? "–" : pct + " %"}</span>${I.chev}</div>
+      <div class="area-meta"><span class="hint">${pastLine(h)}</span></div>
+    </button>`;
+  }).join("");
+  return `<h3 style="margin:18px 0 4px">Días anteriores</h3>
+    <p class="sub">Vuelve a ver tus preguntas con la respuesta correcta, la explicación y la fuente.</p>
+    <div class="areas">${rows}</div>
+    ${all.length > 7 ? `<button class="linkish" type="button" data-past-all>${PAST_ALL ? "Ver menos" : `Ver los ${all.length} días`}</button>` : ""}`;
+}
+async function openPast(day){
+  if (studyBusy) return; studyBusy = true;
+  const { data, error } = await SB.rpc("get_day", { p_day: day });
+  studyBusy = false;
+  if (error){ toast(error.message); return; }
+  PAST = { day, qs: data || [] }; STUDY_VIEW = "past"; REPORT_OPEN = null;
+  renderStudy(); window.scrollTo(0, 0);
+}
+function renderPast(){
+  const back = `<div class="playhead"><button class="btn ghost small" type="button" data-study-hub>Volver</button></div>`;
+  const qs = PAST.qs, sim = qs.some(q => q.is_recap);
+  const title = `<h2>${sim ? "Simulacro del" : "Preguntas del"} ${DIAS[D(PAST.day).getDay()].toLowerCase()} ${fmtS(PAST.day)}</h2>`;
+  if (!qs.length) return `${back}${title}<div class="empty">Ese día no hubo preguntas.</div>`;
+  const done = qs.filter(q => q.my_choice != null), ok = done.filter(q => q.is_correct).length;
+  const strip = qs.map(q => `<i class="${q.my_choice==null?"":q.is_correct?"ok":"bad"}" title="${q.slot}"></i>`).join("");
+  const head = `<div class="sheet-head"><div class="strip" aria-label="Resultado del día">${strip}</div>
+    <p class="sub" style="margin:6px 0 0">${done.length ? `<b>${ok} de ${qs.length}</b> correctas` : "No respondiste este día"}${done.length && done.length < qs.length ? ` · ${qs.length - done.length} sin responder` : ""}.</p></div>`;
+  const cards = qs.map(q => {
+    const answered = q.my_choice != null;
+    return `<article class="qcard" id="q-${q.id}">
+      <div class="qmeta"><span class="qn">${q.slot}</span>${areaChips(q)}${answered && q.topic ? `<span class="hint">${esc(q.topic)}</span>` : ""}</div>
+      <p class="stem">${esc(q.stem)}</p>
+      ${optList(q, { kind:"", pick: q.my_choice, correct: answered ? q.correct : null, locked: true })}
+      ${answered ? feedback(q.is_correct, q.explanation, q.source, q.id) : `<p class="hint" style="margin:6px 0 0">No la respondiste, así que no se muestra la respuesta.</p>`}
+    </article>`;
+  }).join("");
+  return `${back}${title}${head}<div class="qlist">${cards}</div>`;
+}
+
 function mates(){
   return Object.values(PEOPLE).filter(p => p.id !== ME.id).sort((a,b) => a.alias.localeCompare(b.alias,"es"));
 }
@@ -987,12 +1045,14 @@ function renderStudy(){
   if (SD){ el.innerHTML = renderStudyDate(); return; }
   if (LIVE){ el.innerHTML = renderLive(); return; }
   if (STUDY_VIEW === "sd"){ el.innerHTML = sdMenu(); return; }
-  if (STUDY_VIEW !== "daily"){ el.innerHTML = `${streakCard()}${rankPanel()}${studyHub()}`; return; }
+  if (STUDY_VIEW === "past" && PAST){ el.innerHTML = renderPast(); return; }
+  if (STUDY_VIEW !== "daily"){ el.innerHTML = `${streakCard()}${rankPanel()}${studyHub()}${pastDays()}`; return; }
   const back = `<div class="playhead"><button class="btn ghost small" type="button" data-study-hub>Volver</button></div>`;
   const dow = bogotaDow();
   if (dow === 0 && !DAILY.length){
     el.innerHTML = `${back}<h2>Domingo: día de descanso</h2>
-      <p class="sub">Hoy no hay preguntas. Descansa: el domingo no rompe tu racha ni tus rachas de batallas. Si quieres, igual puedes retar a alguien. Mañana vuelven las preguntas diarias.</p>`;
+      <p class="sub">Hoy no hay preguntas. Descansa: el domingo no rompe tu racha ni tus rachas de batallas. Si quieres, igual puedes retar a alguien. Mañana vuelven las preguntas diarias.</p>
+      ${HISTORY[0] && HISTORY[0].day < todayBog() && pastSim(HISTORY[0]) ? `<button class="btn" type="button" data-past="${HISTORY[0].day}">Revisar el simulacro de ayer</button>` : ""}`;
     return;
   }
   if (isSimDay()){
@@ -1256,7 +1316,7 @@ function studyHub(){
   const done = DAILY.filter(q => q.my_choice != null).length, ok = DAILY.filter(q => q.is_correct).length;
   let dline, dhot = false;
   if (!studyLoaded) dline = "Cargando…";
-  else if (dow === 0 && !n) dline = "Hoy es domingo: descanso";
+  else if (dow === 0 && !n) dline = HISTORY[0] && pastSim(HISTORY[0]) ? "Descanso. Revisa el simulacro de ayer" : "Hoy es domingo: descanso";
   else if (!n) dline = sim ? "El simulacro se arma a medianoche" : "Se publican cada madrugada";
   else if (done < n){ dline = sim ? `${done} de ${n} respondidas` : `${n - done} por responder hoy`; dhot = true; }
   else dline = DAILY.some(q => q.correct == null) ? "Entregado" : `Terminaste: ${ok} de ${n}`;
@@ -1409,7 +1469,10 @@ document.addEventListener("click", async e => {
   const t = e.target;
   if (t.closest("[data-study-daily]")){ STUDY_VIEW = "daily"; renderStudy(); window.scrollTo(0, 0); return; }
   if (t.closest("[data-sd-menu]")){ STUDY_VIEW = "sd"; renderStudy(); window.scrollTo(0, 0); return; }
-  if (t.closest("[data-study-hub]")){ STUDY_VIEW = null; renderStudy(); window.scrollTo(0, 0); return; }
+  if (t.closest("[data-study-hub]")){ STUDY_VIEW = null; PAST = null; renderStudy(); window.scrollTo(0, 0); return; }
+  const pd = t.closest("[data-past]");
+  if (pd){ openPast(pd.dataset.past); return; }
+  if (t.closest("[data-past-all]")){ PAST_ALL = !PAST_ALL; const y = window.scrollY; renderStudy(); window.scrollTo(0, y); return; }
   const pr = t.closest("[data-pr]");
   if (pr){
     const k = pr.dataset.pr;
