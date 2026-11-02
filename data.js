@@ -1,8 +1,8 @@
 const DATA = [
-{id:"ces",name:"Universidad CES",city:"Medellín",type:"Privada",cycle:"Ingreso 2027‑2 (junio 2027)",cost:"$448.700",
+{id:"ces",portal:"https://www.ces.edu.co/content/uploads/2026/06/GU-DC-001-2026-004-Guia-inscripciones-Posgrados-Clinicos-Medicos_2027-02-FINAL.pdf",name:"Universidad CES",city:"Medellín",type:"Privada",cycle:"Ingreso 2027‑2 (junio 2027)",cost:"$448.700",
  specs:["Anestesiología","Cirugía General","Cirugía Plástica","Dermatología","Ginecología y Obstetricia","Medicina de Urgencias","Medicina Interna","Neurología","Oftalmología","Ortopedia y Traumatología","Pediatría","Psiquiatría","Radiología","Urología"],
  insc:"2026-11-04",final:"2026-12-04",
- tl:[["2026-07-01","Abren inscripciones"],["2026-11-04","Cierre de inscripciones y envío de documentos"],["2026-11-11","Examen 8:00 a.m. (Medellín, Bogotá, Barranquilla y Cali en la Fundación Valle del Lili)"],["2026-11-17","Entrevistas en Medellín (hasta 4 dic); resultado inmediatamente después","2026-12-04"],["2027-06-01","Inicio del programa"]],
+ tl:[["2026-07-01","Abren inscripciones"],["2026-11-04","Cierre de inscripciones y envío de documentos"],["2026-11-11","Examen 8:00 a.m. (Medellín, Bogotá, Barranquilla y Cali en la Fundación Valle del Lili)"],["2026-11-17","Entrevistas en Medellín (hasta 4 dic); resultado inmediatamente después","2026-12-04"],["2026-12-10","Matrícula ordinaria","2026-12-16"],["2027-06-01","Inicio del programa"]],
  exam:"3 horas. 50 preguntas de ciencias básicas, 50 clínicas basadas en textos clásicos, 15 de comprensión de lectura en inglés y 15 de cultura general.",
  weights:null,weightNote:"El examen filtra; solo quienes lo pasan van a entrevista. El puntaje del examen no se publica. Urgencias suma un examen práctico.",
  req:["Médico general con tarjeta profesional y RETHUS","Certificado del año social obligatorio","Notas, acta y diploma de pregrado","Resultado Saber Pro (graduados desde 2003)","Hoja de vida con foto","Documentos enviados a admisiones@ces.edu.co antes de la entrevista"],
@@ -33,8 +33,8 @@ const DATA = [
   "Se repiten la Resolución 3280 (paraclínicos de riesgo cardiovascular, AUDIT, tamizaje neonatal), salud familiar (APGAR familiar, Erikson), HTA con AMPA y MAPA, metas de LDL, diabetes cardiorrenal, anticoagulación en FA, radiculopatías, rodilla y nervios periféricos, hernias y unas 8 a 10 de cultura general (arte, literatura, historia, historia de la medicina y de Univalle)."],
  src:[["Admisiones Univalle · Ciencias Clínicas","https://admisiones.univalle.edu.co/new/index.php?action=filtrado&valorProceso=3&nombreProceso=cienciasClinicas&sede=00&NombreSede=Cali"],["Programas de posgrado Escuela de Medicina","https://medicina.univalle.edu.co/postgrado"],["Resumen convocatoria (Futuros Residentes)","https://cursofuturosresidentes.com/blog/convocatoria-especialidades-medicas-univalle-2026-fecha"]]},
 
-{id:"bosque",name:"Universidad El Bosque",city:"Bogotá",type:"Privada",cycle:"Convocatoria octubre 2026",cost:"$270.000",
- specs:["Anestesiología","Cirugía General","Cirugía Plástica","Dermatología","Ginecología y Obstetricia","Medicina Crítica y Cuidado Intensivo","Medicina del Deporte","Medicina Familiar","Medicina Física y Rehabilitación","Medicina Interna","Neurología","Oftalmología","Pediatría","Psiquiatría","Radiología","Urología"],
+{id:"bosque",portal:"https://www.unbosque.edu.co/inscripciones/posgrado",name:"Universidad El Bosque",city:"Bogotá",type:"Privada",cycle:"Convocatoria octubre 2026",cost:"$270.000",
+ specs:["Anestesiología","Cirugía General","Cirugía Plástica","Dermatología","Ginecología y Obstetricia","Medicina Crítica y Cuidado Intensivo","Medicina de Urgencias","Medicina del Deporte","Medicina Familiar","Medicina Física y Rehabilitación","Medicina Interna","Neurología","Oftalmología","Pediatría","Psiquiatría","Radiología","Urología"],
  insc:"2026-10-09",final:"2026-11-04",
  next:"Abre dos convocatorias al año: mayo y octubre. En 2026 la de mayo tuvo examen el 24 de mayo.",
  tl:[["2026-10-09","Cierre de inscripciones y de carga de documentos"],["2026-10-18","Examen de admisión"],["2026-10-19","Pruebas psicotécnicas 7:00 a.m. (solo quienes pasan a entrevista)"],["2026-10-20","Entrevistas (fechas según programa)","2026-10-27"],["2026-11-04","Publicación de admitidos"]],
@@ -44,7 +44,7 @@ const DATA = [
  tips:["La mitad del examen es de tu especialidad: estudia el temario propio, no solo medicina general.","Verifica que tu BLS no esté vencido: es requisito.","Entrevista con quienes serán tus profesores: lleva ejemplos reales de tu práctica.","Solo puedes presentarte a un programa."],
  src:[["Facultad de Medicina El Bosque","https://www.unbosque.edu.co/programas-academicos/facultad-medicina/especializacion-anestesiologia#-2867165544"],["Resumen convocatoria","https://cursofuturosresidentes.com/blog/convocatoria-especialidades-medicas-el-bosque-2026-fechas"]]},
 
-{id:"umanizales",name:"Universidad de Manizales",city:"Manizales",type:"Privada",cycle:"Convocatoria 2026",cost:"1 SMMLV",
+{id:"umanizales",portal:"https://umanizales.edu.co/oferta-academica/especializacion-en-medicina-interna",name:"Universidad de Manizales",city:"Manizales",type:"Privada",cycle:"Convocatoria 2026",cost:"1 SMMLV",
  specs:["Medicina Crítica y Cuidado Intensivo","Medicina Interna","Psiquiatría"],
  cupos:{"Medicina Crítica y Cuidado Intensivo":4,"Medicina Interna":4,"Psiquiatría":4},
  insc:"2026-10-09",final:"2026-10-21",
@@ -76,7 +76,7 @@ const DATA = [
  tips:["Mitad del examen es de la especialidad: prioriza el temario específico.","Entre resultados y entrevista hay menos de una semana: prepara la entrevista antes."],
  src:[["Portal Unisanitas","https://www.unisanitas.edu.co/"],["Resumen convocatoria","https://cursofuturosresidentes.com/blog/convocatoria-especialidades-medica-unisanitas"]]},
 
-{id:"rosario",name:"Universidad del Rosario",city:"Bogotá",type:"Privada",cycle:"Ingreso 2027‑1",cost:"Ver portal Kairos",
+{id:"rosario",portal:"https://urosario.edu.co/escuela-de-medicina/programas/especializaciones/especializaciones-medico-quirurgicas",name:"Universidad del Rosario",city:"Bogotá",type:"Privada",cycle:"Ingreso 2027‑1",cost:"Ver portal Kairos",
  specs:["Anestesiología","Cirugía General","Genética Médica","Ginecología y Obstetricia","Medicina Crítica y Cuidado Intensivo","Medicina de Urgencias","Medicina Familiar","Medicina Interna","Neurología","Oftalmología","Ortopedia y Traumatología","Otorrinolaringología","Pediatría","Psiquiatría","Radiología","Urología"],
  insc:"2026-08-24",final:"2026-10-22",
  tl:[["2026-08-24","Cierre de inscripciones"],["2026-09-05","Examen de preselección (Quinta Mutis) y cierre de documentos"],["2026-09-15","Citados a entrevista"],["2026-09-18","Prueba psicotécnica","2026-10-03"],["2026-10-05","Entrevistas con jefes de departamento","2026-10-19"],["2026-10-22","Admitidos por correo 5:00 p.m."],["2026-10-29","Plazo para confirmar el cupo"],["2027-01-13","Inicio de clases"]],
@@ -96,7 +96,7 @@ const DATA = [
  tips:["El examen es el 80%: es la convocatoria más 'pura' de medicina general.","Comprar PIN no te inscribe: formaliza al día siguiente o lo pierdes.","El B2 internacional tarda semanas: sácalo antes de que abra la convocatoria.","Solo cuenta investigación en grupos categorizados por Minciencias (GRUPLAC)."],
  src:[["Guía médico‑quirúrgica UdeC","https://academico.unicartagena.edu.co/medicoquirurgico/guia"],["Resumen convocatoria","https://cursofuturosresidentes.com/blog/convocatoria-especialidades-medicas-u-de-cartagena-2026"]]},
 
-{id:"umng",name:"Universidad Militar Nueva Granada",city:"Bogotá",type:"Pública",cycle:"Ordinaria 2027",cost:"$577.000",
+{id:"umng",portal:"https://umng.edu.co/calendario-de-admisiones/",name:"Universidad Militar Nueva Granada",city:"Bogotá",type:"Pública",cycle:"Ordinaria 2027",cost:"$577.000",
  specs:["Medicina Interna","Ginecología y Obstetricia","Pediatría","Anestesiología","Cirugía General","Ortopedia y Traumatología","Psiquiatría","Urología","Dermatología","Medicina Física y Rehabilitación","Neurología","Oftalmología","Otorrinolaringología","Radiología","Cirugía Plástica","Neurocirugía","Neurología Pediátrica","Patología","Cirugía Pediátrica"],
  cupos:{"Medicina Interna":12,"Ginecología y Obstetricia":10,"Pediatría":10,"Anestesiología":6,"Cirugía General":5,"Ortopedia y Traumatología":5,"Psiquiatría":4,"Urología":4,"Dermatología":3,"Medicina Física y Rehabilitación":3,"Neurología":3,"Oftalmología":3,"Otorrinolaringología":3,"Radiología":3,"Cirugía Plástica":2,"Neurocirugía":2,"Neurología Pediátrica":2,"Patología":2,"Cirugía Pediátrica":1},
  insc:"2026-08-28",final:"2026-10-30",
@@ -108,7 +108,7 @@ const DATA = [
  tips:["Repasa ciencias básicas: históricamente aparecen bioquímica, fisiología y microbiología.","La rotación en el servicio cuenta 15%: actitud y trabajo en equipo se califican.","Tienes 2 días hábiles para pedir aclaración de resultados por escrito.","Entrevista con psicólogo o psiquiatra y preguntas de actualidad."],
  src:[["Calendario UMNG 2027","https://umng.edu.co/wp-content/uploads/2026/07/Calendario-de-Admisiones-Convocatoria-Ordinaria-2027.pdf"],["Oferta de cupos UMNG 2027","https://umng.edu.co/wp-content/uploads/2026/08/3-Oferta-Cupos-Esp.-Medicas-2027-14-08-26.pdf"]]},
 
-{id:"uniandes",name:"Universidad de los Andes",city:"Bogotá",type:"Privada",cycle:"Convocatoria 2026 (Fundación Santa Fe)",cost:"$338.400",
+{id:"uniandes",portal:"https://registroapps.uniandes.edu.co/SisAdmisiones/pos_abiertos.php",name:"Universidad de los Andes",city:"Bogotá",type:"Privada",cycle:"Convocatoria 2026 (Fundación Santa Fe)",cost:"$338.400",
  specs:["Cirugía General","Urología","Ginecología y Obstetricia","Pediatría","Psiquiatría"],
  insc:"2026-09-02",final:"2026-10-19",
  tl:[["2026-09-02","Cierre de inscripciones 5:00 p.m."],["2026-09-11","Examen de admisión"],["2026-09-15","Entrevista general","2026-09-16"],["2026-09-28","Entrevista específica","2026-10-02"],["2026-10-05","Evaluación de hojas de vida","2026-10-16"],["2026-10-19","Resultado"]],
@@ -139,7 +139,7 @@ const DATA = [
  tips:["La entrevista vale 60%: es de las universidades donde más pesa tu perfil.","Algunos paneles preguntan en inglés.","Junta los documentos antes del examen: hay menos de una semana hasta las entrevistas."],
  src:[["Posgrados FUCS","https://www.fucsalud.edu.co/posgrado"],["Resumen convocatoria","https://cursofuturosresidentes.com/blog/convocatoria-especialidades-medicas-fucs-2026-fechas"]]},
 
-{id:"sabana",name:"Universidad de La Sabana",city:"Chía",type:"Privada",cycle:"Ingreso 2027‑1",cost:"$150.000",
+{id:"sabana",portal:"https://www.unisabana.edu.co/programas/posgrados/especializacion-en-medicina-interna",name:"Universidad de La Sabana",city:"Chía",type:"Privada",cycle:"Ingreso 2027‑1",cost:"$150.000",
  specs:["Medicina Familiar","Medicina Física y Rehabilitación","Pediatría","Medicina Crítica y Cuidado Intensivo","Radiología","Medicina Interna","Farmacología Clínica","Ginecología y Obstetricia","Medicina del Dolor y Cuidados Paliativos","Anestesiología"],
  insc:"2026-08-28",final:"2026-10-02",
  tl:[["2026-08-28","Cierre de inscripciones"],["2026-09-08","Examen de conocimientos y ensayo escrito"],["2026-09-14","Inglés y psicotécnicas (virtual)","2026-09-18"],["2026-09-28","Entrevistas presenciales","2026-10-02"]],
@@ -149,7 +149,7 @@ const DATA = [
  tips:["Entrena escribir un ensayo argumentativo con tiempo: casi nadie lo practica.","El perfil institucional enfatiza el respeto a la vida: piensa tu postura ética antes de la entrevista."],
  src:[["Admisión La Sabana","https://www.unisabana.edu.co/programas/posgrados/especializacion-en-anestesiologia-y-medicina-perioperatoria"],["Resumen convocatoria","https://cursofuturosresidentes.com/blog/convocatoria-especialidades-medicas-2026-unisabanaa"]]},
 
-{id:"upb",name:"Universidad Pontificia Bolivariana",city:"Medellín",type:"Privada",cycle:"Única convocatoria 2027",cost:"Ver portal UPB",
+{id:"upb",portal:"https://portal.upb.edu.co/procedimiento-admision-primera-especialidades-medico-quirurgicas",name:"Universidad Pontificia Bolivariana",city:"Medellín",type:"Privada",cycle:"Única convocatoria 2027",cost:"Ver portal UPB",
  specs:["Anestesiología","Cirugía General","Dermatología","Medicina del Dolor y Cuidados Paliativos","Ginecología y Obstetricia","Medicina del Deporte","Medicina Interna","Medicina Crítica y Cuidado Intensivo","Oftalmología","Ortopedia y Traumatología","Pediatría","Psiquiatría","Radiología"],
  insc:"2026-09-18",final:"2026-10-31",finalEst:true,
  tl:[["2026-09-18","Cierre de inscripciones y pago"],["2026-09-27","Examen 8:00 a.m., sede Laureles"],["2026-10-02","Citados a entrevista"],["2026-10-14","Envío de documentos para entrevista"],["2026-10-31","Entrevistas y admitidos (fecha según citación)","",true],["2027-08-02","Inicio de actividades"]],
@@ -159,7 +159,7 @@ const DATA = [
  tips:["El examen solo vale 30%: tu hoja de vida y la entrevista deciden el 70%.","Un certificado de inglés vigente suma directamente en la entrevista.","Cursos y congresos solo cuentan si son de la especialidad y de los últimos 3 años."],
  src:[["Procedimiento de admisión UPB 2027","https://portal.upb.edu.co/procedimiento-admision-primera-especialidades-medico-quirurgicas"]]},
 
-{id:"caldas",name:"Universidad de Caldas",city:"Manizales",type:"Pública",cycle:"Ingreso 2027",cost:"$1.423.500",
+{id:"caldas",portal:"https://viceacademica.ucaldas.edu.co/posgrados/",name:"Universidad de Caldas",city:"Manizales",type:"Pública",cycle:"Ingreso 2027",cost:"$1.423.500",
  specs:["Anestesiología","Cirugía General","Medicina Interna","Geriatría","Medicina de Urgencias","Ginecología y Obstetricia","Pediatría","Psiquiatría","Sexología Clínica"],
  cupos:{"Anestesiología":3,"Cirugía General":3,"Medicina Interna":3,"Geriatría":6,"Medicina de Urgencias":3,"Ginecología y Obstetricia":3,"Pediatría":3,"Psiquiatría":3,"Sexología Clínica":2},
  insc:"2026-08-24",final:"2026-10-09",
@@ -170,8 +170,9 @@ const DATA = [
  tips:["Con RASCH acertar preguntas difíciles vale más: no dejes en blanco las difíciles.","Lápiz de mina negra No. 2 y borrador blanco; llega desde las 7:00 a.m."],
  src:[["Convocatoria oficial U. de Caldas 2027","https://viceacademica.ucaldas.edu.co/wp-content/uploads/2026/03/Convocatoria-ECQ-2027.pdf"]]},
 
-{id:"uis",name:"Universidad Industrial de Santander",city:"Bucaramanga",type:"Pública",cycle:"Convocatoria 2026",cost:"Ver convocatoria",
- specs:["Anestesiología","Cirugía General","Cirugía Plástica","Medicina Interna","Ortopedia y Traumatología","Patología","Pediatría","Oftalmología"],partial:true,
+{id:"uis",portal:"https://convocatorias.uis.edu.co/convocatorias-especializaciones-medicoquirurgicas/index.html",name:"Universidad Industrial de Santander",city:"Bucaramanga",type:"Pública",cycle:"Convocatoria 2026",cost:"Ver convocatoria",
+ specs:["Anestesiología","Cirugía General","Cirugía Plástica","Ginecología y Obstetricia","Medicina Interna","Ortopedia y Traumatología","Patología","Pediatría","Oftalmología","Psiquiatría"],partial:true,
+ cupos:{"Anestesiología":4,"Cirugía General":3,"Cirugía Plástica":3,"Ginecología y Obstetricia":4,"Medicina Interna":6,"Oftalmología":2,"Ortopedia y Traumatología":2,"Patología":3,"Pediatría":6,"Psiquiatría":8},
  insc:"2026-07-27",final:"2026-09-18",
  tl:[["2026-07-27","Cierre de inscripción"],["2026-08-10","Examen de conocimientos presencial"],["2026-09-07","Puntaje de hoja de vida"],["2026-09-18","Lista de seleccionados"]],
  exam:"Examen de conocimientos presencial; luego hoja de vida, psicotécnica y entrevista.",
@@ -192,7 +193,7 @@ const DATA = [
  tips:["La prueba de aptitudes se parece a la de pregrado: practica lectura crítica y razonamiento, no solo medicina.","Solo hay dos días (29 y 30 de octubre) para enviar la hoja de vida si quedas convocado: tenla lista con soportes desde ya."],
  src:[["Calendario oficial admisión 2027‑1 (Facultad de Medicina)","https://medicina.bogota.unal.edu.co/noticias/item/1911-adm-pos-2027"],["Cupos de posgrado 2027‑1 (Facultad de Medicina)","https://medicina.bogota.unal.edu.co/dependencias/secretaria-academica/admision"]]},
 
-{id:"udea",name:"Universidad de Antioquia",city:"Medellín",type:"Pública",cycle:"Convocatoria 2026 (cerrada)",cost:"1 SMMLV + inglés (2026: $1.760.905)",
+{id:"udea",portal:"https://www.udea.edu.co/wps/portal/udea/web/inicio/unidades-academicas/medicina/estudiar-facultad/posgrados",name:"Universidad de Antioquia",city:"Medellín",type:"Pública",cycle:"Convocatoria 2026 (cerrada)",cost:"1 SMMLV + inglés (2026: $1.760.905)",
  specs:["Alergología Clínica","Anestesiología","Cirugía General","Cirugía Plástica","Dermatología","Ginecología y Obstetricia","Medicina de Urgencias","Medicina del Deporte","Medicina Física y Rehabilitación","Medicina Interna","Neurocirugía","Neurología","Oftalmología","Ortopedia y Traumatología","Otorrinolaringología","Patología","Pediatría","Psiquiatría","Radiología","Toxicología Clínica","Urología"],
  cupos:{"Alergología Clínica":4,"Anestesiología":8,"Cirugía General":7,"Cirugía Plástica":4,"Dermatología":4,"Ginecología y Obstetricia":6,"Medicina de Urgencias":6,"Medicina del Deporte":3,"Medicina Física y Rehabilitación":2,"Medicina Interna":12,"Neurocirugía":2,"Neurología":3,"Oftalmología":3,"Ortopedia y Traumatología":4,"Otorrinolaringología":3,"Patología":4,"Pediatría":12,"Psiquiatría":6,"Radiología":5,"Toxicología Clínica":3,"Urología":2},
  insc:"2026-03-24",final:"2026-05-04",
@@ -241,7 +242,7 @@ const DATA = [
  tips:["El examen es casi todo: 80% del puntaje.","Elige seccional (Cali o Barranquilla) con cuidado: solo una."],
  src:[["Convocatoria Unilibre 2026","https://www.unilibre.edu.co/wp-content/uploads/2026/02/ADMISION-MEDICO-QUIRURGICAS-17022026-RECTOR.pdf"]]},
 
-{id:"uniquindio",portal:"https://www.uniquindio.edu.co/",name:"Universidad del Quindío",city:"Armenia",type:"Pública",cycle:"Convocatoria 2026 (cerrada)",cost:"1 SMMLV",
+{id:"uniquindio",portal:"https://www.uniquindio.edu.co/programas/publicaciones/3793/especializacion-en-medicina-interna/",name:"Universidad del Quindío",city:"Armenia",type:"Pública",cycle:"Convocatoria 2026 (cerrada)",cost:"1 SMMLV",
  specs:["Medicina Interna","Pediatría"],
  insc:"2026-07-09",final:"2026-07-17",next:"Estimada: julio 2027.",
  tl:[["2026-07-09","Cierre de inscripciones"],["2026-07-14","Examen escrito"],["2026-07-15","Entrevista"],["2026-07-17","Admitidos"]],
@@ -250,7 +251,7 @@ const DATA = [
  req:["Cédula, formulario y diploma o acta (convalidado si es extranjero)","Pago de 1 SMMLV"],
  tips:["Lleva la hoja de vida con soportes lista desde el día del examen."],
  src:[["Resumen convocatoria","https://cursofuturosresidentes.com/blog/especialidades-medicas-universidad-del-quindio-2026"]]},
-{id:"icesi",name:"Universidad Icesi · Fundación Valle del Lili",city:"Cali",type:"Privada",cycle:"Ingreso 2027‑1",cost:"Ver portal Icesi",
+{id:"icesi",portal:"https://www.icesi.edu.co/admisiones-de-posgrado/",name:"Universidad Icesi · Fundación Valle del Lili",city:"Cali",type:"Privada",cycle:"Ingreso 2027‑1",cost:"Ver portal Icesi",
  specs:["Anestesiología","Dermatología","Neurocirugía","Neurología","Ortopedia y Traumatología","Patología","Pediatría","Psiquiatría","Radiología","Medicina Crítica y Cuidado Intensivo","Cardiología","Infectología","Reumatología","Cirugía de Trauma y Emergencias","Medicina Materno Fetal","Radiología Intervencionista","Nefrología Pediátrica"],
  oferta:["Anestesiología","Cirugía General","Dermatología","Ginecología y Obstetricia","Medicina de Urgencias","Medicina Interna","Neurocirugía","Neurología","Ortopedia y Traumatología","Patología","Pediatría","Psiquiatría","Radiología","Medicina Crítica y Cuidado Intensivo","Cardiología","Infectología","Reumatología","Hematología","Cirugía de Trauma y Emergencias","Cirugía de Cabeza y Cuello","Medicina Materno Fetal","Radiología Intervencionista","Nefrología Pediátrica"],
  insc:"2026-08-05",final:"2026-10-21",
@@ -273,7 +274,7 @@ const DATA = [
  tips:["60% del examen es de la especialidad: estudia el temario propio.","Inglés de lectura nivel B1 vale 5 puntos.","No hay corrección de documentos: revisa cada PDF antes de enviar.","Cirugía General y Neurología solo tienen 1 cupo abierto este año."],
  src:[["Resolución 026 de 2026 USCO (convocatoria 2027)","https://www.usco.edu.co/documento/638629"]]},
 
-{id:"uninorte",name:"Universidad del Norte",city:"Barranquilla",type:"Privada",cycle:"Próxima convocatoria 2027",cost:"Ver portal (2023: $187.000)",tbd:true,
+{id:"uninorte",portal:"https://www.uninorte.edu.co/web/admisiones-postgrado/especializaciones",name:"Universidad del Norte",city:"Barranquilla",type:"Privada",cycle:"Próxima convocatoria 2027",cost:"Ver portal (2023: $187.000)",tbd:true,
  specs:["Dermatología","Medicina Familiar","Medicina Interna","Oftalmología","Pediatría","Psiquiatría","Radiología"],
  insc:null,final:null,
  next:"Patrón: inscripciones de diciembre a marzo y examen en marzo (2026: examen 14 de marzo y entrevistas 17–18 de marzo, según ResiLab).",
@@ -294,10 +295,10 @@ const DATA = [
  tips:["Una de las pocas opciones de Cirugía Plástica fuera de Bogotá y Medellín.","Las fechas se publican en mayo: agenda alerta desde abril."],
  src:[["Posgrados Unisinú Cartagena","https://unisinucartagena.edu.co/en/posgrados/"],["Cirugía Plástica Unisinú","https://unisinucartagena.edu.co/en/especializacion-cirugia-plastica-estetica-y-reconstructiva-snies-103321/"]]},
 
-{id:"remington",name:"Corporación Universitaria Remington",city:"Medellín",type:"Privada",cycle:"Ingreso 2027‑2",cost:"$337.800",
- specs:["Psiquiatría","Ginecología y Obstetricia","Medicina Familiar"],cupos:{"Psiquiatría":6,"Ginecología y Obstetricia":3,"Medicina Familiar":12},
+{id:"remington",portal:"https://www.uniremington.edu.co/facultades/facultad-de-ciencias-de-la-salud/proceso-seleccion-convocatoria-externa/",name:"Corporación Universitaria Remington",city:"Medellín",type:"Privada",cycle:"Ingreso 2027‑2",cost:"$337.800",
+ specs:["Psiquiatría","Ginecología y Obstetricia","Pediatría","Medicina Familiar"],cupos:{"Psiquiatría":6,"Ginecología y Obstetricia":3,"Medicina Familiar":12},
  insc:"2026-07-22",final:"2026-12-18",
- tl:[["2026-07-22","Cierre de inscripciones"],["2026-07-25","Examen escrito"],["2026-09-04","Psiquiatría: entrevista y simulación"],["2026-10-02","Ginecología: entrevista y simulación"],["2026-11-25","Medicina Familiar: entrevista y simulación"],["2026-12-18","Resultados Medicina Familiar"]],
+ tl:[["2026-07-22","Cierre de inscripciones"],["2026-07-25","Examen escrito"],["2026-09-04","Psiquiatría: entrevista y simulación"],["2026-10-02","Ginecología: entrevista y simulación"],["2026-11-06","Pediatría: entrevista y simulación 7:00 a.m."],["2026-11-07","Pediatría: prueba de inglés 8:00 a.m."],["2026-11-25","Medicina Familiar: entrevista y simulación"],["2026-11-27","Resultados Pediatría (a más tardar)"],["2026-12-18","Resultados Medicina Familiar"]],
  exam:"Examen clasificatorio con competencias del médico general según ASCOFAME. Pasan 3 por cupo.",
  weights:[["Simulación técnica",20],["Simulación no técnica",20],["Entrevista",20],["Análisis de perfil",15],["Examen",10],["Hoja de vida",10],["Inglés",5]],
  req:["Médico general","Caracterización, hoja de vida y perfil enviados por correo (solo cuenta el primer envío)"],
@@ -356,14 +357,23 @@ const DATA = [
  tips:["Medicina Interna aún recibe inscripciones hasta el 31 de octubre, el mismo día del examen.","Urgencias ya cerró inscripciones (examen 17 de octubre).","Primer semestre 2026: $24.769.952."],
  src:[["Medicina Interna UCC Medellín","https://ucc.edu.co/programas/posgrados/Paginas/medellin/especializacion-en-medicina-interna-medellin.aspx"],["Medicina de Urgencias UCC Medellín","https://ucc.edu.co/programas/posgrados/Paginas/medellin/especializacion-en-medicina-de-urgencias-medellin.aspx"]]},
 
-{id:"uninavarra",portal:"https://uninavarra.edu.co/en/estudiantes/calendario-admision/",name:"Fundación Universitaria Navarra",city:"Neiva",type:"Privada",cycle:"Convocatoria 2026‑2 (cerrada)",cost:"Ver portal",
- specs:["Medicina Familiar"],
- insc:"2026-06-08",final:"2026-06-17",next:"El Acuerdo 048 de 2026 (28 de agosto) abrió la convocatoria de la III cohorte de Medicina Interna (fechas en el acuerdo, ver calendario de admisión en uninavarra.edu.co). Medicina Familiar: estimada mayo–junio 2027.",
- tl:[["2026-06-09","Examen de admisión"],["2026-06-17","Jornada de entrevistas"]],
+{id:"uninavarra",portal:"https://uninavarra.edu.co/en/estudiantes/calendario-admision/",name:"Fundación Universitaria Navarra",city:"Neiva",type:"Privada",cycle:"Convocatoria 2027‑1 (abierta)",cost:"$201.450",
+ specs:["Medicina Familiar","Medicina Interna"],
+ insc:null,final:null,tbd:true,next:"Abiertas: Medicina Familiar VIII cohorte para 2027‑1 (Acuerdo 053 del 30 de octubre de 2026) y Medicina Interna III cohorte (Acuerdo 048 del 28 de agosto de 2026). Las fechas de inscripción, examen y entrevistas están en cada acuerdo (calendario de admisión en uninavarra.edu.co); aún no las verificamos aquí.",
+ tl:[],
  exam:"Prueba de conocimientos, prueba psicotécnica y entrevista.",weights:null,weightNote:"",
  req:["Título de médico","Notas de pregrado","Certificados de experiencia en medicina familiar (si aplica)"],
- tips:["Valoran experiencia laboral en atención primaria."],
- src:[["Acuerdo 017 de 2026 Uninavarra","https://uninavarra.edu.co/wp-content/uploads/2026/05/Acuerdo-017-Convocatoria-Admision-VII-cohorte-Esp-Medicina-Familiar.pdf"]]},
+ tips:["Valoran experiencia laboral en atención primaria.","Lee el acuerdo de tu programa: allí está el cronograma completo."],
+ src:[["Acuerdo 053 de 2026 (Medicina Familiar VIII cohorte)","https://uninavarra.edu.co/wp-content/uploads/2026/10/Acuerdo-053-Convocatoria-VIII-cohorte-Esp-Medicina-Familiar.pdf"],["Acuerdo 048 de 2026 (Medicina Interna III cohorte)","https://uninavarra.edu.co/wp-content/uploads/2026/09/Acuerdo-048-Convocatoria-III-Cohorte-Esp.-Medicina-Interna.pdf"],["Calendario de admisión Uninavarra","https://uninavarra.edu.co/en/estudiantes/calendario-admision/"]]},
+
+{id:"usc",portal:"https://www.usc.edu.co/especializacion-en-medicina-interna/",name:"Universidad Santiago de Cali",city:"Cali",type:"Privada",cycle:"Periodo 2027A",cost:"Ver portal",
+ specs:["Medicina Interna"],
+ insc:null,final:null,tbd:true,next:"La Circular 004 de 2026 abre la admisión a Medicina Interna para 2027A; las fechas están en la circular enlazada en la página del programa (aún no verificadas aquí). Inscripción por el portal SINU de la USC.",
+ tl:[],
+ exam:"Prueba de conocimientos, puntaje Saber Pro, análisis de hoja de vida y entrevista.",weights:null,weightNote:"Matrícula anual 2026: $43.500.125. Ingreso anual.",
+ req:["Título de médico general (o convalidado)","Servicio social obligatorio cumplido","Mínimo un año de experiencia laboral","Lectura en inglés (preferible)"],
+ tips:["Piden un año de experiencia laboral: certifícalo con fechas.","El Saber Pro cuenta en la selección."],
+ src:[["Especialización en Medicina Interna USC","https://www.usc.edu.co/especializacion-en-medicina-interna/"]]},
 
 {id:"udes",portal:"https://udes.edu.co/estudia/posgrados/especializaciones-medico-quirurgicas/",name:"Universidad de Santander (UDES)",city:"Bucaramanga",type:"Privada",cycle:"Ingreso 2027‑1",cost:"$548.600",
  specs:["Medicina Interna","Pediatría","Ortopedia y Traumatología","Psiquiatría","Radiología","Medicina Familiar"],
@@ -376,7 +386,7 @@ const DATA = [
  src:[["Medicina Interna UDES","https://udes.edu.co/estudia/posgrados/especializaciones/especializacion-en-medicina-interna"],["Especializaciones médico‑quirúrgicas UDES","https://udes.edu.co/estudia/posgrados/especializaciones-medico-quirurgicas/"]]}
 ];
 
-const OTHERS=[["Fundación Universitaria Juan N. Corpas","Bogotá","3 programas"],["Universidad Metropolitana","Barranquilla","5 programas"],["Universidad Santiago de Cali","Cali","1 programa"],["Universidad de Boyacá","Tunja","1 programa"],["Universidad Pedagógica y Tecnológica (UPTC)","Tunja","1 programa"],["Fundación Universitaria Luis G. Páez","—","1 programa"],["Escuela Superior de Oftalmología Instituto Barraquer","Bogotá","Oftalmología"]];
+const OTHERS=[["Fundación Universitaria Juan N. Corpas","Bogotá","3 programas"],["Universidad Metropolitana","Barranquilla","5 programas"],["Universidad de Boyacá","Tunja","1 programa"],["Universidad Pedagógica y Tecnológica (UPTC)","Tunja","1 programa"],["Fundación Universitaria Luis G. Páez","—","1 programa"],["Escuela Superior de Oftalmología Instituto Barraquer","Bogotá","Oftalmología"]];
 
 const ALIAS={"cirugia plastica":"Cirugía Plástica","plastica":"Cirugía Plástica","orto":"Ortopedia y Traumatología","ortopedia":"Ortopedia y Traumatología","gineco":"Ginecología y Obstetricia","ginecologia":"Ginecología y Obstetricia","uci":"Medicina Crítica y Cuidado Intensivo","intensivo":"Medicina Crítica y Cuidado Intensivo","urgencias":"Medicina de Urgencias","interna":"Medicina Interna","radio":"Radiología","anestesia":"Anestesiología"};
 
