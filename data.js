@@ -274,7 +274,7 @@ const DATA = [
  tips:["60% del examen es de la especialidad: estudia el temario propio.","Inglés de lectura nivel B1 vale 5 puntos.","No hay corrección de documentos: revisa cada PDF antes de enviar.","Cirugía General y Neurología solo tienen 1 cupo abierto este año."],
  src:[["Resolución 026 de 2026 USCO (convocatoria 2027)","https://www.usco.edu.co/documento/638629"]]},
 
-{id:"uninorte",portal:"https://www.uninorte.edu.co/web/admisiones-postgrado/especializaciones",name:"Universidad del Norte",city:"Barranquilla",type:"Privada",cycle:"Próxima convocatoria 2027",cost:"Ver portal (2023: $187.000)",tbd:true,
+{id:"uninorte",portal:"https://www.uninorte.edu.co/web/admisiones-postgrado/especializaciones",name:"Universidad del Norte",city:"Barranquilla",type:"Privada",cycle:"Próxima convocatoria 2027",cost:"Inscripción $550.000 (proceso 2026; ver portal)",tbd:true,
  specs:["Dermatología","Medicina Familiar","Medicina Interna","Oftalmología","Pediatría","Psiquiatría","Radiología"],
  insc:null,final:null,
  next:"Patrón: inscripciones de diciembre a marzo y examen en marzo (2026: examen 14 de marzo y entrevistas 17–18 de marzo, según ResiLab).",
@@ -359,7 +359,7 @@ const DATA = [
 
 {id:"uninavarra",portal:"https://uninavarra.edu.co/en/estudiantes/calendario-admision/",name:"Fundación Universitaria Navarra",city:"Neiva",type:"Privada",cycle:"Convocatoria 2027‑1 (abierta)",cost:"$201.450",
  specs:["Medicina Familiar","Medicina Interna"],
- insc:null,final:null,tbd:true,next:"Abiertas: Medicina Familiar VIII cohorte para 2027‑1 (Acuerdo 053 del 30 de octubre de 2026) y Medicina Interna III cohorte (Acuerdo 048 del 28 de agosto de 2026). Las fechas de inscripción, examen y entrevistas están en cada acuerdo (calendario de admisión en uninavarra.edu.co); aún no las verificamos aquí.",
+ insc:null,final:null,tbd:true,next:"Abiertas: Medicina Familiar VIII cohorte para 2027‑1 (Acuerdo 053 del 30 de octubre de 2026) y Medicina Interna III cohorte (Acuerdo 048 del 28 de agosto de 2026). El 6 de noviembre publicó el listado de preseleccionados de Medicina Familiar VIII cohorte. Las fechas de inscripción, examen y entrevistas están en cada acuerdo (calendario de admisión en uninavarra.edu.co); aún no las verificamos aquí.",
  tl:[],
  exam:"Prueba de conocimientos, prueba psicotécnica y entrevista.",weights:null,weightNote:"",
  req:["Título de médico","Notas de pregrado","Certificados de experiencia en medicina familiar (si aplica)"],
