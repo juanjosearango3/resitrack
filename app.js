@@ -103,6 +103,14 @@ const allSpecs = [...new Set(DATA.flatMap(OF))].sort((a,b) => a.localeCompare(b,
 allSpecs.forEach(s => $("spec").add(new Option(s+" ("+DATA.filter(u => OF(u).includes(s)).length+")", s)));
 [...new Set(DATA.flatMap(CI))].sort((a,b) => a.localeCompare(b,"es")).forEach(c => $("city").add(new Option(c,c)));
 
+// Cifras de la portada: universidades del radar y días para el cierre de inscripciones más cercano
+// (si no hay ninguna abierta, el número de especialidades). El total de preguntas va fijo en index.html.
+{ $("csUnis").textContent = DATA.length;
+  const left = DATA.filter(u => !u.tbd && u.insc && days(u.insc) >= 0).map(u => days(u.insc)).sort((a, b) => a - b)[0];
+  if (left == null){ $("csNext").textContent = allSpecs.length; $("csNextL").textContent = "especialidades"; }
+  else { $("csNext").textContent = left === 0 ? "Hoy" : left === 1 ? "1 día" : left + " días";
+         $("csNextL").textContent = left === 0 ? "cierra una inscripción" : "para el próximo cierre"; } }
+
 const querySpec = () => { const q = norm($("q").value); return q && ALIAS[q] ? ALIAS[q] : null; };
 const curSpec = () => $("spec").value || querySpec();
 function matches(u, ignoreStatus){
