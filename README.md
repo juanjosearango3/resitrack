@@ -40,6 +40,11 @@ Avisa a quien sigue `ces` y a quien tiene alguna de esas especialidades en su pe
 - Una pregunta a la vez: las diarias, el repaso, la práctica, el simulacro y los desafíos se pasan como diapositivas (`slides()` en `app.js`): puntos numerados para saltar, Anterior / Siguiente, deslizar o flechas del teclado. Los días anteriores y los resultados siguen en lista.
 - Domingo = descanso: no hay preguntas. La racha individual solo cuenta días con preguntas, y la racha de batallas (`cal_streak_len`) salta los domingos sin batalla.
 
+## Tareas programadas: permisos y horarios
+
+- `.claude/settings.json` autoriza a WebFetch a abrir los dominios oficiales de las universidades de `data.js`. Sin esa lista, «Actualizar ResiTrack» se queda esperando un permiso que nadie responde y no puede leer las convocatorias. Al agregar una universidad nueva a `DATA`, agrega también su dominio ahí.
+- El límite semanal de Juanjo se reinicia el miércoles en la madrugada (hacia las 4:00, hora de Bogotá). Las tres tareas del banco corren justo antes para gastar lo que sobró: «Preguntas semanales» martes 22:32, «Banco de simulacros» martes 23:42 y «Pulido del banco» miércoles 0:45.
+
 ## Publicación
 
 Cada push a `main` publica la app en Vercel automáticamente (resitrackjj.vercel.app).
