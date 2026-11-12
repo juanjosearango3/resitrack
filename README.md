@@ -36,6 +36,7 @@ Avisa a quien sigue `ces` y a quien tiene alguna de esas especialidades en su pe
 - Los desafíos usan preguntas del banco y de días anteriores, nunca las de hoy.
 - Una tarea programada (rutina «Preguntas diarias ResiTrack») escribe las 15 preguntas de lunes a viernes, cada madrugada (hora de Bogotá).
 - Sábado = simulacro: pg_cron (`resitrack-simulacro`, 00:05 Bogotá) llama a `build_weekly_recap()`, que copia las preguntas de lunes a viernes (hasta 50, slots 1-50) en orden aleatorio y con las opciones reordenadas. Las copias llevan `recap_of` = id original y no entran a los desafíos. En el simulacro, `get_daily`, `answer_daily`, `my_study_history` y `leaderboard` no revelan aciertos ni explicaciones hasta que la persona termina todas (`day_finished`). Si la semana trae más de 50, mitad las más falladas y mitad al azar; si trae menos, completa con semanas anteriores (mitad falladas, mitad al azar).
+- Una pregunta a la vez: las diarias, el repaso, la práctica, el simulacro y los desafíos se pasan como diapositivas (`slides()` en `app.js`): puntos numerados para saltar, Anterior / Siguiente, deslizar o flechas del teclado. Los días anteriores y los resultados siguen en lista.
 - Domingo = descanso: no hay preguntas. La racha individual solo cuenta días con preguntas, y la racha de batallas (`cal_streak_len`) salta los domingos sin batalla.
 
 ## Publicación

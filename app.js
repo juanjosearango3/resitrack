@@ -345,7 +345,7 @@ document.addEventListener("click", async e => {
 function renderGroup(){
   if (!ME){ $("p-group").innerHTML = inviteBanner() + gate("Tus amigos y grupos","Entra para agregar amigos, crear grupos y retarse."); return; }
   if (!PROFILE){ $("p-group").innerHTML = `<div class="empty">Primero crea tu perfil en la pestaña Para mí.</div>`; return; }
-  if (PLAY){ $("p-group").innerHTML = renderPlay(); return; }
+  if (PLAY){ $("p-group").innerHTML = renderPlay(); slFix(); return; }
   if (RESULT){ $("p-group").innerHTML = renderResult(); return; }
   if (PERSON_OPEN && $("pdlg").open) renderPersonDlg();
   const nIn = FREQS.filter(r => r.incoming).length;
@@ -858,19 +858,71 @@ function feedback(ok, explanation, source, qid){
   return `<div class="fb ${ok?"fb-ok":"fb-bad"}"><i class="fb-ico" aria-hidden="true">${ok?"✓":"✕"}</i><div class="fb-main"><div class="fb-hd">${ok?"Correcta.":"Incorrecta."}</div><div class="fb-body">${body}</div></div></div>${source?`<div class="fb-src"><span class="ico-tile">${I.doc}</span><div><b>Fuente</b><span>${esc(source)}</span></div></div>`:""}${reportBox(qid)}`;
 }
 
+/* ---------- una pregunta a la vez ---------- */
+// Las diarias, la práctica, el repaso, el simulacro y los desafíos se pasan de a una pregunta.
+// SL recuerda en cuál va el mazo abierto; al abrir otro mazo se arranca donde diga `start`.
+let SL = { key: null, i: 0, n: 0 }, SL_SEQ = 0;
+const firstOpen = (n, answered) => { for (let k = 0; k < n; k++) if (!answered(k)) return k; return -1; };
+function slides(key, cards, o){
+  // o: { cls(k): clase del punto, ready(k): ya respondida, start, note: html bajo los puntos, last: html del botón en la última }
+  const n = cards.length;
+  if (SL.key !== key) SL = { key, i: o.start || 0, n };
+  SL.n = n; SL.i = Math.max(0, Math.min(n - 1, SL.i));
+  const i = SL.i;
+  const dots = cards.map((_, k) => `<button type="button" class="sl-dot ${o.cls(k)}${k === i ? " cur" : ""}" data-sl-go="${k}" aria-label="Pregunta ${k + 1}"${k === i ? ' aria-current="true"' : ""}>${k + 1}</button>`).join("");
+  const next = i < n - 1 ? `<button type="button" class="btn${o.ready(i) ? "" : " ghost"}" data-sl-go="${i + 1}">Siguiente</button>` : (o.last || "<span></span>");
+  return `<div class="sl-deck" data-sl>
+    <div class="sheet-head"><div class="sl-dots${n > 20 ? " long" : ""}" aria-label="Preguntas">${dots}</div>${o.note ? `<p class="sub" style="margin:8px 0 0">${o.note}</p>` : ""}</div>
+    ${cards[i]}
+    <div class="slnav"><button type="button" class="btn ghost" data-sl-go="${i - 1}" ${i ? "" : "disabled"}>Anterior</button><span class="hint">${i + 1} de ${n}</span>${next}</div>
+  </div>`;
+}
+// Botón de la última pregunta cuando aún quedan sin responder: lleva a la primera pendiente.
+const slPending = k => `<button type="button" class="btn" data-sl-go="${k}">Falta la ${k + 1}</button>`;
+// Tras pintar: en mazos largos, la fila de puntos se desplaza hasta la pregunta actual.
+function slFix(){
+  const c = document.querySelector(".sl-dots.long .cur");
+  if (c) c.parentNode.scrollLeft = c.offsetLeft - (c.parentNode.clientWidth - c.offsetWidth) / 2;
+}
+function slideTo(i){
+  if (!document.querySelector("[data-sl]") || !(i >= 0 && i < SL.n) || i === SL.i) return;
+  SL.i = i; REPORT_OPEN = null; renderCurrent();
+  // Solo se mueve la página si el mazo quedó tapado por arriba (venías leyendo la explicación).
+  const d = document.querySelector("[data-sl]");
+  if (d && d.getBoundingClientRect().top < 56) d.scrollIntoView({ block: "start" });
+}
+document.addEventListener("click", e => {
+  const g = e.target.closest("[data-sl-go]");
+  if (g && !g.disabled) slideTo(Number(g.dataset.slGo));
+});
+document.addEventListener("keydown", e => {
+  if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+  if (e.altKey || e.ctrlKey || e.metaKey || e.target.closest?.("input,textarea,select,dialog")) return;
+  slideTo(SL.i + (e.key === "ArrowRight" ? 1 : -1));
+});
+// Deslizar hacia los lados pasa de pregunta (no sobre la fila de puntos ni en campos de texto).
+let slTouch = null;
+document.addEventListener("touchstart", e => {
+  const ok = e.touches.length === 1 && e.target.closest("[data-sl]") && !e.target.closest(".sl-dots,textarea,input");
+  slTouch = ok ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : null;
+}, { passive: true });
+document.addEventListener("touchend", e => {
+  if (!slTouch) return;
+  const t = e.changedTouches[0], dx = t.clientX - slTouch.x, dy = t.clientY - slTouch.y; slTouch = null;
+  if (Math.abs(dx) < 70 || Math.abs(dx) < 2.5 * Math.abs(dy)) return;
+  slideTo(SL.i + (dx < 0 ? 1 : -1));
+}, { passive: true });
+
 function renderDaily(){
   if (!studyLoaded) return `<div class="empty">Cargando preguntas…</div>`;
   if (!DAILY.length) return `<div class="empty">Las preguntas de hoy todavía no están listas. Se publican cada madrugada.</div>`;
   const done = DAILY.filter(q => q.my_choice != null), ok = done.filter(q => q.is_correct).length;
   // En el simulacro el servidor no entrega aciertos ni explicaciones hasta terminar todas.
   const hidden = done.some(q => q.is_correct == null);
-  const strip = DAILY.map(q => `<i class="${q.my_choice==null?"":q.is_correct==null?"done":q.is_correct?"ok":"bad"}" title="${q.slot}"></i>`).join("");
-  const head = `<div class="sheet-head"><div class="strip" aria-label="Avance de hoy">${strip}</div>
-    <p class="sub" style="margin:6px 0 0">${done.length === DAILY.length && !hidden
+  const note = done.length === DAILY.length && !hidden
       ? `Terminaste: <b>${ok} de ${DAILY.length}</b> correctas.`
       : hidden ? `${done.length} de ${DAILY.length} respondidas. Verás tu resultado y la retroalimentación al terminar.`
-      : `${done.length} de ${DAILY.length} respondidas${done.length?`, ${ok} correctas`:""}.`}
-</p></div>`;
+      : `${done.length} de ${DAILY.length} respondidas${done.length?`, ${ok} correctas`:""}.`;
   const cards = DAILY.map(q => {
     const answered = q.my_choice != null;
     return `<article class="qcard" id="q-${q.id}">
@@ -879,8 +931,14 @@ function renderDaily(){
       ${optList(q, { kind:"daily", pick: q.my_choice, correct: answered ? q.correct : null, locked: answered })}
       ${answered && q.correct != null ? feedback(q.is_correct, q.explanation, q.source, q.id) : answered ? `<p class="hint" style="margin:6px 0 0">Respuesta guardada. La retroalimentación aparece al final del simulacro.</p>` : ""}
     </article>`;
-  }).join("");
-  return head + `<div class="qlist">${cards}</div>`;
+  });
+  const open = firstOpen(DAILY.length, k => DAILY[k].my_choice != null);
+  return slides("daily:" + todayBog(), cards, {
+    cls: k => { const q = DAILY[k]; return q.my_choice == null ? "" : q.is_correct == null ? "done" : q.is_correct ? "ok" : "bad"; },
+    ready: k => DAILY[k].my_choice != null,
+    start: Math.max(open, 0), note,
+    last: open < 0 ? `<button type="button" class="btn" data-study-hub>Listo</button>` : slPending(open)
+  });
 }
 
 // Días anteriores: lista sacada de HISTORY y, al abrir uno, sus preguntas con get_day (la correcta solo de las que respondiste).
@@ -1002,9 +1060,12 @@ function renderPlay(){
   const all = PLAY.qs.every((q,i) => PLAY.picks[i] != null);
   return `<div class="playhead"><button class="btn ghost small" id="chBack">Volver</button><h2 style="margin:0">Desafío contra ${esc(PLAY.rival)}</h2></div>
     <p class="sub">Elige una respuesta en cada pregunta. Al enviar ves tu retroalimentación; el ganador se define cuando ${esc(PLAY.rival)} también termine.</p>
-    <div class="qlist">${PLAY.qs.map((q,i) => `<article class="qcard"><div class="qmeta"><span class="qn">${i+1}</span>${areaChips(q)}</div>
-      <p class="stem">${esc(q.stem)}</p>${optList({ ...q, id: i }, { kind:"play", pick: PLAY.picks[i] })}</article>`).join("")}</div>
-    <div class="submitbar"><span class="hint">${PLAY.picks.filter(x => x!=null).length} de ${PLAY.qs.length}</span><button class="btn" id="chSubmit" ${all?"":"disabled"}>Enviar respuestas</button></div>`;
+    ${slides("play:" + PLAY.id, PLAY.qs.map((q,i) => `<article class="qcard"><div class="qmeta"><span class="qn">${i+1}</span>${areaChips(q)}</div>
+      <p class="stem">${esc(q.stem)}</p>${optList({ ...q, id: i }, { kind:"play", pick: PLAY.picks[i] })}</article>`), {
+      cls: k => PLAY.picks[k] != null ? "done" : "", ready: k => PLAY.picks[k] != null,
+      note: `${PLAY.picks.filter(x => x!=null).length} de ${PLAY.qs.length} respondidas. Puedes cambiar tus respuestas hasta enviar.`,
+      last: all ? `<button class="btn" id="chSubmit">Enviar respuestas</button>` : slPending(firstOpen(PLAY.qs.length, k => PLAY.picks[k] != null))
+    })}`;
 }
 
 function renderResult(){
@@ -1037,7 +1098,8 @@ function bogotaDow(){
 }
 // Sábado de simulacro: el set de ese día trae más de 15 preguntas (o aún no está listo).
 const isSimDay = () => bogotaDow() === 6 && (!studyLoaded || !DAILY.length || DAILY.length > 15);
-function renderStudy(){
+function renderStudy(){ drawStudy(); slFix(); }
+function drawStudy(){
   const el = $("p-study");
   if (!ME){ el.innerHTML = gate("Estudia con ResiTrack","Entra para responder las preguntas del día y retar a tus amigos."); return; }
   if (!PROFILE){ el.innerHTML = `<div class="empty">Primero crea tu perfil en la pestaña Para mí.</div>`; return; }
@@ -1079,6 +1141,7 @@ document.addEventListener("click", async e => {
       studyBusy = false;
       if (error){ toast(error.message); return; }
       const r = data?.[0], q = DAILY.find(x => x.id === qid);
+      const simLike = (r && r.correct == null) || DAILY.some(x => x.my_choice != null && x.is_correct == null);
       if (q && r){ Object.assign(q, { my_choice: i, is_correct: r.is_correct, correct: r.correct, explanation: r.explanation, source: r.source }); }
       const h = HISTORY.find(x => x.day === new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" }));
       if (h){ h.answered++; if (r?.is_correct) h.correct++; }
@@ -1094,8 +1157,14 @@ document.addEventListener("click", async e => {
         renderTop();
         toast(`🔥 ${myStreak()} ${myStreak()===1?"día":"días"} seguidos. ¡Racha al día!`);
       }
-      updateBadges(); renderStudy();
-      document.getElementById("q-"+qid)?.scrollIntoView({ block: "nearest" });
+      // En el simulacro del sábado no hay retroalimentación al responder: se pasa sola a la siguiente pendiente.
+      const at = DAILY.findIndex(x => x.id === qid), allDone = DAILY.every(x => x.my_choice != null);
+      if (simLike && !allDone){
+        const nx = DAILY.findIndex((x, k) => k > at && x.my_choice == null);
+        SL.i = nx >= 0 ? nx : DAILY.findIndex(x => x.my_choice == null);
+      } else if (simLike) SL.i = 0;   // simulacro terminado: se revisa desde la primera
+      const y = window.scrollY;
+      updateBadges(); renderStudy(); window.scrollTo(0, y);
       return;
     }
     if (opt.dataset.kind === "play"){
@@ -1418,11 +1487,19 @@ function renderRun(){
       <p class="stem">${esc(q.stem)}</p>
       ${optList({ ...q, id: i }, { kind: "prac", pick, correct: show ? q.correct : null, locked: show })}
       ${show ? feedback(pick === q.correct, q.explanation, q.source, q.id) : ""}</article>`;
-  }).join("");
-  const bar = sim
-    ? `<div class="submitbar"><span class="hint">${done} de ${P.qs.length}</span><button class="btn" type="button" data-pr-finish>Terminar y ver resultado</button></div>`
-    : done === P.qs.length ? `<div class="sim-card" style="margin-top:14px"><b>Listo: ${P.qs.filter((q, i) => P.picks[i] === q.correct).length} de ${P.qs.length} correctas.</b>${P.mode === "review" ? ` ${REV.due_now ? `Te quedan ${REV.due_now} para hoy.` : "Terminaste el repaso de hoy."}` : ""}<div style="margin-top:10px"><button class="btn small" type="button" data-pr-back>Volver</button></div></div>` : "";
-  return `${prHead(esc(P.title), clock)}<p class="sub">${intro}</p><div class="qlist">${cards}</div>${bar}`;
+  });
+  const open = firstOpen(P.qs.length, k => P.picks[k] != null), all = open < 0;
+  const hits = P.qs.filter((q, i) => P.picks[i] === q.correct).length;
+  const summary = !sim && all ? `<div class="sim-card" style="margin-top:14px"><b>Listo: ${hits} de ${P.qs.length} correctas.</b>${P.mode === "review" ? ` ${REV.due_now ? `Te quedan ${REV.due_now} para hoy.` : "Terminaste el repaso de hoy."}` : ""}<div style="margin-top:10px"><button class="btn small" type="button" data-pr-back>Volver</button></div></div>` : "";
+  P.slk ||= "prac:" + (++SL_SEQ);
+  const deck = slides(P.slk, cards, {
+    cls: k => P.picks[k] == null ? "" : sim ? "done" : P.picks[k] === P.qs[k].correct ? "ok" : "bad",
+    ready: k => P.picks[k] != null,
+    note: sim ? `${done} de ${P.qs.length} respondidas. <button type="button" class="linkish" data-pr-finish>Terminar ahora</button>`
+      : `${done} de ${P.qs.length} respondidas${done ? `, ${hits} correctas` : ""}.`,
+    last: sim ? `<button class="btn" type="button" data-pr-finish>Terminar</button>` : all ? "" : slPending(open)
+  });
+  return `${prHead(esc(P.title), clock)}<p class="sub">${intro}</p>${deck}${summary}`;
 }
 function renderSimResult(){
   const P = PRAC, R = P.result;
