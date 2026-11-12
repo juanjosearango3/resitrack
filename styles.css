@@ -825,7 +825,7 @@ button.chrow:hover{border-color:var(--rule-strong)}
 .cover-title{margin-top:auto}
 .cover-title img{width:min(80vw,440px)}
 .cover-lead{max-width:30ch;margin:18px auto 0;color:var(--muted);font-size:16px;line-height:1.55}
-.cover-actions{display:grid;gap:12px;width:min(100%,420px);margin-top:auto;padding-top:28px}
+.cover-actions{display:grid;gap:12px;width:min(100%,420px);margin:min(8svh,64px) 0 auto}
 .ob-cta,.ob-next{width:100%;min-height:54px;font-size:17px;gap:10px}
 .ob-cta svg,.ob-next svg{width:20px;height:20px}
 .ob-cta2{width:100%;min-height:50px;font-size:16px}
