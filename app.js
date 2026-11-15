@@ -796,6 +796,7 @@ const fire = n => `<span class="fire" aria-label="racha de ${n} ${n===1?"día":"
 const atRisk = id => { const t = STREAKS[id]; return t && t.together > 0 && !t.battled_today; };
 
 function streakHint(me){
+  if (isSunSim()) return me.done_today ? "Terminaste el simulacro del sábado. Mañana vuelven las diarias." : `Hoy es el último día para terminar el simulacro del sábado${me.solo ? " y no perderla" : ""}.`;
   if (me.done_today) return "Hoy ya sumaste. Vuelve mañana.";
   if (bogotaDow() === 0 && !DAILY.length) return "Hoy es domingo de descanso: tu racha está a salvo.";
   const what = isSimDay() ? "el simulacro de hoy" : `las ${DAILY.length || 15} de hoy`;
@@ -941,7 +942,7 @@ function renderDaily(){
     </article>`;
   });
   const open = firstOpen(DAILY.length, k => DAILY[k].my_choice != null);
-  return slides("daily:" + todayBog(), cards, {
+  return slides("daily:" + activeDay(), cards, {
     cls: k => { const q = DAILY[k]; return q.my_choice == null ? "" : q.is_correct == null ? "done" : q.is_correct ? "ok" : "bad"; },
     ready: k => DAILY[k].my_choice != null,
     start: Math.max(open, 0), note,
@@ -953,6 +954,9 @@ function renderDaily(){
 let PAST = null;        // { day, qs } del día que se está revisando
 let PAST_ALL = false;   // mostrar los 60 días y no solo los últimos 7
 const todayBog = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" });
+// Día de las preguntas abiertas: hoy, salvo el domingo, cuando sigue abierto el simulacro del sábado.
+const isSunSim = () => bogotaDow() === 0 && DAILY.length > 0;
+const activeDay = () => { if (!isSunSim()) return todayBog(); const d = new Date(todayBog() + "T12:00:00"); d.setDate(d.getDate() - 1); return d.toLocaleDateString("en-CA"); };
 const pastSim = h => h.total > 15;
 const dayName = s => `${DIAS[D(s).getDay()]} ${fmtS(s)}`;
 function pastLine(h){
@@ -962,7 +966,7 @@ function pastLine(h){
   return `${h.correct} de ${h.total} correctas${h.answered < h.total ? ` · ${h.total - h.answered} sin responder` : ""}`;
 }
 function pastDays(){
-  const today = todayBog(), all = HISTORY.filter(h => h.day < today);
+  const today = activeDay(), all = HISTORY.filter(h => h.day < today);
   if (!all.length) return "";
   const yest = all[0], sunSim = bogotaDow() === 0 && pastSim(yest);
   const rows = (PAST_ALL ? all : all.slice(0, 7)).map(h => {
@@ -1105,7 +1109,7 @@ function bogotaDow(){
   return ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].indexOf(w);
 }
 // Sábado de simulacro: el set de ese día trae más de 15 preguntas (o aún no está listo).
-const isSimDay = () => bogotaDow() === 6 && (!studyLoaded || !DAILY.length || DAILY.length > 15);
+const isSimDay = () => (bogotaDow() === 6 && (!studyLoaded || !DAILY.length || DAILY.length > 15)) || (isSunSim() && DAILY.length > 15);
 function renderStudy(){ drawStudy(); slFix(); }
 function drawStudy(){
   const el = $("p-study");
@@ -1127,7 +1131,9 @@ function drawStudy(){
   }
   if (isSimDay()){
     const n = DAILY.length || 50;
-    el.innerHTML = `${back}<h2>Simulacro</h2>
+    const sun = isSunSim(), fin = DAILY.every(q => q.my_choice != null);
+    el.innerHTML = `${back}<h2>Simulacro${sun ? " del sábado" : ""}</h2>
+      ${sun ? `<div class="info-card"><span class="ico-tile">${I.info}</span><div><b>${fin ? "Ya lo terminaste" : "Sigue abierto hasta hoy a medianoche"}</b><p>${fin ? "Aquí tienes tu resultado y la retroalimentación. Mañana vuelven las preguntas diarias." : "Si no alcanzaste el sábado, termínalo hoy domingo: cuenta igual para tu racha y para el ranking de la semana."}</p></div></div>` : ""}
       <p class="sub">El simulacro del sábado abarca las preguntas de esta semana (lunes a viernes): ${n} preguntas en un orden nuevo y con las opciones reordenadas. Cuenta tu primera respuesta y, para sumar a tu racha, debes terminarlas todas.</p>
       <p class="sub"><b>Como en el examen real, la retroalimentación es al final:</b> mientras respondes no verás si acertaste. Cuando termines las ${n} aparecen tu puntaje, las respuestas correctas, las explicaciones y las fuentes.</p>
       ${studyLoaded && !DAILY.length ? `<div class="empty">El simulacro de hoy todavía no está listo. Se arma a medianoche.</div>` : renderDaily()}`;
@@ -1151,7 +1157,7 @@ document.addEventListener("click", async e => {
       const r = data?.[0], q = DAILY.find(x => x.id === qid);
       const simLike = (r && r.correct == null) || DAILY.some(x => x.my_choice != null && x.is_correct == null);
       if (q && r){ Object.assign(q, { my_choice: i, is_correct: r.is_correct, correct: r.correct, explanation: r.explanation, source: r.source }); }
-      const h = HISTORY.find(x => x.day === new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" }));
+      const h = HISTORY.find(x => x.day === activeDay());
       if (h){ h.answered++; if (r?.is_correct) h.correct++; }
       if (DAILY.every(x => x.my_choice != null)){
         if (DAILY.some(x => x.correct == null)){
@@ -1395,7 +1401,7 @@ function studyHub(){
   if (!studyLoaded) dline = "Cargando…";
   else if (dow === 0 && !n) dline = HISTORY[0] && pastSim(HISTORY[0]) ? "Descanso. Revisa el simulacro de ayer" : "Hoy es domingo: descanso";
   else if (!n) dline = sim ? "El simulacro se arma a medianoche" : "Se publican cada madrugada";
-  else if (done < n){ dline = sim ? `${done} de ${n} respondidas` : `${n - done} por responder hoy`; dhot = true; }
+  else if (done < n){ dline = sim ? `${done} de ${n} respondidas${dow === 0 ? " · cierra hoy" : ""}` : `${n - done} por responder hoy`; dhot = true; }
   else dline = DAILY.some(q => q.correct == null) ? "Entregado" : `Terminaste: ${ok} de ${n}`;
   const w = weakestArea();
   const rline = REV.due_now ? `${REV.due_now} para repasar hoy` : w ? `Más floja: ${AREAS[w.area]}` : REV.upcoming ? `Próximo repaso: ${fmtS(REV.next_due)}` : "Tus aciertos por área";
