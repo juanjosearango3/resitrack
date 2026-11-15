@@ -272,6 +272,7 @@ footer{margin-top:36px;font-size:14px;color:var(--muted)}
 .score{display:flex;justify-content:center;align-items:center;gap:22px;margin:10px 0 18px;padding:20px 12px;text-align:center;color:var(--muted);font-weight:700;background:var(--sheet);border:1px solid var(--rule);border-radius:20px;box-shadow:var(--shadow)}
 .score span{display:block;font-family:var(--f-display);font-weight:800;font-size:56px;line-height:1;color:var(--ink);font-variant-numeric:tabular-nums}
 .score .vs{font-size:28px}
+.sim-score small{display:block;margin-top:4px;font-size:12px;font-weight:600}
 
 /* ---------- portada ---------- */
 .brand{background:none;border:0;padding:0;color:inherit}

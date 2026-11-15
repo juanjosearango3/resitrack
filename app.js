@@ -938,7 +938,7 @@ function renderDaily(){
   const hidden = done.some(q => q.is_correct == null);
   const rtxt = DREV.length ? ` y <b>${rok} de ${DREV.length}</b> de repaso` : "";
   const note = all === items.length && !hidden
-      ? `Terminaste: <b>${ok} de ${DAILY.length}</b> ${DREV.length ? "nuevas" : "correctas"}${rtxt}.`
+      ? `Terminaste: <b>${ok} de ${DAILY.length}</b> ${DREV.length ? "nuevas" : "correctas"}${rtxt}${isSimDay() ? ` · nota <b>${notaOf(ok, DAILY.length)}</b> de 5` : ""}.`
       : hidden ? `${done.length} de ${DAILY.length} respondidas. Verás tu resultado y la retroalimentación al terminar.`
       : `${all} de ${items.length} respondidas${DREV.length ? ` · ${DAILY.length} nuevas y ${DREV.length} de repaso` : ""}.`;
   const cards = items.map(({ rev, q }, k) => {
@@ -990,7 +990,7 @@ function pastLine(h){
   if (!h.answered) return "Sin responder";
   // El historial no da los aciertos de un simulacro sin terminar; se ven al abrirlo.
   if (pastSim(h) && h.answered < h.total && !h.correct) return `${h.answered} de ${h.total} respondidas`;
-  return `${h.correct} de ${h.total} correctas${h.answered < h.total ? ` · ${h.total - h.answered} sin responder` : ""}`;
+  return `${h.correct} de ${h.total} correctas${pastSim(h) ? ` · nota ${notaOf(h.correct, h.total)}` : ""}${h.answered < h.total ? ` · ${h.total - h.answered} sin responder` : ""}`;
 }
 function pastDays(){
   const today = activeDay(), all = HISTORY.filter(h => h.day < today);
@@ -1023,9 +1023,10 @@ function renderPast(){
   const title = `<h2>${sim ? "Simulacro del" : "Preguntas del"} ${DIAS[D(PAST.day).getDay()].toLowerCase()} ${fmtS(PAST.day)}</h2>`;
   if (!qs.length) return `${back}${title}<div class="empty">Ese día no hubo preguntas.</div>`;
   const done = qs.filter(q => q.my_choice != null), ok = done.filter(q => q.is_correct).length;
+  const score = sim && done.length ? simScore(ok, qs.length) : "";
   const strip = qs.map(q => `<i class="${q.my_choice==null?"":q.is_correct?"ok":"bad"}" title="${q.slot}"></i>`).join("");
   const head = `<div class="sheet-head"><div class="strip" aria-label="Resultado del día">${strip}</div>
-    <p class="sub" style="margin:6px 0 0">${done.length ? `<b>${ok} de ${qs.length}</b> correctas` : "No respondiste este día"}${done.length && done.length < qs.length ? ` · ${qs.length - done.length} sin responder` : ""}.</p></div>`;
+    <p class="sub" style="margin:6px 0 0">${done.length ? `<b>${ok} de ${qs.length}</b> correctas${sim ? ` · nota <b>${notaOf(ok, qs.length)}</b> de 5` : ""}` : "No respondiste este día"}${done.length && done.length < qs.length ? ` · ${qs.length - done.length} sin responder` : ""}.</p></div>`;
   const cards = qs.map(q => {
     const answered = q.my_choice != null;
     return `<article class="qcard" id="q-${q.id}">
@@ -1035,7 +1036,7 @@ function renderPast(){
       ${answered ? feedback(q.is_correct, q.explanation, q.source, q.id) : `<p class="hint" style="margin:6px 0 0">No la respondiste, así que no se muestra la respuesta.</p>`}
     </article>`;
   }).join("");
-  return `${back}${title}${head}<div class="qlist">${cards}</div>`;
+  return `${back}${title}${score}${head}<div class="qlist">${cards}</div>`;
 }
 
 function mates(){
@@ -1166,6 +1167,7 @@ function drawStudy(){
       ${sun && (intro || fin) ? `<div class="info-card"><span class="ico-tile">${I.info}</span><div><b>${fin ? "Ya lo terminaste" : "Sigue abierto hasta hoy a medianoche"}</b><p>${fin ? "Aquí tienes tu resultado y la retroalimentación. Mañana vuelven las preguntas diarias." : "Si no alcanzaste el sábado, termínalo hoy domingo: cuenta igual para tu racha y para el ranking de la semana."}</p></div></div>` : ""}
       ${intro ? `<p class="sub">El simulacro del sábado abarca las preguntas de esta semana (lunes a viernes): ${n} preguntas en un orden nuevo y con las opciones reordenadas. Cuenta tu primera respuesta y, para sumar a tu racha, debes terminarlas todas.</p>
       <p class="sub"><b>Como en el examen real, la retroalimentación es al final:</b> mientras respondes no verás si acertaste. Cuando termines las ${n} aparecen tu puntaje, las respuestas correctas, las explicaciones y las fuentes.</p>` : ""}
+      ${fin && DAILY.length && DAILY.every(q => q.is_correct != null) ? simScore(DAILY.filter(q => q.is_correct).length, DAILY.length) : ""}
       ${studyLoaded && !DAILY.length ? `<div class="empty">El simulacro de hoy todavía no está listo. Se arma a medianoche.</div>` : renderDaily()}`;
     return;
   }
@@ -1415,6 +1417,10 @@ try { const t = localStorage.getItem("rt-tab"); if (t && ["all","mine","study","
 const SIM_SIZES = [25, 50, 100];
 const SIM_MIN_PER_Q = 1.8;
 const pctOf = (ok, n) => n ? Math.round(100 * ok / n) : 0;
+// Nota de 0 a 5 de un simulacro (como en la universidad): aciertos sobre el total, con un decimal. Las en blanco cuentan como malas.
+const notaOf = (ok, n) => (n ? Math.round(50 * ok / n) / 10 : 0).toFixed(1).replace(".", ",");
+// Tarjeta de resultado de un simulacro: la nota grande y, al lado, los aciertos.
+const simScore = (ok, n, extra) => `<div class="score sim-score"><div><span>${notaOf(ok, n)}</span>nota de 5</div><div class="vs">·</div><div><span>${ok}</span>de ${n} correctas${extra ? `<small>${extra}</small>` : ""}</div></div>`;
 async function loadPractice(){
   const [r, a, b, sc, h] = await Promise.all([
     SB.rpc("review_summary"), SB.rpc("my_area_stats"), SB.rpc("bank_size"), SB.rpc("subarea_counts"),
@@ -1517,7 +1523,7 @@ function simPlan(size){
 }
 function renderSimSetup(){
   const pick = PRAC.size || 50;
-  const hist = SIM_HIST.length ? `<h4 class="ghead">Tus últimos simulacros</h4><div class="chlist">${SIM_HIST.map(h => `<div class="chrow"><span>${h.correct} de ${h.n} (${pctOf(h.correct, h.n)} %) · ${Math.round(h.secs / 60)} min</span><span class="hint">${new Date(h.created_at).toLocaleDateString("es-CO", { day: "numeric", month: "short" })}</span></div>`).join("")}</div>` : "";
+  const hist = SIM_HIST.length ? `<h4 class="ghead">Tus últimos simulacros</h4><div class="chlist">${SIM_HIST.map(h => `<div class="chrow"><span>Nota ${notaOf(h.correct, h.n)} · ${h.correct} de ${h.n} (${pctOf(h.correct, h.n)} %) · ${Math.round(h.secs / 60)} min</span><span class="hint">${new Date(h.created_at).toLocaleDateString("es-CO", { day: "numeric", month: "short" })}</span></div>`).join("")}</div>` : "";
   const plan = simPlan(pick);
   return `${prHead("Simulacro")}
     <p class="sub">Con cronómetro y sin retroalimentación hasta terminar, como el examen real. Mezcla preguntas de exámenes pasados de la UdeA y Univalle (verificadas con la evidencia actual) y del banco de ResiTrack, para que llegues listo a cualquier estilo. No cuenta para el ranking ni las rachas.</p>
@@ -1564,7 +1570,7 @@ function renderSimResult(){
   const P = PRAC, R = P.result;
   const areas = Object.entries(R.by).sort((a, b) => pctOf(a[1].ok, a[1].n) - pctOf(b[1].ok, b[1].n));
   return `${prHead("Resultado del simulacro")}
-    <div class="score"><div><span>${R.ok}</span>de ${P.qs.length}</div><div class="vs">·</div><div><span>${pctOf(R.ok, P.qs.length)}%</span>${clockText(R.secs * 1000)} min</div></div>
+    ${simScore(R.ok, P.qs.length, `${pctOf(R.ok, P.qs.length)} % · ${clockText(R.secs * 1000)} min`)}
     <h4 class="ghead">Por área (de la más floja a la mejor)</h4>
     <div class="areas">${areas.map(([k, v]) => `<div class="area-row"><div class="area-top"><b>${esc(AREAS[k] || k)}</b><span class="area-pct">${v.ok}/${v.n}</span></div><div class="bar" aria-hidden="true"><i style="width:${Math.max(pctOf(v.ok, v.n), 3)}%"></i></div></div>`).join("")}</div>
     <p class="sub" style="margin-top:12px">${R.ok < P.qs.length ? `Las ${P.qs.length - R.ok} que fallaste o dejaste en blanco quedaron en tu repaso: vuelven en 3 días.` : "Sin errores. Excelente."}</p>
@@ -1750,7 +1756,7 @@ function strengthsBox(){
     <div class="sw-hd"><span class="ico-tile">${I.chart}</span><h3 style="margin:0;flex:1">Mis fortalezas y debilidades</h3></div>
     <p class="hint" style="margin:6px 0 0">${tot[0]} de ${tot[1]} correctas · ${pctOf(tot[0], tot[1])} %</p>
     <div class="sw-bars">${bars}</div>
-    <p class="hint" style="margin:8px 0 0">${REV.due_now ? `Tienes ${REV.due_now} ${REV.due_now === 1 ? "pregunta" : "preguntas"} de repaso para hoy. ` : ""}${last ? `Último simulacro: ${pctOf(last.correct, last.n)} %. ` : ""}Las áreas cuentan desde 3 respuestas.</p>
+    <p class="hint" style="margin:8px 0 0">${REV.due_now ? `Tienes ${REV.due_now} ${REV.due_now === 1 ? "pregunta" : "preguntas"} de repaso para hoy. ` : ""}${last ? `Último simulacro: nota ${notaOf(last.correct, last.n)} (${pctOf(last.correct, last.n)} %). ` : ""}Las áreas cuentan desde 3 respuestas.</p>
     <button type="button" class="btn small" data-go-refuerzo>Reforzar en Estudiar</button>
   </div>`;
 }
