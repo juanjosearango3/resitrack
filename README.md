@@ -43,7 +43,7 @@ Avisa a quien sigue `ces` y a quien tiene alguna de esas especialidades en su pe
 
 ## Caso de la semana
 
-Un paciente por semana (tablas `weekly_cases`, `case_steps`, `case_answers`): llega el lunes a urgencias o a consulta externa, de martes a jueves se le pasa revista o se le hace control, y el viernes es el desenlace. Una pregunta por día; cada paso se abre en su fecha y solo después de responder el anterior (la narrativa de un día asume la conducta correcta del anterior). Quien se atrasa puede ponerse al día hasta el domingo. No cuenta para rachas ni ranking. RPC: `get_week_case()` y `answer_case(step, choice)`. La tarea programada «Caso semanal ResiTrack» (martes 21:13 Bogotá, Opus) escribe el caso de la semana siguiente con `save_weekly_case(jsonb)` en el lunes que da `next_case_monday()`.
+Un paciente por semana (tablas `weekly_cases`, `case_steps`, `case_answers`): llega el lunes a urgencias o a consulta externa, de martes a jueves se le pasa revista o se le hace control, y el viernes es el desenlace. Una pregunta por día; cada paso se abre en su fecha y solo después de responder el anterior (la narrativa de un día asume la conducta correcta del anterior). Quien se atrasa puede ponerse al día hasta el domingo. No cuenta para rachas ni ranking. RPC: `get_week_case()` y `answer_case(step, choice)`. La tarea programada «Preguntas semanales ResiTrack» (martes 22:32 Bogotá, Opus), en su sección C, escribe el caso de la semana siguiente con `save_weekly_case(jsonb)` en el lunes que da `next_case_monday()`.
 
 ## Tareas programadas: permisos y horarios
 
