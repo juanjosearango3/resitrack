@@ -232,7 +232,8 @@ footer{margin-top:36px;font-size:14px;color:var(--muted)}
 .opt .ov{flex:none;box-sizing:border-box;width:30px;height:30px;border-radius:50%;border:1.5px solid var(--rule-strong);background:var(--sheet);display:inline-flex;align-items:center;justify-content:center;font-family:var(--f-display);font-weight:800;font-size:13px;color:var(--muted)}
 .opt .txt{flex:1;padding-top:4px}
 .opt .who{flex:none;font-size:12px;font-weight:700;color:var(--muted);padding-top:7px}
-.opt:not([disabled]):hover{border-color:var(--drop);background:var(--sheet)}
+/* Solo con mouse: en el celular el :hover se queda pegado y, al pasar sola a la siguiente pregunta, la opción que queda bajo el dedo parecía marcada. */
+@media (hover:hover) and (pointer:fine){.opt:not([disabled]):hover{border-color:var(--drop);background:var(--sheet)}}
 .opt.picked{border-color:var(--lead)}
 .opt.picked .ov{background:var(--lead);border-color:var(--lead);color:var(--on-lead)}
 .opt.right{border-color:var(--ok);background:var(--ok-bg)}
