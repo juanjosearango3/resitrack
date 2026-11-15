@@ -981,3 +981,28 @@ body:has(#cover:not([hidden]))::before{display:none}
 .slnav > :first-child{justify-self:start}
 .slnav > :last-child{justify-self:end}
 .slnav .hint{font-variant-numeric:tabular-nums;white-space:nowrap}
+/* Repaso dentro de la sesión diaria */
+.rev-chip{background:color-mix(in srgb,var(--rt-warning) 18%,transparent);border:1px solid color-mix(in srgb,var(--rt-warning) 55%,transparent);color:var(--ink);font-weight:700}
+.rev-intro{margin:0 0 10px;padding:8px 12px;border-radius:10px;background:color-mix(in srgb,var(--rt-warning) 12%,transparent)}
+.sl-dot.rev:not(.ok):not(.bad){border-style:dashed;border-color:var(--rt-warning)}
+/* Caso de la semana */
+.hub-wide{grid-column:1/-1;min-height:0;flex-direction:row;align-items:center;justify-content:flex-start;gap:14px}
+.hub-case{--hc:#E0738A}
+.case-kicker{font-size:12px!important;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--hc)!important}
+.case-top{margin:8px 0 14px}
+.case-list{display:grid;gap:14px}
+.case-step{position:relative;padding-left:18px;border-left:2px solid var(--rule)}
+.case-step.now{border-left-color:var(--rt-primary)}
+.case-step.lock{opacity:.75}
+.case-hd{display:flex;align-items:center;gap:10px;margin:0 0 8px -31px;flex-wrap:wrap}
+.case-hd b{font-family:var(--f-display);font-size:16px}
+.case-dot{flex:none;width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-family:var(--f-display);font-weight:800;font-size:12.5px;background:var(--paper);border:2px solid var(--rule-strong);color:var(--muted)}
+.case-dot.open{border-color:var(--rt-primary);color:var(--rt-primary)}
+.case-dot.ok{background:var(--ok);border-color:var(--ok);color:var(--sheet)}
+.case-dot.bad{background:var(--bad);border-color:var(--bad);color:var(--sheet)}
+.case-narr{background:var(--sheet);border:1px solid var(--rule);border-radius:var(--r-card);padding:12px 14px;margin-bottom:10px;font-size:15.5px;line-height:1.6}
+.case-narr p{margin:0 0 8px}.case-narr p:last-child{margin:0}
+.case-wait{margin:0 0 4px}
+.case-end{margin-top:16px}
+.case-end p{margin:0 0 8px;line-height:1.6}
+.case-dx{padding:8px 12px;border-radius:10px;background:var(--drop-soft)}

@@ -733,6 +733,8 @@ const areaChips = q => `<span class="chip on">${esc(AREAS[q.area] || q.area)}</s
 let SUB_COUNTS = {};
 const LETTERS = ["A","B","C","D","E"];
 let DAILY = [], HISTORY = [], CHALLS = [], CH_ANS = [];
+let DREV = [];      // hasta 5 preguntas de repaso fijas para hoy (van después de las 10 diarias)
+let WCASE = null;   // caso de la semana (jsonb de get_week_case)
 let REPORTED = new Set(), REPORT_OPEN = null;
 let RETAR_OPEN = null, BACK_TAB = "study";
 let FRIENDS = [], FREQS = [];
@@ -754,7 +756,9 @@ async function loadStudy(){
     loadRank(),
     SB.rpc("my_reports").then(r => { REPORTED = new Set((r.data || []).map(Number)); }),
     loadPractice(),
-    loadLeagues()
+    loadLeagues(),
+    SB.rpc("get_daily_review").then(r => { DREV = r.data || []; }),
+    SB.rpc("get_week_case").then(r => { WCASE = r.data || null; })
   ]);
   STREAKS = Object.fromEntries((k.data || []).map(r => [r.user_id, r]));
   DAILY = d.data || [];
@@ -799,7 +803,7 @@ function streakHint(me){
   if (isSunSim()) return me.done_today ? "Terminaste el simulacro del sábado. Mañana vuelven las diarias." : `Hoy es el último día para terminar el simulacro del sábado${me.solo ? " y no perderla" : ""}.`;
   if (me.done_today) return "Hoy ya sumaste. Vuelve mañana.";
   if (bogotaDow() === 0 && !DAILY.length) return "Hoy es domingo de descanso: tu racha está a salvo.";
-  const what = isSimDay() ? "el simulacro de hoy" : `las ${DAILY.length || 15} de hoy`;
+  const what = isSimDay() ? "el simulacro de hoy" : `las ${(DAILY.length || 10) + DREV.length} de hoy`;
   return me.solo ? `Termina ${what} para no perderla.` : `Termina ${what} para empezar tu racha.`;
 }
 function streakCard(){
@@ -925,29 +929,52 @@ document.addEventListener("touchend", e => {
 function renderDaily(){
   if (!studyLoaded) return `<div class="empty">Cargando preguntas…</div>`;
   if (!DAILY.length) return `<div class="empty">Las preguntas de hoy todavía no están listas. Se publican cada madrugada.</div>`;
+  // La sesión del día: las diarias y, detrás, hasta 5 de repaso de lo que la persona ha fallado.
+  const items = [...DAILY.map(q => ({ rev: false, q })), ...DREV.map(q => ({ rev: true, q }))];
   const done = DAILY.filter(q => q.my_choice != null), ok = done.filter(q => q.is_correct).length;
+  const rdone = DREV.filter(q => q.my_choice != null), rok = rdone.filter(q => q.is_correct).length;
+  const all = done.length + rdone.length;
   // En el simulacro el servidor no entrega aciertos ni explicaciones hasta terminar todas.
   const hidden = done.some(q => q.is_correct == null);
-  const note = done.length === DAILY.length && !hidden
-      ? `Terminaste: <b>${ok} de ${DAILY.length}</b> correctas.`
+  const rtxt = DREV.length ? ` y <b>${rok} de ${DREV.length}</b> de repaso` : "";
+  const note = all === items.length && !hidden
+      ? `Terminaste: <b>${ok} de ${DAILY.length}</b> ${DREV.length ? "nuevas" : "correctas"}${rtxt}.`
       : hidden ? `${done.length} de ${DAILY.length} respondidas. Verás tu resultado y la retroalimentación al terminar.`
-      : `${done.length} de ${DAILY.length} respondidas${done.length?`, ${ok} correctas`:""}.`;
-  const cards = DAILY.map(q => {
+      : `${all} de ${items.length} respondidas${DREV.length ? ` · ${DAILY.length} nuevas y ${DREV.length} de repaso` : ""}.`;
+  const cards = items.map(({ rev, q }, k) => {
     const answered = q.my_choice != null;
-    return `<article class="qcard" id="q-${q.id}">
-      <div class="qmeta"><span class="qn">${q.slot}</span>${areaChips(q)}${answered && q.topic ? `<span class="hint">${esc(q.topic)}</span>` : ""}</div>
+    const meta = rev
+      ? `<span class="qn">${k + 1}</span><span class="chip rev-chip">Repaso</span>${areaChips(q)}${q.misses > 1 ? `<span class="hint">fallada ${q.misses} veces</span>` : ""}`
+      : `<span class="qn">${q.slot}</span>${areaChips(q)}`;
+    return `<article class="qcard" id="${rev ? "r" : "q"}-${q.id}">
+      ${rev && k === DAILY.length && !answered ? `<p class="hint rev-intro">Ahora, ${DREV.length === 1 ? "una pregunta" : `${DREV.length} preguntas`} que fallaste antes. Repasarlas es lo que fija lo aprendido.</p>` : ""}
+      <div class="qmeta">${meta}${answered && q.topic ? `<span class="hint">${esc(q.topic)}</span>` : ""}</div>
       <p class="stem">${esc(q.stem)}</p>
-      ${optList(q, { kind:"daily", pick: q.my_choice, correct: answered ? q.correct : null, locked: answered })}
+      ${optList(q, { kind: rev ? "drev" : "daily", pick: q.my_choice, correct: answered ? q.correct : null, locked: answered })}
       ${answered && q.correct != null ? feedback(q.is_correct, q.explanation, q.source, q.id) : answered ? `<p class="hint" style="margin:6px 0 0">Respuesta guardada. La retroalimentación aparece al final del simulacro.</p>` : ""}
     </article>`;
   });
-  const open = firstOpen(DAILY.length, k => DAILY[k].my_choice != null);
+  const open = firstOpen(items.length, k => items[k].q.my_choice != null);
   return slides("daily:" + activeDay(), cards, {
-    cls: k => { const q = DAILY[k]; return q.my_choice == null ? "" : q.is_correct == null ? "done" : q.is_correct ? "ok" : "bad"; },
-    ready: k => DAILY[k].my_choice != null,
+    cls: k => { const { rev, q } = items[k]; return (rev ? "rev " : "") + (q.my_choice == null ? "" : q.is_correct == null ? "done" : q.is_correct ? "ok" : "bad"); },
+    ready: k => items[k].q.my_choice != null,
     start: Math.max(open, 0), note,
     last: open < 0 ? `<button type="button" class="btn" data-study-hub>Listo</button>` : slPending(open)
   });
+}
+// Al terminar toda la sesión del día (diarias y repaso) se recalculan la racha y el ranking.
+async function afterSession(){
+  if (DAILY.every(x => x.my_choice != null) && DAILY.some(x => x.correct == null)){
+    const fresh = await SB.rpc("get_daily");
+    if (fresh.data) DAILY = fresh.data;
+    HISTORY = (await SB.rpc("my_study_history")).data || HISTORY;
+  }
+  if (!DAILY.every(x => x.my_choice != null) || !DREV.every(x => x.my_choice != null)) return;
+  const k = await SB.rpc("streaks_v2");
+  STREAKS = Object.fromEntries((k.data || []).map(x => [x.user_id, x]));
+  await loadRank();
+  renderTop();
+  toast(`🔥 ${myStreak()} ${myStreak()===1?"día":"días"} seguidos. ¡Racha al día!`);
 }
 
 // Días anteriores: lista sacada de HISTORY y, al abrir uno, sus preguntas con get_day (la correcta solo de las que respondiste).
@@ -1026,7 +1053,7 @@ const isMyTurn = c => c.status === "pending" && !chExpired(c) && !myChAns(c.id);
 const pendingCount = () => ME ? CHALLS.filter(isMyTurn).length : 0;
 function updateBadges(){
   const p = pendingCount(), r = FREQS.filter(x => x.incoming).length;
-  const left = DAILY.length ? DAILY.filter(q => q.my_choice == null).length : 0;
+  const left = (DAILY.length ? DAILY.filter(q => q.my_choice == null).length : 0) + DREV.filter(q => q.my_choice == null).length + (caseToday() ? 1 : 0);
   $("nStudy").textContent = left || "";
   $("nGroup").textContent = (p + r) || "";
 }
@@ -1119,6 +1146,7 @@ function drawStudy(){
   if (SD){ el.innerHTML = renderStudyDate(); return; }
   if (LIVE){ el.innerHTML = renderLive(); return; }
   if (STUDY_VIEW === "sd"){ el.innerHTML = sdMenu(); return; }
+  if (STUDY_VIEW === "case"){ el.innerHTML = renderCase(); return; }
   if (STUDY_VIEW === "past" && PAST){ el.innerHTML = renderPast(); return; }
   if (STUDY_VIEW !== "daily"){ el.innerHTML = `${streakCard()}${rankPanel()}${studyHub()}${pastDays()}`; return; }
   const back = `<div class="playhead"><button class="btn ghost small" type="button" data-study-hub>Volver</button></div>`;
@@ -1140,7 +1168,7 @@ function drawStudy(){
     return;
   }
   const sn = STREAKS[ME.id]?.solo || 0;
-  el.innerHTML = `${back}<div class="dq-hd"><span class="ico-tile">${I.target}</span><div class="dq-t"><h2>Preguntas diarias: ${DIAS[dow]}</h2><p class="sub">Diez de básicas, clínicas y quirúrgicas, tres de salud pública y sistema de salud y dos de cultura general. Cuenta tu primera respuesta.</p></div><div class="streak-pill"><b>🔥 ${sn} ${sn === 1 ? "día" : "días"}</b><span>Racha actual</span></div></div>
+  el.innerHTML = `${back}<div class="dq-hd"><span class="ico-tile">${I.target}</span><div class="dq-t"><h2>Preguntas diarias: ${DIAS[dow]}</h2><p class="sub">Diez nuevas (básicas, clínicas, quirúrgicas, salud pública, sistema de salud y cultura general) y hasta cinco de repaso de lo que has fallado. Cuenta tu primera respuesta.</p></div><div class="streak-pill"><b>🔥 ${sn} ${sn === 1 ? "día" : "días"}</b><span>Racha actual</span></div></div>
     ${renderDaily()}`;
 }
 
@@ -1159,18 +1187,7 @@ document.addEventListener("click", async e => {
       if (q && r){ Object.assign(q, { my_choice: i, is_correct: r.is_correct, correct: r.correct, explanation: r.explanation, source: r.source }); }
       const h = HISTORY.find(x => x.day === activeDay());
       if (h){ h.answered++; if (r?.is_correct) h.correct++; }
-      if (DAILY.every(x => x.my_choice != null)){
-        if (DAILY.some(x => x.correct == null)){
-          const fresh = await SB.rpc("get_daily");
-          if (fresh.data) DAILY = fresh.data;
-          HISTORY = (await SB.rpc("my_study_history")).data || HISTORY;
-        }
-        const k = await SB.rpc("streaks_v2");
-        STREAKS = Object.fromEntries((k.data || []).map(x => [x.user_id, x]));
-        await loadRank();
-        renderTop();
-        toast(`🔥 ${myStreak()} ${myStreak()===1?"día":"días"} seguidos. ¡Racha al día!`);
-      }
+      await afterSession();
       // En el simulacro del sábado no hay retroalimentación al responder: se pasa sola a la siguiente pendiente.
       const at = DAILY.findIndex(x => x.id === qid), allDone = DAILY.every(x => x.my_choice != null);
       if (simLike && !allDone){
@@ -1179,6 +1196,27 @@ document.addEventListener("click", async e => {
       } else if (simLike) SL.i = 0;   // simulacro terminado: se revisa desde la primera
       const y = window.scrollY;
       updateBadges(); renderStudy(); window.scrollTo(0, y);
+      return;
+    }
+    if (opt.dataset.kind === "drev"){
+      if (studyBusy) return; studyBusy = true;
+      const qid = Number(opt.dataset.q);
+      const { data, error } = await SB.rpc("answer_daily_review", { p_qid: qid, p_choice: i });
+      studyBusy = false;
+      if (error){ toast(error.message); return; }
+      const r = data?.[0], q = DREV.find(x => x.id === qid);
+      if (q && r) Object.assign(q, { my_choice: i, is_correct: r.is_correct, correct: r.correct, explanation: r.explanation, source: r.source });
+      await afterSession();
+      const y = window.scrollY; updateBadges(); renderStudy(); window.scrollTo(0, y);
+      return;
+    }
+    if (opt.dataset.kind === "case"){
+      if (studyBusy) return; studyBusy = true;
+      const { data, error } = await SB.rpc("answer_case", { p_step: Number(opt.dataset.q), p_choice: i });
+      studyBusy = false;
+      if (error){ toast(error.message); return; }
+      WCASE = data || WCASE;
+      const y = window.scrollY; updateBadges(); renderStudy(); window.scrollTo(0, y);
       return;
     }
     if (opt.dataset.kind === "play"){
@@ -1392,21 +1430,23 @@ const HUB_ICONS = {
   daily: svgI('<rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M8 3v4M16 3v4M3.5 10h17M8.5 15l2 2 4-4"/>'),
   ref: svgI('<path d="M4 19h16"/><path d="M6.5 16v-4M11.5 16V8M16.5 16v-6"/><path d="M14 5h4v4"/>'),
   sim: svgI('<circle cx="12" cy="13" r="7.5"/><path d="M12 9.5V13l2.5 2M10 2.5h4M18.5 6l1.5-1.5"/>'),
+  case: svgI('<path d="M7 3.5v5a5 5 0 0 0 10 0v-5"/><path d="M12 13.5v2.5a4 4 0 0 0 8 0v-1.5"/><circle cx="20" cy="13" r="1.6"/>'),
   sd: svgI('<circle cx="9" cy="8.5" r="3"/><circle cx="17" cy="9.5" r="2.5"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5M15 14.2c2.5-.4 4.6 1 5.2 4.3"/>')
 };
 function studyHub(){
   const dow = bogotaDow(), sim = isSimDay(), n = DAILY.length;
-  const done = DAILY.filter(q => q.my_choice != null).length, ok = DAILY.filter(q => q.is_correct).length;
+  const n2 = n + DREV.length, done = DAILY.filter(q => q.my_choice != null).length + DREV.filter(q => q.my_choice != null).length, ok = DAILY.filter(q => q.is_correct).length;
   let dline, dhot = false;
   if (!studyLoaded) dline = "Cargando…";
   else if (dow === 0 && !n) dline = HISTORY[0] && pastSim(HISTORY[0]) ? "Descanso. Revisa el simulacro de ayer" : "Hoy es domingo: descanso";
   else if (!n) dline = sim ? "El simulacro se arma a medianoche" : "Se publican cada madrugada";
-  else if (done < n){ dline = sim ? `${done} de ${n} respondidas${dow === 0 ? " · cierra hoy" : ""}` : `${n - done} por responder hoy`; dhot = true; }
+  else if (done < n2){ dline = sim ? `${done} de ${n} respondidas${dow === 0 ? " · cierra hoy" : ""}` : `${n2 - done} por responder hoy${DREV.length ? ` (${DREV.length} de repaso)` : ""}`; dhot = true; }
   else dline = DAILY.some(q => q.correct == null) ? "Entregado" : `Terminaste: ${ok} de ${n}`;
   const w = weakestArea();
   const rline = REV.due_now ? `${REV.due_now} para repasar hoy` : w ? `Más floja: ${AREAS[w.area]}` : REV.upcoming ? `Próximo repaso: ${fmtS(REV.next_due)}` : "Tus aciertos por área";
   const card = (attr, k, title, line, hot) => `<button type="button" class="hub-card hub-${k}${hot ? " hot" : ""}" ${attr}><span class="hub-ico" aria-hidden="true">${HUB_ICONS[k]}</span><span class="hub-txt"><b>${title}</b><span>${esc(line)}</span></span></button>`;
   return `<div class="hub">
+    ${caseCard()}
     ${card("data-study-daily", "daily", sim ? "Simulacro del sábado" : "Preguntas diarias", dline, dhot)}
     ${card('data-pr="refuerzo"', "ref", "Reforzar debilidades", rline, REV.due_now > 0)}
     ${card('data-pr="sim"', "sim", "Simulacro", "Mezcla de estilos, con cronómetro", false)}
@@ -1560,6 +1600,7 @@ document.addEventListener("click", async e => {
   const t = e.target;
   if (t.closest("[data-study-daily]")){ STUDY_VIEW = "daily"; renderStudy(); window.scrollTo(0, 0); return; }
   if (t.closest("[data-sd-menu]")){ STUDY_VIEW = "sd"; renderStudy(); window.scrollTo(0, 0); return; }
+  if (t.closest("[data-study-case]")){ STUDY_VIEW = "case"; REPORT_OPEN = null; renderStudy(); const cur = document.querySelector(".case-step.now"); if (cur && cur.previousElementSibling) cur.scrollIntoView({ block: "start" }); else window.scrollTo(0, 0); return; }
   if (t.closest("[data-study-hub]")){ STUDY_VIEW = null; PAST = null; renderStudy(); window.scrollTo(0, 0); return; }
   const pd = t.closest("[data-past]");
   if (pd){ openPast(pd.dataset.past); return; }
@@ -1639,6 +1680,52 @@ document.addEventListener("click", async e => {
   }
 });
 
+/* ---------- caso de la semana ---------- */
+// Un paciente por semana: llega el lunes (urgencias o consulta externa), se sigue de martes a jueves
+// y el viernes tiene su desenlace. Una decisión por día; cada día se abre en su fecha y después de responder el anterior.
+const CASE_SET = { urgencias: "Urgencias", consulta: "Consulta externa" };
+const caseSteps = () => WCASE?.steps || [];
+// Paso de hoy abierto y sin responder (para la insignia y la tarjeta).
+const caseToday = () => caseSteps().find(s => s.day === todayBog() && s.state === "open" && s.my_choice == null) || null;
+const caseParas = t => String(t || "").split(/\n\s*\n/).map(p => `<p>${esc(p.trim()).replace(/^OJO:/, "<b>OJO:</b>")}</p>`).join("");
+function caseCard(){
+  if (!WCASE) return "";
+  const st = caseSteps(), pend = st.find(s => s.state === "open" && s.my_choice == null), blocked = st.find(s => s.state === "prev");
+  const next = st.find(s => s.state === "date");
+  let line, hot = false;
+  if (WCASE.done === 5) line = `Terminado: ${WCASE.ok} de 5 decisiones correctas`;
+  else if (pend){ line = `${pend.day === todayBog() ? "Hoy" : "Pendiente"}: ${pend.label.split(" · ")[1] || pend.label}`; hot = true; }
+  else if (blocked){ line = "Te falta el día anterior"; hot = true; }
+  else if (next) line = `${DIAS[D(next.day).getDay()]}: ${next.label.split(" · ")[1] || next.label}`;
+  else line = "";
+  return `<button type="button" class="hub-card hub-case hub-wide${hot ? " hot" : ""}" data-study-case><span class="hub-ico" aria-hidden="true">${HUB_ICONS.case}</span><span class="hub-txt"><span class="case-kicker">Caso de la semana · ${esc(CASE_SET[WCASE.setting] || "")}</span><b>${esc(WCASE.title)}</b><span>${esc(line)}</span></span></button>`;
+}
+function renderCase(){
+  const back = `<div class="playhead"><button class="btn ghost small" type="button" data-study-hub>Volver</button></div>`;
+  if (!WCASE) return `${back}<h2>Caso de la semana</h2><div class="empty">Esta semana todavía no hay caso. Se publica el lunes.</div>`;
+  const st = caseSteps(), nowStep = st.find(s => s.state === "open" && s.my_choice == null);
+  const dot = s => s.my_choice != null ? (s.is_correct ? "ok" : "bad") : s.state === "open" ? "open" : "lock";
+  const steps = st.map(s => {
+    const dia = DIAS[D(s.day).getDay()];
+    const head = `<div class="case-hd"><span class="case-dot ${dot(s)}">${s.step}</span><b>${esc(s.label)}</b><span class="hint">${dia} ${fmtS(s.day)}</span></div>`;
+    if (s.state !== "open") return `<section class="case-step lock">${head}<p class="hint case-wait">${s.state === "date" ? `Se abre el ${dia.toLowerCase()}.` : "Responde primero el día anterior para seguir con el paciente."}</p></section>`;
+    const answered = s.my_choice != null;
+    return `<section class="case-step${s === nowStep ? " now" : ""}">${head}
+      <div class="case-narr">${caseParas(s.narrative)}</div>
+      <article class="qcard"><p class="stem">${esc(s.stem)}</p>
+        ${optList({ id: s.id, options: s.options }, { kind: "case", pick: s.my_choice, correct: answered ? s.correct : null, locked: answered })}
+        ${answered ? feedback(s.is_correct, s.explanation, s.source, null) : ""}
+      </article></section>`;
+  }).join("");
+  const end = WCASE.done === 5 ? `<section class="sim-card case-end"><h3 style="margin:0 0 6px">Desenlace</h3>
+      <p class="case-dx"><b>Diagnóstico:</b> ${esc(WCASE.diagnosis)}</p>${caseParas(WCASE.epilogue)}
+      <p class="hint" style="margin:10px 0 0">Acertaste ${WCASE.ok} de 5 decisiones. El lunes llega un paciente nuevo.</p>
+      ${WCASE.source ? `<div class="fb-src"><span class="ico-tile">${I.doc}</span><div><b>Fuente</b><span>${esc(WCASE.source)}</span></div></div>` : ""}</section>` : "";
+  return `${back}<div class="case-top"><span class="chip on">${esc(CASE_SET[WCASE.setting] || "")}</span><h2 style="margin:6px 0 4px">${esc(WCASE.title)}</h2>
+    <p class="sub" style="margin:0">Un paciente por semana: llega el lunes y lo sigues hasta el viernes, una decisión por día. Si te atrasas, puedes ponerte al día hasta el domingo. No cuenta para la racha ni el ranking.</p></div>
+    <div class="case-list">${steps}</div>${end}`;
+}
+
 /* ---------- resumen de fortalezas y debilidades (Para mí) ---------- */
 function strengthsBox(){
   const rows = AREA_STATS.filter(x => x.answered >= 3);
@@ -1693,7 +1780,7 @@ function countdownBox(){
     <div class="cd-hd"><span class="ico-tile">${I.cal}</span><h3>Mi próximo examen</h3></div>
     <div class="cd-main"><span class="cd-num">${d}</span><div><b>${d === 1 ? "día" : "días"} para el examen de ${esc(u.name.split(" · ")[0])}</b></div></div>
     <div class="cd-meta"><span>${I.cal}${fmt(ex)}</span>${evt ? `<span>${I.doc}${esc(evt)}</span>` : ""}</div>
-    <p class="cd-plan">Hasta ese día salen unas <b>${wk * 15}</b> preguntas diarias nuevas${sats ? ` y ${sats} ${sats === 1 ? "simulacro" : "simulacros"} de sábado` : ""}. Cada semana: termina las diarias, haz tu repaso${REV.due_now ? ` (hoy tienes ${REV.due_now})` : ""} y un simulacro en Estudiar.</p>
+    <p class="cd-plan">Hasta ese día salen unas <b>${wk * 10}</b> preguntas diarias nuevas${sats ? ` y ${sats} ${sats === 1 ? "simulacro" : "simulacros"} de sábado` : ""}. Cada semana: termina las diarias, haz tu repaso${REV.due_now ? ` (hoy tienes ${REV.due_now})` : ""} y un simulacro en Estudiar.</p>
     <div class="cd-change"><span class="hint">Cambiar:</span>${sel(u.id)}</div>
   </div>`;
 }
