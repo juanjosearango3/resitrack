@@ -1132,10 +1132,12 @@ function drawStudy(){
   if (isSimDay()){
     const n = DAILY.length || 50;
     const sun = isSunSim(), fin = DAILY.every(q => q.my_choice != null);
+    // La explicación del simulacro sale solo al abrirlo; en cuanto respondes la primera, se quita.
+    const intro = !DAILY.some(q => q.my_choice != null);
     el.innerHTML = `${back}<h2>Simulacro${sun ? " del sábado" : ""}</h2>
-      ${sun ? `<div class="info-card"><span class="ico-tile">${I.info}</span><div><b>${fin ? "Ya lo terminaste" : "Sigue abierto hasta hoy a medianoche"}</b><p>${fin ? "Aquí tienes tu resultado y la retroalimentación. Mañana vuelven las preguntas diarias." : "Si no alcanzaste el sábado, termínalo hoy domingo: cuenta igual para tu racha y para el ranking de la semana."}</p></div></div>` : ""}
-      <p class="sub">El simulacro del sábado abarca las preguntas de esta semana (lunes a viernes): ${n} preguntas en un orden nuevo y con las opciones reordenadas. Cuenta tu primera respuesta y, para sumar a tu racha, debes terminarlas todas.</p>
-      <p class="sub"><b>Como en el examen real, la retroalimentación es al final:</b> mientras respondes no verás si acertaste. Cuando termines las ${n} aparecen tu puntaje, las respuestas correctas, las explicaciones y las fuentes.</p>
+      ${sun && (intro || fin) ? `<div class="info-card"><span class="ico-tile">${I.info}</span><div><b>${fin ? "Ya lo terminaste" : "Sigue abierto hasta hoy a medianoche"}</b><p>${fin ? "Aquí tienes tu resultado y la retroalimentación. Mañana vuelven las preguntas diarias." : "Si no alcanzaste el sábado, termínalo hoy domingo: cuenta igual para tu racha y para el ranking de la semana."}</p></div></div>` : ""}
+      ${intro ? `<p class="sub">El simulacro del sábado abarca las preguntas de esta semana (lunes a viernes): ${n} preguntas en un orden nuevo y con las opciones reordenadas. Cuenta tu primera respuesta y, para sumar a tu racha, debes terminarlas todas.</p>
+      <p class="sub"><b>Como en el examen real, la retroalimentación es al final:</b> mientras respondes no verás si acertaste. Cuando termines las ${n} aparecen tu puntaje, las respuestas correctas, las explicaciones y las fuentes.</p>` : ""}
       ${studyLoaded && !DAILY.length ? `<div class="empty">El simulacro de hoy todavía no está listo. Se arma a medianoche.</div>` : renderDaily()}`;
     return;
   }
@@ -1150,7 +1152,7 @@ document.addEventListener("click", async e => {
     const i = Number(opt.dataset.i);
     if (opt.dataset.kind === "daily"){
       if (studyBusy) return; studyBusy = true;
-      const qid = Number(opt.dataset.q);
+      const qid = Number(opt.dataset.q), first = !DAILY.some(x => x.my_choice != null);
       const { data, error } = await SB.rpc("answer_daily", { p_qid: qid, p_choice: i });
       studyBusy = false;
       if (error){ toast(error.message); return; }
@@ -1179,6 +1181,9 @@ document.addEventListener("click", async e => {
       } else if (simLike) SL.i = 0;   // simulacro terminado: se revisa desde la primera
       const y = window.scrollY;
       updateBadges(); renderStudy(); window.scrollTo(0, y);
+      // Al responder la primera del simulacro se quita la explicación de arriba: que el mazo no quede tapado.
+      const d = simLike && first && document.querySelector("[data-sl]");
+      if (d && d.getBoundingClientRect().top < 56) d.scrollIntoView({ block: "start" });
       return;
     }
     if (opt.dataset.kind === "play"){
